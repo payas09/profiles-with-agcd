@@ -5,6 +5,52 @@
   width: 100%;
 }
 
+/* Tab Switcher Container */
+.agcd-tab-switcher-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px 40px 0;
+  background-color: #faf9f8;
+}
+
+/* Tab Switcher */
+.agcd-tab-switcher {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.agcd-tab-button {
+  padding: 8px 24px;
+  background: white;
+  border: none;
+  border-right: 1px solid #e1dfdd;
+  font-size: 14px;
+  font-weight: 500;
+  color: #605e5c;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.agcd-tab-button:last-child {
+  border-right: none;
+}
+
+.agcd-tab-button:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+.agcd-tab-button.active {
+  background-color: #0078d4;
+  color: white;
+  font-weight: 600;
+}
+
 /* Top Menu Bar */
 .top-menu-bar {
   display: flex;

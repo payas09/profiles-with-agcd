@@ -93,6 +93,7 @@ const AgCDPromptEdit: React.FC = () => {
   const [tempSelectionMode, setTempSelectionMode] = useState<SelectionMode>('all');
   const [tempSelectedProfiles, setTempSelectedProfiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'engagement' | 'conversation'>('engagement');
+  const [activePageTab, setActivePageTab] = useState<'home' | 'playbook'>('home');
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -220,6 +221,15 @@ const AgCDPromptEdit: React.FC = () => {
     navigate('/agcd');
   };
 
+  const handlePageTabChange = (tab: 'home' | 'playbook') => {
+    setActivePageTab(tab);
+    if (tab === 'home') {
+      navigate('/agcd');
+    } else {
+      navigate('/agcd/playbook');
+    }
+  };
+
   // Only check for template when creating new policies
   if (!isEditMode && !template) {
     return (
@@ -282,6 +292,24 @@ const AgCDPromptEdit: React.FC = () => {
 
   return (
     <div className="agcd-prompt-edit-page">
+      {/* Tab Switcher */}
+      <div className="agcd-tab-switcher-container">
+        <div className="agcd-tab-switcher">
+          <button
+            className={`agcd-tab-button ${activePageTab === 'home' ? 'active' : ''}`}
+            onClick={() => handlePageTabChange('home')}
+          >
+            Home
+          </button>
+          <button
+            className={`agcd-tab-button ${activePageTab === 'playbook' ? 'active' : ''}`}
+            onClick={() => handlePageTabChange('playbook')}
+          >
+            Playbook
+          </button>
+        </div>
+      </div>
+
       {/* Top Menu Bar */}
       <div className="top-menu-bar">
         <div className="menu-left-actions">

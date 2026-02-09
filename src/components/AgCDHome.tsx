@@ -107,6 +107,7 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
 const AgCDHome: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'home' | 'playbook'>('home');
+  const [activePromptFilter, setActivePromptFilter] = useState<'orchestration' | 'assignment'>('orchestration');
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [galleryFilterTab, setGalleryFilterTab] = useState<'orchestration' | 'assignment'>('orchestration');
   const [selectedScenario, setSelectedScenario] = useState<string>('');
@@ -133,8 +134,8 @@ const AgCDHome: React.FC = () => {
     }
   }, []);
 
-  const handlePromptClick = (promptType: string) => {
-    navigate(`/agcd/prompt/${promptType}`);
+  const handlePromptFilterClick = (filter: 'orchestration' | 'assignment') => {
+    setActivePromptFilter(filter);
   };
 
   const handleTabChange = (tab: 'home' | 'playbook') => {
@@ -287,36 +288,22 @@ const AgCDHome: React.FC = () => {
         </div>
 
         <div className="canned-prompts-buttons">
-          <button className="canned-prompt-btn" onClick={() => handlePromptClick('orchestrator')}>
+          <button
+            className={`canned-prompt-btn ${activePromptFilter === 'orchestration' ? 'active' : ''}`}
+            onClick={() => handlePromptFilterClick('orchestration')}
+          >
             Orchestrator
           </button>
-          <button className="canned-prompt-btn" onClick={() => handlePromptClick('assignment')}>
+          <button
+            className={`canned-prompt-btn ${activePromptFilter === 'assignment' ? 'active' : ''}`}
+            onClick={() => handlePromptFilterClick('assignment')}
+          >
             Assignment
           </button>
         </div>
 
-        {/* Orchestration Prompts */}
-        <h3 className="prompts-category-title">Orchestrator</h3>
         <div className="prompts-card-grid">
-          {promptGalleryCards.orchestration.map((card) => (
-            <button key={card.id} className="prompt-card-item" onClick={() => handleViewSamplePrompt(card.id)}>
-              <div className="card-icon-title">
-                <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="10" r="8" stroke="#0078d4" strokeWidth="1.5" fill="none"/>
-                </svg>
-                <span className="card-title-text">{card.title}</span>
-              </div>
-              <p className="card-description-text">
-                {card.description}
-              </p>
-            </button>
-          ))}
-        </div>
-
-        {/* Assignment Prompts */}
-        <h3 className="prompts-category-title">Assignment</h3>
-        <div className="prompts-card-grid">
-          {promptGalleryCards.assignment.map((card) => (
+          {promptGalleryCards[activePromptFilter].map((card) => (
             <button key={card.id} className="prompt-card-item" onClick={() => handleViewSamplePrompt(card.id)}>
               <div className="card-icon-title">
                 <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
