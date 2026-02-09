@@ -213,6 +213,14 @@
   background-color: #106ebe;
 }
 
+.prompts-category-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #323130;
+  margin: 24px 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
 .prompts-card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

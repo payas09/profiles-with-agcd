@@ -295,42 +295,40 @@ const AgCDHome: React.FC = () => {
           </button>
         </div>
 
+        {/* Orchestration Prompts */}
+        <h3 className="prompts-category-title">Orchestrator</h3>
         <div className="prompts-card-grid">
-          <button className="prompt-card-item" onClick={() => handlePromptClick('overflow')}>
-            <div className="card-icon-title">
-              <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="#0078d4" strokeWidth="1.5" fill="none"/>
-              </svg>
-              <span className="card-title-text">Overflow</span>
-            </div>
-            <p className="card-description-text">
-              If queue wait time is greater than 5 minutes, then route to available overflow queue. Communicate with customer whenever overflow is triggered.
-            </p>
-          </button>
+          {promptGalleryCards.orchestration.map((card) => (
+            <button key={card.id} className="prompt-card-item" onClick={() => handleViewSamplePrompt(card.id)}>
+              <div className="card-icon-title">
+                <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="8" stroke="#0078d4" strokeWidth="1.5" fill="none"/>
+                </svg>
+                <span className="card-title-text">{card.title}</span>
+              </div>
+              <p className="card-description-text">
+                {card.description}
+              </p>
+            </button>
+          ))}
+        </div>
 
-          <button className="prompt-card-item" onClick={() => handlePromptClick('automated-messages')}>
-            <div className="card-icon-title">
-              <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M17 2H3c-.9 0-1.7.7-1.9 1.6L1 4v12l3-3h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM4 7h12v1H4V7zm8 3H4V9h8v1zm4-4H4V5h12v1z" fill="#0078d4"/>
-              </svg>
-              <span className="card-title-text">Automated messages</span>
-            </div>
-            <p className="card-description-text">
-              Send customers automatic messages based on specific triggers.
-            </p>
-          </button>
-
-          <button className="prompt-card-item" onClick={() => handlePromptClick('dynamic-prioritization')}>
-            <div className="card-icon-title">
-              <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2l2.5 5.1 5.5.8-4 3.9.9 5.4L10 14.8l-4.9 2.6.9-5.4-4-3.9 5.5-.8L10 2z" fill="#0078d4"/>
-              </svg>
-              <span className="card-title-text">Dynamic prioritization</span>
-            </div>
-            <p className="card-description-text">
-              Adjust work item priority dynamically based on real-time conditions and business rules.
-            </p>
-          </button>
+        {/* Assignment Prompts */}
+        <h3 className="prompts-category-title">Assignment</h3>
+        <div className="prompts-card-grid">
+          {promptGalleryCards.assignment.map((card) => (
+            <button key={card.id} className="prompt-card-item" onClick={() => handleViewSamplePrompt(card.id)}>
+              <div className="card-icon-title">
+                <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="8" stroke="#0078d4" strokeWidth="1.5" fill="none"/>
+                </svg>
+                <span className="card-title-text">{card.title}</span>
+              </div>
+              <p className="card-description-text">
+                {card.description}
+              </p>
+            </button>
+          ))}
         </div>
 
         <div className="view-all-prompts">
