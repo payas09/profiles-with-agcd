@@ -198,9 +198,9 @@
 
 .canned-prompt-btn {
   padding: 8px 20px;
-  background-color: #0078d4;
-  color: white;
-  border: none;
+  background-color: #f3f2f1;
+  color: #605e5c;
+  border: 1px solid #e1dfdd;
   border-radius: 4px;
   font-size: 14px;
   font-weight: 600;
@@ -210,12 +210,19 @@
 }
 
 .canned-prompt-btn:hover {
-  background-color: #106ebe;
+  background-color: #e1dfdd;
+  color: #323130;
 }
 
 .canned-prompt-btn.active {
-  background-color: #005a9e;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+  background-color: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.canned-prompt-btn.active:hover {
+  background-color: #106ebe;
+  border-color: #106ebe;
 }
 
 .prompts-category-title {
@@ -254,13 +261,7 @@
 }
 
 .card-icon-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.card-prompt-icon {
-  flex-shrink: 0;
+  display: block;
 }
 
 .card-title-text {

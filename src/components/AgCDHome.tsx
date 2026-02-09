@@ -306,9 +306,6 @@ const AgCDHome: React.FC = () => {
           {promptGalleryCards[activePromptFilter].map((card) => (
             <button key={card.id} className="prompt-card-item" onClick={() => handleViewSamplePrompt(card.id)}>
               <div className="card-icon-title">
-                <svg className="card-prompt-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="10" r="8" stroke="#0078d4" strokeWidth="1.5" fill="none"/>
-                </svg>
                 <span className="card-title-text">{card.title}</span>
               </div>
               <p className="card-description-text">
