@@ -214,8 +214,7 @@ const AgCDHome: React.FC = () => {
   };
 
   const handleViewSamplePrompt = (cardId: string) => {
-    // TODO: Navigate to prompt edit page with the selected prompt
-    alert(`Viewing sample prompt: ${cardId}`);
+    navigate(`/agcd/prompt/${cardId}`);
     setShowGalleryModal(false);
   };
 
