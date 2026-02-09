@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './AgCDPlaybook.css';
-import { getAllPrompts, getProfileDisplayText, deletePrompt, duplicatePrompt, PromptData } from '../utils/promptStorage';
+import { getAllPrompts, deletePrompt, duplicatePrompt, PromptData } from '../utils/promptStorage';
 
 const AgCDPlaybook: React.FC = () => {
   const navigate = useNavigate();
