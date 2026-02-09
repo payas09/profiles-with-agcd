@@ -488,3 +488,249 @@
   flex: 1;
   min-width: 0;
 }
+
+/* AgCD Integration Banner */
+.agcd-integration-banner {
+  background-color: #f3f2f1;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.agcd-integration-text {
+  font-size: 14px;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 20px;
+}
+
+.agcd-integration-cta {
+  padding: 8px 20px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.agcd-integration-cta:hover {
+  background-color: #106ebe;
+}
+
+
+/* AgCD Section Card */
+.agcd-section-card {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.agcd-playbooks-section {
+  margin-top: 20px;
+}
+
+.agcd-playbooks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.agcd-playbooks-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.view-playbook-page-btn {
+  background: none;
+  border: none;
+  color: #0078d4;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.view-playbook-page-btn:hover {
+  background-color: #f3f2f1;
+  text-decoration: underline;
+}
+
+/* AgCD Playbooks Table */
+.agcd-playbooks-table-wrapper {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  overflow: visible;
+}
+
+.agcd-playbooks-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.agcd-playbooks-table thead {
+  background-color: #faf9f8;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+.agcd-playbooks-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  white-space: nowrap;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.agcd-playbooks-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #242424;
+  border-bottom: 1px solid #e1dfdd;
+  font-family: 'Segoe UI', sans-serif;
+  position: relative;
+}
+
+.agcd-playbooks-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.policy-name-link-text {
+  color: #0078d4;
+  font-weight: 500;
+}
+
+.trigger-column-text {
+  max-width: 300px;
+}
+
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-pill.published {
+  background-color: #dff6dd;
+  color: #107c10;
+}
+
+.status-pill.draft {
+  background-color: #fff4ce;
+  color: #8a8000;
+}
+
+/* Action Menu */
+.action-menu-container {
+  position: relative;
+}
+
+.action-menu-button {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-menu-button:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+.action-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #242424;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-menu-item:hover {
+  background-color: #f3f2f1;
+}
+
+.dropdown-menu-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Traditional Configuration Card */
+.traditional-config-card {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.config-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+
+/* AgCD Section Header */
+.agcd-section-header {
+  font-size: 18px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+

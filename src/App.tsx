@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -14,36 +14,47 @@ import EngagementProfiles from './components/EngagementProfiles';
 import EngagementProfileEdit from './components/EngagementProfileEdit';
 import Queues from './components/Queues';
 import QueueEdit from './components/QueueEdit';
+import AgCDHome from './components/AgCDHome';
+import AgCDPromptEdit from './components/AgCDPromptEdit';
+import AgCDPlaybook from './components/AgCDPlaybook';
 import './App.css';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const isEditPage = location.pathname.startsWith('/channel/') ||
-                     location.pathname.startsWith('/voice-channel/') ||
-                     location.pathname.startsWith('/conversation-flow/') ||
-                     location.pathname.startsWith('/engagement-profile/');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  if (isEditPage) {
+  const isNonAgCDEditPage = location.pathname.startsWith('/channel/') ||
+                            location.pathname.startsWith('/voice-channel/') ||
+                            location.pathname.startsWith('/conversation-flow/') ||
+                            location.pathname.startsWith('/engagement-profile/');
+
+  if (isNonAgCDEditPage) {
     return (
-      <div className="app">
+      <>
         <Header />
-        {children}
-      </div>
+        <div className="app app-no-sidebar">
+          {children}
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="app">
+    <>
       <Header />
-      <Sidebar />
-      {children}
-    </div>
+      <div className="app">
+        <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+        <div className={`main-content-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          {children}
+        </div>
+      </div>
+    </>
   );
 };
 
 const App: React.FC = () => {
   return (
-    <Router basename="/profiles-vision-four">
+    <Router basename="/agcd-with-profiles">
       <Layout>
         <Routes>
           <Route path="/" element={<MainContent />} />
@@ -58,6 +69,10 @@ const App: React.FC = () => {
           <Route path="/voice-channel/:id" element={<VoiceChannelEdit />} />
           <Route path="/conversation-flow/:id" element={<ConversationFlowEdit />} />
           <Route path="/engagement-profile/:id" element={<EngagementProfileEdit />} />
+          <Route path="/agcd" element={<AgCDHome />} />
+          <Route path="/agcd/prompt/:promptType" element={<AgCDPromptEdit />} />
+          <Route path="/agcd/policy/:policyId" element={<AgCDPromptEdit />} />
+          <Route path="/agcd/playbook" element={<AgCDPlaybook />} />
         </Routes>
       </Layout>
     </Router>

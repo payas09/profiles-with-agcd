@@ -7,6 +7,24 @@
   bottom: 0;
   overflow-y: auto;
   border-right: 1px solid #e1dfdd;
+  transition: width 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 48px;
+}
+
+.sidebar.collapsed .nav-section-title {
+  display: none;
+}
+
+.sidebar.collapsed .nav-item span {
+  display: none;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 8px 0;
 }
 
 .hamburger-menu {
@@ -19,10 +37,15 @@
   align-items: center;
   justify-content: flex-start;
   color: #323130;
+  transition: justify-content 0.3s ease;
 }
 
 .hamburger-menu:hover {
   background-color: #e1dfdd;
+}
+
+.sidebar.collapsed .hamburger-menu {
+  justify-content: center;
 }
 
 .sidebar-nav {

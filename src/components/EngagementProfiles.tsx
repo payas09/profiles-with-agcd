@@ -9,6 +9,7 @@ interface EngagementProfileData {
   owner: string;
   createdOn: string;
   status: string;
+  queues: string[];
 }
 
 const engagementProfilesData: EngagementProfileData[] = [
@@ -18,7 +19,8 @@ const engagementProfilesData: EngagementProfileData[] = [
     description: 'Default engagement profile for general customer support interactions',
     owner: 'Aurora365 User6',
     createdOn: '8/10/2025 10:00 AM',
-    status: 'Active'
+    status: 'Active',
+    queues: ['General Support Queue', 'Chat Support Queue', 'Live Chat Queue', 'Case Management Queue']
   },
   {
     id: 'profile2',
@@ -26,7 +28,8 @@ const engagementProfilesData: EngagementProfileData[] = [
     description: 'Premium engagement experience for VIP customers with priority handling',
     owner: 'Aurora365 User6',
     createdOn: '8/12/2025 2:30 PM',
-    status: 'Active'
+    status: 'Active',
+    queues: ['VIP Support Queue', 'Emergency Queue']
   },
   {
     id: 'profile3',
@@ -34,7 +37,8 @@ const engagementProfilesData: EngagementProfileData[] = [
     description: 'Specialized profile for technical support with skill-based routing',
     owner: 'Aurora365 User6',
     createdOn: '8/15/2025 9:15 AM',
-    status: 'Active'
+    status: 'Active',
+    queues: ['Technical Support Queue']
   },
   {
     id: 'profile4',
@@ -42,7 +46,8 @@ const engagementProfilesData: EngagementProfileData[] = [
     description: 'Engagement profile optimized for sales interactions and lead conversion',
     owner: 'Aurora365 User6',
     createdOn: '8/18/2025 11:45 AM',
-    status: 'Active'
+    status: 'Active',
+    queues: ['Sales Queue']
   },
   {
     id: 'profile5',
@@ -50,7 +55,8 @@ const engagementProfilesData: EngagementProfileData[] = [
     description: 'Limited engagement profile for after-hours support coverage',
     owner: 'Aurora365 User6',
     createdOn: '8/20/2025 4:20 PM',
-    status: 'Active'
+    status: 'Active',
+    queues: ['After Hours Queue']
   },
   {
     id: 'profile6',
@@ -58,7 +64,8 @@ const engagementProfilesData: EngagementProfileData[] = [
     description: 'Engagement profile for billing and payment inquiries',
     owner: 'Aurora365 User6',
     createdOn: '8/25/2025 1:00 PM',
-    status: 'Active'
+    status: 'Active',
+    queues: ['Billing Queue']
   }
 ];
 
@@ -108,6 +115,7 @@ const EngagementProfiles: React.FC = () => {
                 </div>
               </th>
               <th>Description</th>
+              <th>Queues</th>
               <th>Status</th>
               <th>Owner</th>
               <th>CreatedOn</th>
@@ -122,6 +130,9 @@ const EngagementProfiles: React.FC = () => {
                   </Link>
                 </td>
                 <td>{profile.description}</td>
+                <td>
+                  <span className="queues-list">{profile.queues.join(', ')}</span>
+                </td>
                 <td>
                   <span className="status-badge status-active">{profile.status}</span>
                 </td>

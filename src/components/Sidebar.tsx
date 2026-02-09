@@ -2,10 +2,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isCollapsed: boolean;
+  onToggle: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   return (
-    <aside className="sidebar">
-      <button className="hamburger-menu">
+    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <button className="hamburger-menu" onClick={onToggle}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
           <path d="M2 3h12v1H2V3zm0 4.5h12v1H2v-1zM2 12h12v1H2v-1z" />
         </svg>
@@ -90,6 +95,14 @@ const Sidebar: React.FC = () => {
             </svg>
             <span>Routing</span>
           </a>
+          <Link to="/agcd" className="nav-item">
+            <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <circle cx="8" cy="6" r="1" fill="currentColor"/>
+              <path d="M6 10l2 2 2-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Agentic routing</span>
+          </Link>
           <a href="#" className="nav-item">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <circle cx="8" cy="5" r="2.5" />

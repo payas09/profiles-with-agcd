@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './VoiceChannelEdit.css';
+import { getAllPrompts, PromptData } from '../utils/promptStorage';
 
 // Map profile IDs to names
 const profileNames: { [key: string]: string } = {
@@ -12,14 +13,193 @@ const profileNames: { [key: string]: string } = {
   'profile6': 'Billing Support Profile'
 };
 
+// Helper function to determine which tab a playbook belongs to
+const getPlaybookTab = (prompt: PromptData): string => {
+  const name = prompt.promptName.toLowerCase();
+
+  if (name.includes('overflow')) {
+    return 'overflow';
+  } else if (name.includes('automated') || name.includes('message')) {
+    return 'automatedMessages';
+  } else if (name.includes('priorit')) {
+    return 'dynamicPrioritization';
+  } else if (name.includes('assignment') || name.includes('vip') || name.includes('expert') || name.includes('callback')) {
+    return 'assignmentMethod';
+  }
+
+  // Default based on type
+  if (prompt.type === 'Assignment') {
+    return 'assignmentMethod';
+  }
+  return 'overflow'; // Default for Orchestrator type
+};
+
 const EngagementProfileEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('automatedMessages');
   const [consultEnabled, setConsultEnabled] = useState(true);
   const [transferEnabled, setTransferEnabled] = useState(true);
+  const [allPlaybooks, setAllPlaybooks] = useState<PromptData[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const profileName = id ? profileNames[id] || 'Unknown Profile' : 'Unknown Profile';
+
+  // Load playbooks on mount
+  useEffect(() => {
+    const prompts = getAllPrompts();
+    setAllPlaybooks(prompts);
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMenuId && !(event.target as Element).closest('.action-menu-container')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
+
+  // Get playbooks for current profile and tab
+  const getPlaybooksForTab = (tab: string): PromptData[] => {
+    return allPlaybooks.filter(playbook => {
+      // Check if playbook belongs to this tab
+      if (getPlaybookTab(playbook) !== tab) return false;
+
+      // Check if playbook is associated with this profile
+      if (playbook.selectionMode === 'all') return true;
+
+      if (playbook.selectionMode === 'list') {
+        return playbook.selectedProfiles.some(p => p.profileId === id);
+      }
+
+      if (playbook.selectionMode === 'except') {
+        return !playbook.selectedProfiles.some(p => p.profileId === id);
+      }
+
+      return false;
+    });
+  };
+
+  const handleEditPlaybook = (policyId: string) => {
+    navigate(`/agcd/policy/${policyId}`);
+  };
+
+  const toggleMenu = (policyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === policyId ? null : policyId);
+  };
+
+  // Component to render AgCD playbooks section
+  const renderAgCDSection = (tabName: string, filterTab: 'orchestration' | 'assignment', scenario: string, tabKey: string) => {
+    const playbooks = getPlaybooksForTab(tabKey);
+
+    return (
+      <div className="agcd-section-card">
+        {/* AgCD Section Header */}
+        <h3 className="agcd-section-header">Agentic Conversation Distribution</h3>
+
+        {/* AgCD Integration Banner */}
+        <div className="agcd-integration-banner">
+          <p className="agcd-integration-text">
+            Configure {tabName} using natural language playbooks via Agentic Conversation Distribution (AgCD)
+          </p>
+          <button
+            className="agcd-integration-cta"
+            onClick={() => navigate(`/agcd?openGallery=true&tab=${filterTab}&scenario=${scenario}`)}
+          >
+            Configure with AgCD
+          </button>
+        </div>
+
+        {/* Playbooks Table */}
+        {playbooks.length > 0 && (
+          <div className="agcd-playbooks-section">
+            <div className="agcd-playbooks-header">
+              <h3 className="agcd-playbooks-title">Playbooks already configured:</h3>
+              <button
+                className="view-playbook-page-btn"
+                onClick={() => navigate('/agcd/playbook')}
+              >
+                View all playbooks →
+              </button>
+            </div>
+
+            <div className="agcd-playbooks-table-wrapper">
+              <table className="agcd-playbooks-table">
+                <thead>
+                  <tr>
+                    <th>Policy Name</th>
+                    <th>Trigger</th>
+                    <th>Status</th>
+                    <th>Last Modified</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {playbooks.map((policy) => (
+                    <tr key={policy.id}>
+                      <td>
+                        <span
+                          className="policy-name-link-text"
+                          onClick={() => handleEditPlaybook(policy.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {policy.promptName}
+                        </span>
+                      </td>
+                      <td className="trigger-column-text">
+                        {policy.selectedTrigger ?
+                          policy.selectedTrigger.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                          : 'Work item is unassigned'}
+                      </td>
+                      <td>
+                        <span className={`status-pill ${policy.status.toLowerCase()}`}>
+                          {policy.status}
+                        </span>
+                      </td>
+                      <td>{policy.lastModified}</td>
+                      <td>
+                        <div className="action-menu-container">
+                          <button
+                            className="action-menu-button"
+                            onClick={(e) => toggleMenu(policy.id, e)}
+                            title="More actions"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="8" cy="3" r="1.5"/>
+                              <circle cx="8" cy="8" r="1.5"/>
+                              <circle cx="8" cy="13" r="1.5"/>
+                            </svg>
+                          </button>
+                          {openMenuId === policy.id && (
+                            <div className="action-dropdown-menu">
+                              <button
+                                className="dropdown-menu-item"
+                                onClick={() => handleEditPlaybook(policy.id)}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                  <path d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 000-.354l-1.086-1.086zM11.189 6.25L9.75 4.81 2.987 11.574a.25.25 0 00-.064.108l-.558 1.953 1.953-.558a.25.25 0 00.108-.064l6.763-6.763z"/>
+                                </svg>
+                                Edit
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="voice-channel-edit-page">
@@ -75,6 +255,18 @@ const EngagementProfileEdit: React.FC = () => {
                 Work distribution
               </button>
               <button
+                className={`edit-tab ${activeTab === 'overflow' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overflow')}
+              >
+                Overflow
+              </button>
+              <button
+                className={`edit-tab ${activeTab === 'dynamicPrioritization' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dynamicPrioritization')}
+              >
+                Dynamic prioritization
+              </button>
+              <button
                 className={`edit-tab ${activeTab === 'assignmentMethod' ? 'active' : ''}`}
                 onClick={() => setActiveTab('assignmentMethod')}
               >
@@ -116,7 +308,13 @@ const EngagementProfileEdit: React.FC = () => {
                   interaction. These messages keep customers informed about their conversation status and wait times.
                 </p>
 
-                <div className="greetings-list">
+                {/* AgCD Section */}
+                {renderAgCDSection('Automated messages', 'orchestration', 'Automated messages', 'automatedMessages')}
+
+                {/* Traditional Configuration Card */}
+                <div className="traditional-config-card">
+                  <h3 className="config-card-title">Message triggers</h3>
+                  <div className="greetings-list">
                   <div className="greeting-item">
                     <div className="greeting-header">
                       <span className="greeting-trigger">Agent assigned</span>
@@ -207,12 +405,13 @@ const EngagementProfileEdit: React.FC = () => {
                     </div>
                   </div>
 
-                  <button className="add-greeting-button">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                    Add message trigger
-                  </button>
+                    <button className="add-greeting-button">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                      Add message trigger
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -370,6 +569,32 @@ const EngagementProfileEdit: React.FC = () => {
               </div>
             )}
 
+            {activeTab === 'overflow' && (
+              <div className="form-section">
+                <h2 className="section-label">Overflow</h2>
+                <p className="form-help-text">
+                  Configure overflow routing rules to handle scenarios when queues reach capacity or wait times exceed thresholds.
+                  Overflow strategies ensure customers receive timely assistance even during high-demand periods.
+                </p>
+
+                {/* AgCD Section */}
+                {renderAgCDSection('Overflow', 'orchestration', 'Overflow handling', 'overflow')}
+              </div>
+            )}
+
+            {activeTab === 'dynamicPrioritization' && (
+              <div className="form-section">
+                <h2 className="section-label">Dynamic Prioritization</h2>
+                <p className="form-help-text">
+                  Configure rules to dynamically adjust work item priorities based on real-time conditions such as wait time,
+                  customer sentiment, transfer events, and business requirements. Ensure critical issues receive immediate attention.
+                </p>
+
+                {/* AgCD Section */}
+                {renderAgCDSection('Dynamic prioritization', 'orchestration', 'Dynamic prioritization', 'dynamicPrioritization')}
+              </div>
+            )}
+
             {activeTab === 'assignmentMethod' && (
               <div className="form-section">
                 <h2 className="section-label">Assignment Method</h2>
@@ -378,7 +603,13 @@ const EngagementProfileEdit: React.FC = () => {
                   which agent receives the next work item when multiple eligible agents are available.
                 </p>
 
-                <div className="form-group-section">
+                {/* AgCD Section */}
+                {renderAgCDSection('Assignment method', 'assignment', 'Assign to a predicted expert', 'assignmentMethod')}
+
+                {/* Traditional Configuration Card */}
+                <div className="traditional-config-card">
+                  <h3 className="config-card-title">Assignment settings</h3>
+                  <div className="form-group-section">
                   <div className="form-group">
                     <label className="form-label">Assignment method</label>
                     <select className="form-select" defaultValue="round-robin">
@@ -398,14 +629,15 @@ const EngagementProfileEdit: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="form-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" className="form-checkbox" defaultChecked />
-                      <span>Enable agent affinity</span>
-                    </label>
-                    <p className="form-help-text">
-                      When enabled, attempts to assign returning customers to agents they've previously worked with
-                    </p>
+                    <div className="form-group">
+                      <label className="checkbox-label">
+                        <input type="checkbox" className="form-checkbox" defaultChecked />
+                        <span>Enable agent affinity</span>
+                      </label>
+                      <p className="form-help-text">
+                        When enabled, attempts to assign returning customers to agents they've previously worked with
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,26 @@
 .app {
-  min-height: 100vh;
+  min-height: calc(100vh - 48px);
   background-color: #faf9f8;
+  display: flex;
+  margin-top: 48px; /* Height of fixed header */
+}
+
+.app-no-sidebar {
+  margin-left: 0;
+}
+
+.main-content-wrapper {
+  flex: 1;
+  margin-left: 160px; /* Width of sidebar */
+  overflow-y: auto;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content-wrapper.sidebar-collapsed {
+  margin-left: 48px; /* Width of collapsed sidebar */
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
 }
