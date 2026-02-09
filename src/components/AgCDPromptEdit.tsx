@@ -504,9 +504,11 @@ const AgCDPromptEdit: React.FC = () => {
               className="policy-behavior-textarea"
               value={policyBehavior}
               onChange={(e) => setPolicyBehavior(e.target.value)}
-              placeholder="Cannot add queues or profiles in the prompt condition/action"
               rows={8}
             />
+            <div className="policy-behavior-hint-text">
+              Only describe condition and actions. Do not mention queues or profiles in this section
+            </div>
           </div>
         </div>
       </main>

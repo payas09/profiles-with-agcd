@@ -449,6 +449,14 @@
   border-color: #0078d4;
 }
 
+.policy-behavior-hint-text {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+  font-style: italic;
+}
+
 /* Side Panel */
 .side-panel-overlay {
   position: fixed;
