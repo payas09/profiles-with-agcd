@@ -54,7 +54,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   return (
-    <Router basename="/agcd-with-profiles">
+    <Router basename="/profiles-with-agcd">
       <Layout>
         <Routes>
           <Route path="/" element={<MainContent />} />
