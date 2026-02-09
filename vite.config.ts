@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/agcd-with-profiles/',
+  base: '/profiles-with-agcd/',
 })
