@@ -40,117 +40,117 @@ const promptTemplates: { [key: string]: { title: string; type: string; descripti
     title: 'Escalate priority based on wait time',
     type: 'Orchestrator',
     description: 'Automatically increase the priority of conversations that have been waiting in the queue for an extended period of time.',
-    defaultPrompt: 'For the below mentioned engagement profiles, automatically increase the priority of conversations that have been waiting in the queue for an extended period of time.'
+    defaultPrompt: 'Automatically increase the priority of conversations that have been waiting in the queue for an extended period of time.'
   },
   'queue-transfer-escalation': {
     title: 'Escalate priority based on transfer to a queue',
     type: 'Orchestrator',
     description: 'Increase priority when a conversation is transferred to a specific queue, ensuring faster resolution.',
-    defaultPrompt: 'For the below mentioned engagement profiles, increase priority when a conversation is transferred to a specific queue, ensuring faster resolution.'
+    defaultPrompt: 'Increase priority when a conversation is transferred to a specific queue, ensuring faster resolution.'
   },
   'scheduled-callback-overflow': {
     title: 'Configure scheduled callback as overflow action',
     type: 'Orchestrator',
     description: 'When queue capacity is reached, automatically offer customers the option to schedule a callback at their convenience.',
-    defaultPrompt: 'For the below mentioned engagement profiles, when queue capacity is reached, automatically offer customers the option to schedule a callback at their convenience.'
+    defaultPrompt: 'When queue capacity is reached, automatically offer customers the option to schedule a callback at their convenience.'
   },
   'did-overflow': {
     title: 'Overflow for Direct Inward Dialing',
     type: 'Orchestrator',
     description: 'Route incoming DID calls to alternative queues or agents when primary resources are unavailable.',
-    defaultPrompt: 'For the below mentioned engagement profiles, route incoming DID calls to alternative queues or agents when primary resources are unavailable.'
+    defaultPrompt: 'Route incoming DID calls to alternative queues or agents when primary resources are unavailable.'
   },
   'agent-availability-overflow': {
     title: 'Immediate overflow based on agent availability',
     type: 'Orchestrator',
     description: 'Instantly redirect conversations to overflow queues when no agents are available in the primary queue.',
-    defaultPrompt: 'For the below mentioned engagement profiles, instantly redirect conversations to overflow queues when no agents are available in the primary queue.'
+    defaultPrompt: 'Instantly redirect conversations to overflow queues when no agents are available in the primary queue.'
   },
   'offline-overflow': {
     title: 'Immediate overflow when all agents are offline',
     type: 'Orchestrator',
     description: 'Automatically route conversations when all agents in a queue are offline or unavailable.',
-    defaultPrompt: 'For the below mentioned engagement profiles, automatically route conversations when all agents in a queue are offline or unavailable.'
+    defaultPrompt: 'Automatically route conversations when all agents in a queue are offline or unavailable.'
   },
   'recurring-overflow': {
     title: 'Recurring overflow actions',
     type: 'Orchestrator',
     description: 'Set up repeating overflow actions based on time patterns or recurring queue conditions.',
-    defaultPrompt: 'For the below mentioned engagement profiles, set up repeating overflow actions based on time patterns or recurring queue conditions.'
+    defaultPrompt: 'Set up repeating overflow actions based on time patterns or recurring queue conditions.'
   },
   'messages-with-overflow': {
     title: 'Combine frequent messages with overflow actions',
     type: 'Orchestrator',
     description: 'Send periodic status updates to customers while implementing overflow routing strategies.',
-    defaultPrompt: 'For the below mentioned engagement profiles, send periodic status updates to customers while implementing overflow routing strategies.'
+    defaultPrompt: 'Send periodic status updates to customers while implementing overflow routing strategies.'
   },
   'interval-messages': {
     title: 'Play message at specific time intervals',
     type: 'Orchestrator',
     description: 'Deliver automated messages to customers at defined time intervals during their wait.',
-    defaultPrompt: 'For the below mentioned engagement profiles, deliver automated messages to customers at defined time intervals during their wait.'
+    defaultPrompt: 'Deliver automated messages to customers at defined time intervals during their wait.'
   },
   'frequent-messages-overflow': {
     title: 'Combine frequent messages with overflow actions',
     type: 'Orchestrator',
     description: 'Coordinate automated messaging with overflow routing to keep customers informed.',
-    defaultPrompt: 'For the below mentioned engagement profiles, coordinate automated messaging with overflow routing to keep customers informed.'
+    defaultPrompt: 'Coordinate automated messaging with overflow routing to keep customers informed.'
   },
   // Assignment prompts
   'preferred-then-last-expert': {
     title: 'Assign to preferred expert and then last interacted expert',
     type: 'Assignment',
     description: 'First attempt to assign to the customer\'s preferred expert, then fall back to the last expert they interacted with.',
-    defaultPrompt: 'For the below mentioned engagement profiles, first attempt to assign to the customer\'s preferred expert, then fall back to the last expert they interacted with.'
+    defaultPrompt: 'First attempt to assign to the customer\'s preferred expert, then fall back to the last expert they interacted with.'
   },
   'last-interacted-expert': {
     title: 'Assign to last interacted expert',
     type: 'Assignment',
     description: 'Route conversations to the expert who most recently handled this customer\'s previous interactions.',
-    defaultPrompt: 'For the below mentioned engagement profiles, route conversations to the expert who most recently handled this customer\'s previous interactions.'
+    defaultPrompt: 'Route conversations to the expert who most recently handled this customer\'s previous interactions.'
   },
   'callback-creator': {
     title: 'Assign to expert who created the callback',
     type: 'Assignment',
     description: 'Route scheduled callbacks to the same expert who originally created the callback request.',
-    defaultPrompt: 'For the below mentioned engagement profiles, route scheduled callbacks to the same expert who originally created the callback request.'
+    defaultPrompt: 'Route scheduled callbacks to the same expert who originally created the callback request.'
   },
   'reattempt-callback-assignment': {
     title: 'Reattempt assignment to expert who created the callback',
     type: 'Assignment',
     description: 'If the callback creator is unavailable, retry assignment to them before routing to other experts.',
-    defaultPrompt: 'For the below mentioned engagement profiles, if the callback creator is unavailable, retry assignment to them before routing to other experts.'
+    defaultPrompt: 'If the callback creator is unavailable, retry assignment to them before routing to other experts.'
   },
   // Legacy templates for backward compatibility
   'overflow': {
     title: 'Overflow',
     type: 'Orchestrator',
     description: 'Manage queue overflow scenarios with intelligent routing',
-    defaultPrompt: 'For the below mentioned engagement profiles, if queue wait time is greater than 5 minutes, then route to available overflow queue and communicate with customer whenever overflow is triggered.'
+    defaultPrompt: 'If queue wait time is greater than 5 minutes, then route to available overflow queue and communicate with customer whenever overflow is triggered.'
   },
   'assignment': {
     title: 'Assignment',
     type: 'Assignment',
     description: 'Define intelligent work assignment rules',
-    defaultPrompt: 'For the below mentioned engagement profiles, implement skill-based routing with preference for agents who have successfully resolved similar cases in the past 30 days.'
+    defaultPrompt: 'Implement skill-based routing with preference for agents who have successfully resolved similar cases in the past 30 days.'
   },
   'automated-messages': {
     title: 'Automated Messages',
     type: 'Orchestrator',
     description: 'Configure automated customer messages',
-    defaultPrompt: 'For the below mentioned engagement profiles, send welcome message when customer connects, provide wait time updates every 2 minutes, and send closing message when conversation ends.'
+    defaultPrompt: 'Send welcome message when customer connects, provide wait time updates every 2 minutes, and send closing message when conversation ends.'
   },
   'dynamic-prioritization': {
     title: 'Dynamic Prioritization',
     type: 'Assignment',
     description: 'Dynamically adjust work item priorities',
-    defaultPrompt: 'For the below mentioned engagement profiles, prioritize work items based on customer sentiment, wait time, and issue severity. Escalate items waiting more than 10 minutes or with negative sentiment.'
+    defaultPrompt: 'Prioritize work items based on customer sentiment, wait time, and issue severity. Escalate items waiting more than 10 minutes or with negative sentiment.'
   },
   'orchestrator': {
     title: 'Orchestrator',
     type: 'Orchestrator',
     description: 'Orchestrate complex multi-step workflows',
-    defaultPrompt: 'For the below mentioned engagement profiles, orchestrate the workflow to handle complex scenarios.'
+    defaultPrompt: 'Orchestrate the workflow to handle complex scenarios.'
   }
 };
 
