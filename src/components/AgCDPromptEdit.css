@@ -760,3 +760,73 @@
   line-height: 20px;
 }
 
+/* Edit Mode Toggle */
+.edit-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #faf9f8;
+  border-radius: 6px;
+  border: 1px solid #e1dfdd;
+}
+
+.edit-mode-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.toggle-button-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background-color: white;
+  color: #605e5c;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+  border-right: 1px solid #e1dfdd;
+}
+
+.toggle-btn:last-child {
+  border-right: none;
+}
+
+.toggle-btn:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+.toggle-btn.active {
+  background-color: #0078d4;
+  color: white;
+}
+
+.toggle-btn.active:hover {
+  background-color: #106ebe;
+}
+
+.toggle-btn svg {
+  flex-shrink: 0;
+}
+
+/* Policy Behavior Builder Section */
+.policy-behavior-builder-section {
+  margin-top: 16px;
+}
+

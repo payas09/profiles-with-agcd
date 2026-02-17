@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import './AgCDPromptEdit.css';
 import { savePrompt, getPrompt, SelectionMode } from '../utils/promptStorage';
+import TemplatePromptEditor from './TemplatePromptEditor';
 
 // Engagement profiles data
 const engagementProfiles = [
@@ -181,6 +182,7 @@ const AgCDPromptEdit: React.FC = () => {
   const [tempSelectedProfiles, setTempSelectedProfiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'engagement' | 'conversation'>('engagement');
   const [activePageTab, setActivePageTab] = useState<'home' | 'playbook'>('home');
+  const [editMode, setEditMode] = useState<'simple' | 'builder'>('simple');
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -498,18 +500,56 @@ const AgCDPromptEdit: React.FC = () => {
             </div>
           </div>
 
-          {/* Policy Behavior Textarea - Full Width */}
-          <div className="policy-behavior-textarea-section">
-            <textarea
-              className="policy-behavior-textarea"
-              value={policyBehavior}
-              onChange={(e) => setPolicyBehavior(e.target.value)}
-              rows={8}
-            />
-            <div className="policy-behavior-hint-text">
-              Only describe condition and actions. Do not mention queues or profiles in this section
+          {/* Edit Mode Toggle */}
+          <div className="edit-mode-toggle">
+            <span className="edit-mode-label">Edit Mode:</span>
+            <div className="toggle-button-group">
+              <button
+                className={`toggle-btn ${editMode === 'simple' ? 'active' : ''}`}
+                onClick={() => setEditMode('simple')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 13.5 2h-11zM2 3.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9z"/>
+                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                Simple Text
+              </button>
+              <button
+                className={`toggle-btn ${editMode === 'builder' ? 'active' : ''}`}
+                onClick={() => setEditMode('builder')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
+                  <path d="M10.5 8a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm0 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+                </svg>
+                Configurable Builder
+              </button>
             </div>
           </div>
+
+          {/* Conditional rendering based on edit mode */}
+          {editMode === 'simple' ? (
+            /* Policy Behavior Textarea - Full Width */
+            <div className="policy-behavior-textarea-section">
+              <textarea
+                className="policy-behavior-textarea"
+                value={policyBehavior}
+                onChange={(e) => setPolicyBehavior(e.target.value)}
+                rows={8}
+              />
+              <div className="policy-behavior-hint-text">
+                Only describe condition and actions. Do not mention queues or profiles in this section
+              </div>
+            </div>
+          ) : (
+            /* Template Prompt Editor */
+            <div className="policy-behavior-builder-section">
+              <TemplatePromptEditor
+                onPromptChange={(prompt) => setPolicyBehavior(prompt)}
+              />
+            </div>
+          )}
         </div>
       </main>
 

@@ -1,0 +1,548 @@
+/* Template Prompt Editor Styles */
+
+.tpe-container {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Header */
+.tpe-header {
+  padding: 20px 24px;
+  background-color: #faf9f8;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+.tpe-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 8px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-subtitle {
+  font-size: 13px;
+  color: #605e5c;
+  margin: 0;
+  line-height: 1.6;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-blue-text {
+  color: #0078d4;
+  font-weight: 500;
+}
+
+.tpe-variable-hint {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #e1f0ff;
+  border: 1px solid #a9d3ff;
+  border-radius: 4px;
+  color: #0050a0;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Template Content Area */
+.tpe-template {
+  padding: 24px;
+}
+
+/* Each Line */
+.tpe-line {
+  margin-bottom: 16px;
+}
+
+.tpe-line:last-child {
+  margin-bottom: 0;
+}
+
+.tpe-line-mixed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  line-height: 2.2;
+}
+
+/* Fixed Text (not editable) */
+.tpe-fixed-text {
+  font-size: 14px;
+  color: #242424;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Text Boxes */
+.tpe-textbox {
+  padding: 8px 12px;
+  border: 1px solid #0078d4;
+  border-radius: 4px;
+  background-color: #f0f8ff;
+  color: #0078d4;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.tpe-textbox::placeholder {
+  color: #0078d4;
+  opacity: 1;
+}
+
+.tpe-textbox:focus {
+  background-color: white;
+  border-color: #0050a0;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.tpe-textbox:not(:placeholder-shown) {
+  background-color: white;
+  color: #242424;
+}
+
+/* Full width text box */
+.tpe-textbox-full {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Inline text box */
+.tpe-textbox-inline {
+  display: inline-block;
+}
+
+.tpe-textbox-small {
+  width: 80px;
+  text-align: center;
+}
+
+.tpe-textbox-wide {
+  min-width: 280px;
+  flex-grow: 1;
+}
+
+/* Dropdown Wrapper */
+.tpe-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Action Chip (dropdown trigger) */
+.tpe-action-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid #0078d4;
+  border-radius: 4px;
+  background-color: #f0f8ff;
+  color: #0078d4;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tpe-action-chip:hover {
+  background-color: #e1f0ff;
+  border-color: #0050a0;
+}
+
+.tpe-action-chip.has-value {
+  background-color: white;
+  color: #242424;
+  font-weight: 500;
+}
+
+/* Dropdown Menu */
+.tpe-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 180px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  overflow: hidden;
+  animation: tpeDropdownFadeIn 0.15s ease;
+}
+
+@keyframes tpeDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tpe-dropdown-item {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #242424;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  font-family: 'Segoe UI', sans-serif;
+  border-bottom: 1px solid #f3f2f1;
+}
+
+.tpe-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.tpe-dropdown-item:hover {
+  background-color: #f3f2f1;
+}
+
+/* Example Reference Section */
+.tpe-example {
+  border-top: 1px solid #e1dfdd;
+  background-color: #faf9f8;
+}
+
+.tpe-example-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0078d4;
+  background-color: #e1f0ff;
+  border-bottom: 1px solid #a9d3ff;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-example-content {
+  padding: 20px 24px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #242424;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-example-content p {
+  margin: 0 0 12px 0;
+}
+
+.tpe-example-content p:last-child {
+  margin-bottom: 0;
+}
+
+.tpe-example-content strong {
+  color: #242424;
+  font-weight: 600;
+}
+
+/* Conditional Line */
+.tpe-line-conditional {
+  padding: 12px 16px;
+  background-color: #fef9f3;
+  border: 1px dashed #f0c14b;
+  border-radius: 6px;
+  margin-left: 20px;
+}
+
+/* Line with dropdown - needs relative positioning */
+.tpe-line-with-dropdown {
+  position: relative;
+}
+
+.tpe-inline-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  flex-grow: 1;
+}
+
+/* Slash Menu - Inline positioning */
+.tpe-slash-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 2000;
+  width: 280px;
+  max-height: 280px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  margin-top: 4px;
+  animation: tpeSlashMenuFadeIn 0.15s ease;
+}
+
+.tpe-slash-menu-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+@keyframes tpeSlashMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tpe-slash-menu-header {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #605e5c;
+  background-color: #faf9f8;
+  border-bottom: 1px solid #e1dfdd;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-slash-menu-group {
+  border-bottom: 1px solid #f3f2f1;
+}
+
+.tpe-slash-menu-group:last-child {
+  border-bottom: none;
+}
+
+.tpe-slash-menu-category {
+  padding: 8px 14px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8a8886;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-slash-menu-item {
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #242424;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-slash-menu-item:hover {
+  background-color: #f3f2f1;
+}
+
+.tpe-slash-menu-slash {
+  color: #0078d4;
+  font-weight: 500;
+  margin-right: 2px;
+}
+
+.tpe-slash-menu-empty {
+  padding: 16px 14px;
+  font-size: 13px;
+  color: #8a8886;
+  text-align: center;
+  font-style: italic;
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+/* Slash menu item with description */
+.tpe-slash-menu-item-with-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tpe-slash-menu-item-main {
+  font-size: 13px;
+  color: #242424;
+}
+
+.tpe-slash-menu-item-desc {
+  font-size: 11px;
+  color: #8a8886;
+  padding-left: 14px;
+}
+
+/* Arrow indicator for cascading dropdown */
+.tpe-slash-menu-arrow {
+  margin-left: auto;
+  color: #8a8886;
+  font-size: 12px;
+}
+
+/* Header with back button */
+.tpe-slash-menu-header-with-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #605e5c;
+  background-color: #faf9f8;
+  border-bottom: 1px solid #e1dfdd;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-slash-menu-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: transparent;
+  border: 1px solid #c8c6c4;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #0078d4;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.15s;
+}
+
+.tpe-slash-menu-back:hover {
+  background-color: #e1f0ff;
+  border-color: #0078d4;
+}
+
+/* Item main row with arrow */
+.tpe-slash-menu-item-main {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #242424;
+}
+
+/* Tabbed Slash Menu (for Line 2) */
+.tpe-slash-menu-tabbed {
+  width: 320px;
+}
+
+.tpe-slash-menu-tabs {
+  display: flex;
+  border-bottom: 1px solid #e1dfdd;
+  background-color: #faf9f8;
+}
+
+.tpe-slash-menu-tab {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background-color: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #605e5c;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Segoe UI', sans-serif;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tpe-slash-menu-tab:hover {
+  color: #242424;
+  background-color: #f3f2f1;
+}
+
+.tpe-slash-menu-tab.active {
+  color: #0078d4;
+  border-bottom-color: #0078d4;
+  background-color: white;
+}
+
+.tpe-slash-menu-tabbed .tpe-slash-menu-item {
+  padding-left: 20px;
+}
+
+/* Condition Block Styles */
+.tpe-condition-block {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.tpe-condition-block:last-of-type {
+  margin-bottom: 0;
+}
+
+.tpe-condition-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border: 1px solid #c8c6c4;
+  border-radius: 4px;
+  color: #605e5c;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  z-index: 10;
+}
+
+.tpe-condition-delete:hover {
+  background-color: #fde7e9;
+  border-color: #d13438;
+  color: #d13438;
+}
+
+/* Add Condition Button */
+.tpe-add-condition-wrapper {
+  margin-top: 16px;
+}
+
+.tpe-add-condition-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background-color: white;
+  border: 1px dashed #0078d4;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0078d4;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tpe-add-condition-btn:hover {
+  background-color: #e1f0ff;
+  border-style: solid;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tpe-header,
+  .tpe-template,
+  .tpe-example-content {
+    padding: 16px;
+  }
+
+  .tpe-textbox-wide {
+    min-width: 200px;
+  }
+
+  .tpe-line-mixed {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tpe-line-conditional {
+    margin-left: 0;
+  }
+
+  .tpe-slash-menu {
+    width: 240px;
+  }
+}
