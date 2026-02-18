@@ -825,8 +825,34 @@
   flex-shrink: 0;
 }
 
+/* Copilot Toggle Button */
+.toggle-btn-copilot {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e8e0f0 100%);
+  color: #6441a5;
+  border-left: 1px solid #d4b8ff;
+}
+
+.toggle-btn-copilot:hover {
+  background: linear-gradient(135deg, #ece0ff 0%, #ddd5e8 100%);
+  color: #5a3a96;
+}
+
+.toggle-btn-copilot.active {
+  background: linear-gradient(135deg, #7b4397 0%, #6441a5 100%);
+  color: white;
+}
+
+.toggle-btn-copilot.active:hover {
+  background: linear-gradient(135deg, #6d3b87 0%, #583995 100%);
+}
+
 /* Policy Behavior Builder Section */
 .policy-behavior-builder-section {
+  margin-top: 16px;
+}
+
+/* Policy Behavior Copilot Section */
+.policy-behavior-copilot-section {
   margin-top: 16px;
 }
 

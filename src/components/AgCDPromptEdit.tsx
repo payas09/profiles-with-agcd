@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import './AgCDPromptEdit.css';
 import { savePrompt, getPrompt, SelectionMode } from '../utils/promptStorage';
 import TemplatePromptEditor from './TemplatePromptEditor';
+import CopilotPromptEditor from './CopilotPromptEditor';
 
 // Engagement profiles data
 const engagementProfiles = [
@@ -182,7 +183,7 @@ const AgCDPromptEdit: React.FC = () => {
   const [tempSelectedProfiles, setTempSelectedProfiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'engagement' | 'conversation'>('engagement');
   const [activePageTab, setActivePageTab] = useState<'home' | 'playbook'>('home');
-  const [editMode, setEditMode] = useState<'simple' | 'builder'>('simple');
+  const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot'>('simple');
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -525,11 +526,20 @@ const AgCDPromptEdit: React.FC = () => {
                 </svg>
                 Configurable Builder
               </button>
+              <button
+                className={`toggle-btn toggle-btn-copilot ${editMode === 'copilot' ? 'active' : ''}`}
+                onClick={() => setEditMode('copilot')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
+                Copilot
+              </button>
             </div>
           </div>
 
           {/* Conditional rendering based on edit mode */}
-          {editMode === 'simple' ? (
+          {editMode === 'simple' && (
             /* Policy Behavior Textarea - Full Width */
             <div className="policy-behavior-textarea-section">
               <textarea
@@ -542,11 +552,21 @@ const AgCDPromptEdit: React.FC = () => {
                 Only describe condition and actions. Do not mention queues or profiles in this section
               </div>
             </div>
-          ) : (
+          )}
+          {editMode === 'builder' && (
             /* Template Prompt Editor */
             <div className="policy-behavior-builder-section">
               <TemplatePromptEditor
                 onPromptChange={(prompt) => setPolicyBehavior(prompt)}
+              />
+            </div>
+          )}
+          {editMode === 'copilot' && (
+            /* Copilot Prompt Editor */
+            <div className="policy-behavior-copilot-section">
+              <CopilotPromptEditor
+                scenario={promptName || 'Assignment Policy'}
+                onPromptGenerated={(prompt) => setPolicyBehavior(prompt)}
               />
             </div>
           )}
