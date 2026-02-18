@@ -380,64 +380,24 @@ const AgCDPromptEdit: React.FC = () => {
     return <div className="profile-display-text">No profiles selected</div>;
   };
 
-  return (
-    <div className="agcd-prompt-edit-page">
-      {/* Top Menu Bar */}
-      <div className="top-menu-bar">
-        <div className="menu-left-actions">
-          <button className="menu-back-button" onClick={handleBack}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M10 2l-6 6 6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Back
-          </button>
-          <button className="menu-btn-secondary" onClick={handleSave}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M2 1.5A1.5 1.5 0 0 1 3.5 0h9A1.5 1.5 0 0 1 14 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-13zM3.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-9z"/>
-              <path d="M11 3H5v4h6V3zM5 2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H5z"/>
-            </svg>
-            Save
-          </button>
-          <button className="menu-btn-primary" onClick={handlePublish}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.695 8.695 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.75.75 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75zM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5zM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75z"/>
-            </svg>
-            Publish
-          </button>
+  // Render the main form content (used in both normal and copilot layouts)
+  const renderFormContent = (inCopilotMode: boolean = false) => (
+    <>
+      {/* Header */}
+      <div className="prompt-header-section">
+        <div className="header-title-group">
+          <h1 className="prompt-page-title">{inCopilotMode ? promptName || 'Assignment Policy' : 'Orchestration Agent (Preview)'}</h1>
+          {!inCopilotMode && <span className="preview-badge-header">Preview: Testing</span>}
         </div>
-      </div>
-
-      {/* Tab Switcher */}
-      <div className="agcd-tab-switcher-container">
-        <div className="agcd-tab-switcher">
-          <button
-            className={`agcd-tab-button ${activePageTab === 'home' ? 'active' : ''}`}
-            onClick={() => handlePageTabChange('home')}
-          >
-            Home
-          </button>
-          <button
-            className={`agcd-tab-button ${activePageTab === 'playbook' ? 'active' : ''}`}
-            onClick={() => handlePageTabChange('playbook')}
-          >
-            Playbook
-          </button>
-        </div>
-      </div>
-
-      <main className="main-content prompt-edit-container-new">
-        {/* Header */}
-        <div className="prompt-header-section">
-          <div className="header-title-group">
-            <h1 className="prompt-page-title">Orchestration Agent (Preview)</h1>
-            <span className="preview-badge-header">Preview: Testing</span>
-          </div>
+        {!inCopilotMode && (
           <p className="prompt-page-subtitle">
             Create and manage routing scenario prompts. Define intelligent routing logic, assignment rules, and automated actions.
           </p>
-        </div>
+        )}
+      </div>
 
-        {/* Prompt Name */}
+      {/* Prompt Name - only show in non-copilot mode */}
+      {!inCopilotMode && (
         <div className="prompt-name-section">
           <label className="prompt-name-label">Prompt Name</label>
           <input
@@ -448,60 +408,65 @@ const AgCDPromptEdit: React.FC = () => {
             placeholder="Enter prompt name"
           />
         </div>
+      )}
 
-        {/* Profiles Section - Card */}
-        <div className="edit-card">
-          <div className="profile-section-full">
-            <div className="profile-section-header">
-              <h2 className="profile-section-title">Profiles</h2>
-              <button className="profile-edit-link" onClick={handleAddProfile}>
-                Edit
-              </button>
+      {/* Profiles Section - Card */}
+      <div className="edit-card">
+        <div className="profile-section-full">
+          <div className="profile-section-header">
+            <h2 className="profile-section-title">Profiles</h2>
+            <button className="profile-edit-link" onClick={handleAddProfile}>
+              Edit
+            </button>
+          </div>
+          <div className="profile-display-box">
+            {renderProfileDisplay()}
+          </div>
+        </div>
+      </div>
+
+      {/* Policy Behavior Card */}
+      <div className="edit-card">
+        {/* Policy Behavior Header and Trigger/Status Row */}
+        <div className="behavior-trigger-row">
+          {/* Policy Behavior Title and Description - Left */}
+          <div className="policy-behavior-header">
+            <h2 className="policy-behavior-title">{inCopilotMode ? 'Generated Policy' : 'Describe Policy Behavior'}</h2>
+            <p className="policy-behavior-desc">
+              {inCopilotMode
+                ? 'This policy was generated by Copilot based on your conversation.'
+                : 'Use natural language to describe what this policy should do. Be specific about conditions and actions.'
+              }
+            </p>
+          </div>
+
+          {/* Trigger and Status - Right */}
+          <div className="trigger-status-section-right">
+            <div className="field-group">
+              <label className="field-label-small">Trigger Event</label>
+              <select
+                className="field-select"
+                value={selectedTrigger}
+                onChange={(e) => setSelectedTrigger(e.target.value)}
+              >
+                {triggerEvents.map(trigger => (
+                  <option key={trigger.id} value={trigger.id}>
+                    {trigger.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="profile-display-box">
-              {renderProfileDisplay()}
+            <div className="field-group">
+              <label className="field-label-small">Status</label>
+              <div className={`status-badge ${status.toLowerCase()}`}>
+                {status}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Policy Behavior Card */}
-        <div className="edit-card">
-          {/* Policy Behavior Header and Trigger/Status Row */}
-          <div className="behavior-trigger-row">
-            {/* Policy Behavior Title and Description - Left */}
-            <div className="policy-behavior-header">
-              <h2 className="policy-behavior-title">Describe Policy Behavior</h2>
-              <p className="policy-behavior-desc">
-                Use natural language to describe what this policy should do. Be specific about conditions and actions.
-              </p>
-            </div>
-
-            {/* Trigger and Status - Right */}
-            <div className="trigger-status-section-right">
-              <div className="field-group">
-                <label className="field-label-small">Trigger Event</label>
-                <select
-                  className="field-select"
-                  value={selectedTrigger}
-                  onChange={(e) => setSelectedTrigger(e.target.value)}
-                >
-                  {triggerEvents.map(trigger => (
-                    <option key={trigger.id} value={trigger.id}>
-                      {trigger.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field-group">
-                <label className="field-label-small">Status</label>
-                <div className={`status-badge ${status.toLowerCase()}`}>
-                  {status}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Edit Mode Toggle */}
+        {/* Edit Mode Toggle - only show in non-copilot mode */}
+        {!inCopilotMode && (
           <div className="edit-mode-toggle">
             <span className="edit-mode-label">Edit Mode:</span>
             <div className="toggle-button-group">
@@ -537,41 +502,124 @@ const AgCDPromptEdit: React.FC = () => {
               </button>
             </div>
           </div>
+        )}
 
-          {/* Conditional rendering based on edit mode */}
-          {editMode === 'simple' && (
-            /* Policy Behavior Textarea - Full Width */
-            <div className="policy-behavior-textarea-section">
-              <textarea
-                className="policy-behavior-textarea"
-                value={policyBehavior}
-                onChange={(e) => setPolicyBehavior(e.target.value)}
-                rows={8}
-              />
+        {/* Conditional rendering based on edit mode */}
+        {(editMode === 'simple' || inCopilotMode) && (
+          /* Policy Behavior Textarea - Full Width */
+          <div className="policy-behavior-textarea-section">
+            {inCopilotMode && policyBehavior && (
+              <div className="copilot-generated-badge-inline">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                </svg>
+                Generated by Copilot
+              </div>
+            )}
+            <textarea
+              className={`policy-behavior-textarea ${inCopilotMode ? 'copilot-generated-textarea' : ''}`}
+              value={policyBehavior}
+              onChange={(e) => setPolicyBehavior(e.target.value)}
+              rows={inCopilotMode ? 12 : 8}
+              readOnly={inCopilotMode}
+            />
+            {!inCopilotMode && (
               <div className="policy-behavior-hint-text">
                 Only describe condition and actions. Do not mention queues or profiles in this section
               </div>
-            </div>
-          )}
-          {editMode === 'builder' && (
-            /* Template Prompt Editor */
-            <div className="policy-behavior-builder-section">
-              <TemplatePromptEditor
-                onPromptChange={(prompt) => setPolicyBehavior(prompt)}
-              />
-            </div>
-          )}
+            )}
+          </div>
+        )}
+        {editMode === 'builder' && !inCopilotMode && (
+          /* Template Prompt Editor */
+          <div className="policy-behavior-builder-section">
+            <TemplatePromptEditor
+              onPromptChange={(prompt) => setPolicyBehavior(prompt)}
+            />
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <div className={`agcd-prompt-edit-page ${editMode === 'copilot' ? 'copilot-layout' : ''}`}>
+      {/* Top Menu Bar */}
+      <div className="top-menu-bar">
+        <div className="menu-left-actions">
+          <button className="menu-back-button" onClick={handleBack}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M10 2l-6 6 6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back
+          </button>
+          <button className="menu-btn-secondary" onClick={handleSave}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2 1.5A1.5 1.5 0 0 1 3.5 0h9A1.5 1.5 0 0 1 14 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-13zM3.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-9z"/>
+              <path d="M11 3H5v4h6V3zM5 2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H5z"/>
+            </svg>
+            Save
+          </button>
+          <button className="menu-btn-primary" onClick={handlePublish}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.695 8.695 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.75.75 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75zM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5zM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75z"/>
+            </svg>
+            Publish
+          </button>
           {editMode === 'copilot' && (
-            /* Copilot Prompt Editor */
-            <div className="policy-behavior-copilot-section">
-              <CopilotPromptEditor
-                scenario={promptName || 'Assignment Policy'}
-                onPromptGenerated={(prompt) => setPolicyBehavior(prompt)}
-              />
-            </div>
+            <button className="menu-btn-exit-copilot" onClick={() => setEditMode('simple')}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              Exit Copilot
+            </button>
           )}
         </div>
-      </main>
+      </div>
+
+      {/* Tab Switcher - hide in copilot mode */}
+      {editMode !== 'copilot' && (
+        <div className="agcd-tab-switcher-container">
+          <div className="agcd-tab-switcher">
+            <button
+              className={`agcd-tab-button ${activePageTab === 'home' ? 'active' : ''}`}
+              onClick={() => handlePageTabChange('home')}
+            >
+              Home
+            </button>
+            <button
+              className={`agcd-tab-button ${activePageTab === 'playbook' ? 'active' : ''}`}
+              onClick={() => handlePageTabChange('playbook')}
+            >
+              Playbook
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Copilot Split Layout */}
+      {editMode === 'copilot' ? (
+        <div className="copilot-split-container">
+          {/* Left Panel - Copilot Chat */}
+          <div className="copilot-left-panel">
+            <CopilotPromptEditor
+              scenario={promptName || 'Assignment Policy'}
+              onPromptGenerated={(prompt) => setPolicyBehavior(prompt)}
+            />
+          </div>
+
+          {/* Right Panel - Form Content */}
+          <div className="copilot-right-panel">
+            <main className="main-content prompt-edit-container-new copilot-form-content">
+              {renderFormContent(true)}
+            </main>
+          </div>
+        </div>
+      ) : (
+        <main className="main-content prompt-edit-container-new">
+          {renderFormContent(false)}
+        </main>
+      )}
 
       {/* Side Panel for Profile Selection */}
       {showSidePanel && (
