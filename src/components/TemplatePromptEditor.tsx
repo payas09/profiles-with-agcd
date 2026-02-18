@@ -159,7 +159,7 @@ interface TemplatePromptEditorProps {
   onPromptChange?: (prompt: string) => void;
 }
 
-const TemplatePromptEditor: React.FC<TemplatePromptEditorProps> = ({ onPromptChange }) => {
+const TemplatePromptEditor: React.FC<TemplatePromptEditorProps> = ({ onPromptChange: _onPromptChange }) => {
   // State for editable fields
   const [line1Value, setLine1Value] = useState('');
 
@@ -171,8 +171,6 @@ const TemplatePromptEditor: React.FC<TemplatePromptEditorProps> = ({ onPromptCha
   const [lookbackDays, setLookbackDays] = useState('');
   const [additionalConditions, setAdditionalConditions] = useState('');
 
-  // Dropdown states
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   // Slash menu state
   const [slashMenuVisible, setSlashMenuVisible] = useState(false);
@@ -228,15 +226,6 @@ const TemplatePromptEditor: React.FC<TemplatePromptEditorProps> = ({ onPromptCha
       variables.push(match[1]);
     }
     return variables;
-  };
-
-  const toggleDropdown = (id: string) => {
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
-
-  const selectAction = (value: string) => {
-    setSelectedAction(value);
-    setActiveDropdown(null);
   };
 
   // Handle input change and detect "/"
@@ -405,7 +394,7 @@ const TemplatePromptEditor: React.FC<TemplatePromptEditorProps> = ({ onPromptCha
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest('.tpe-dropdown-wrapper') && !target.closest('.tpe-slash-menu')) {
-        setActiveDropdown(null);
+        setActiveRuleDropdown(null);
         setSlashMenuVisible(false);
         setSlashMenuTarget(null);
         setSelectedUserAttribute(null);
@@ -628,7 +617,7 @@ const TemplatePromptEditor: React.FC<TemplatePromptEditorProps> = ({ onPromptCha
         </div>
 
         {/* Condition Blocks (repeatable condition + action pairs) */}
-        {ruleBlocks.map((block, index) => (
+        {ruleBlocks.map((block) => (
           <div key={block.id} className="tpe-condition-block">
             {/* Delete button for additional conditions */}
             {ruleBlocks.length > 1 && (
