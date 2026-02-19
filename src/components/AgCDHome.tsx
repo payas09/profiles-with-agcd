@@ -104,6 +104,38 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
   ]
 };
 
+// Scenario definitions for template-based experience
+const scenarioDefinitions = [
+  {
+    id: 'preferred-expert-assignment',
+    title: 'Assign to Preferred Expert',
+    description: 'Route customers to their designated preferred expert based on customer attributes.',
+    category: 'assignment',
+    icon: 'star'
+  },
+  {
+    id: 'previous-expert-assignment',
+    title: 'Assign to Previous Expert',
+    description: 'Route to an expert who previously helped the customer within a lookback period.',
+    category: 'assignment',
+    icon: 'history'
+  },
+  {
+    id: 'conditional-routing',
+    title: 'Conditional Routing',
+    description: 'Create routing rules based on multiple conditions like VIP status, intent, region.',
+    category: 'assignment',
+    icon: 'branch'
+  },
+  {
+    id: 'skill-based-routing',
+    title: 'Skill-Based Routing',
+    description: 'Route conversations to experts with specific skills matching the inquiry type.',
+    category: 'assignment',
+    icon: 'skill'
+  }
+];
+
 const AgCDHome: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'home' | 'playbook'>('home');
@@ -113,6 +145,8 @@ const AgCDHome: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<string>('');
   const [selectedSubScenario, setSelectedSubScenario] = useState<string>('');
   const [gallerySearchQuery, setGallerySearchQuery] = useState<string>('');
+  const [nlRequirement, setNlRequirement] = useState<string>('');
+  const [showScenarioSelection, setShowScenarioSelection] = useState(false);
 
   // Handle URL parameters to open gallery with specific filters
   React.useEffect(() => {
@@ -218,6 +252,29 @@ const AgCDHome: React.FC = () => {
     setShowGalleryModal(false);
   };
 
+  const handleNlRequirementSubmit = () => {
+    if (nlRequirement.trim()) {
+      // Show scenario selection instead of navigating directly
+      setShowScenarioSelection(true);
+    }
+  };
+
+  const handleNlKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleNlRequirementSubmit();
+    }
+  };
+
+  const handleScenarioSelect = (scenarioId: string) => {
+    // Navigate to edit page with template mode, requirement, and selected scenario
+    navigate(`/agcd/prompt/assignment?mode=template&requirement=${encodeURIComponent(nlRequirement)}&scenario=${scenarioId}`);
+  };
+
+  const handleBackToInput = () => {
+    setShowScenarioSelection(false);
+  };
+
   return (
     <main className="main-content agcd-home">
       <div className="agcd-home-wrapper">
@@ -247,6 +304,128 @@ const AgCDHome: React.FC = () => {
         <p className="agcd-subtitle">
           Use our intuitive natural language prompting to create routing scenarios. Create policies to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.
         </p>
+      </div>
+
+      {/* Natural Language Requirement Input */}
+      <div className="nl-requirement-section">
+        <div className="nl-requirement-card">
+          {!showScenarioSelection ? (
+            <>
+              <div className="nl-requirement-header">
+                <div className="nl-icon-container">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <div className="nl-header-text">
+                  <h3 className="nl-title">Describe your routing requirement</h3>
+                  <p className="nl-subtitle">Tell us what you want to achieve in plain English, and we'll help you build the right policy.</p>
+                </div>
+              </div>
+              <div className="nl-input-container">
+                <textarea
+                  className="nl-input-textarea"
+                  placeholder="Example: I want to route premium customers to their preferred expert, and if not available, to the last expert they interacted with in the past 14 days..."
+                  value={nlRequirement}
+                  onChange={(e) => setNlRequirement(e.target.value)}
+                  onKeyDown={handleNlKeyDown}
+                  rows={3}
+                />
+                <button
+                  className="nl-submit-btn"
+                  onClick={handleNlRequirementSubmit}
+                  disabled={!nlRequirement.trim()}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                  </svg>
+                  Continue
+                </button>
+              </div>
+              <div className="nl-examples">
+                <span className="nl-examples-label">Try:</span>
+                <button
+                  className="nl-example-chip"
+                  onClick={() => setNlRequirement('Route VIP customers to their preferred expert based on their account tier')}
+                >
+                  VIP customer routing
+                </button>
+                <button
+                  className="nl-example-chip"
+                  onClick={() => setNlRequirement('Assign conversations to the previous expert who handled the customer in the last 14 days')}
+                >
+                  Previous expert assignment
+                </button>
+                <button
+                  className="nl-example-chip"
+                  onClick={() => setNlRequirement('Route billing inquiries from enterprise customers to billing specialists')}
+                >
+                  Skill-based routing
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Scenario Selection View */}
+              <div className="scenario-selection-header">
+                <button className="back-to-input-btn" onClick={handleBackToInput}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M10 2l-6 6 6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Back
+                </button>
+                <div className="scenario-header-content">
+                  <h3 className="nl-title">Select a scenario that best matches your requirement</h3>
+                  <div className="user-requirement-display">
+                    <span className="requirement-label-small">Your requirement:</span>
+                    <p className="requirement-text-small">"{nlRequirement}"</p>
+                  </div>
+                </div>
+              </div>
+              <div className="scenario-cards-grid">
+                {scenarioDefinitions.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    className="scenario-card"
+                    onClick={() => handleScenarioSelect(scenario.id)}
+                  >
+                    <div className="scenario-card-icon">
+                      {scenario.icon === 'star' && (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                      )}
+                      {scenario.icon === 'history' && (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                        </svg>
+                      )}
+                      {scenario.icon === 'branch' && (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M6 3v12h3v6l8-8h-4V3H6z"/>
+                        </svg>
+                      )}
+                      {scenario.icon === 'skill' && (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="scenario-card-content">
+                      <h4 className="scenario-card-title">{scenario.title}</h4>
+                      <p className="scenario-card-desc">{scenario.description}</p>
+                    </div>
+                    <div className="scenario-card-arrow">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="agcd-get-started-section">

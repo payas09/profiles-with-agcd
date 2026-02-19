@@ -760,6 +760,24 @@
   line-height: 20px;
 }
 
+/* Edit Mode Card - Separate card above Policy Behavior */
+.edit-mode-card {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.05);
+}
+
+.edit-mode-card .edit-mode-toggle {
+  margin-bottom: 0;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+}
+
 /* Edit Mode Toggle */
 .edit-mode-toggle {
   display: flex;
@@ -846,8 +864,34 @@
   background: linear-gradient(135deg, #6d3b87 0%, #583995 100%);
 }
 
+/* Template Toggle Button */
+.toggle-btn-template {
+  background: linear-gradient(135deg, #e6f4ea 0%, #d4edda 100%);
+  color: #107c10;
+  border-left: 1px solid #a8d5ba;
+}
+
+.toggle-btn-template:hover {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #0b6a0b;
+}
+
+.toggle-btn-template.active {
+  background: linear-gradient(135deg, #107c10 0%, #0b6a0b 100%);
+  color: white;
+}
+
+.toggle-btn-template.active:hover {
+  background: linear-gradient(135deg, #0b6a0b 0%, #085c08 100%);
+}
+
 /* Policy Behavior Builder Section */
 .policy-behavior-builder-section {
+  margin-top: 16px;
+}
+
+.policy-behavior-builder-section.template-full-width {
+  margin: -20px;
   margin-top: 16px;
 }
 
@@ -931,5 +975,155 @@
   border-radius: 0 0 6px 6px !important;
   border-top: none !important;
   background-color: #fefefe;
+}
+
+/* Copilot Waiting Message */
+.copilot-waiting-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 32px;
+  background-color: #faf9f8;
+  border: 2px dashed #d4b8ff;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.copilot-waiting-message p {
+  margin: 0;
+  font-size: 14px;
+  color: #605e5c;
+  line-height: 1.6;
+  max-width: 400px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Editable Policy Container */
+.editable-policy-container {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 0 0 8px 8px;
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.editable-policy-line {
+  line-height: 2;
+  font-size: 14px;
+  color: #323130;
+}
+
+.policy-text {
+  display: inline;
+}
+
+.policy-editable-value {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e1f0ff;
+  border: 1px solid #a9d3ff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 500;
+  color: #0078d4;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin: 0 2px;
+}
+
+.policy-editable-value:hover {
+  background-color: #c7e0f4;
+  border-color: #0078d4;
+}
+
+.policy-editable-value.non-editable {
+  background-color: #f3f2f1;
+  border-color: #c8c6c4;
+  color: #605e5c;
+  cursor: default;
+}
+
+.policy-editable-value.non-editable:hover {
+  background-color: #f3f2f1;
+  border-color: #c8c6c4;
+}
+
+.policy-editable-value.editing {
+  padding: 0;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.policy-editable-input {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0078d4;
+  padding: 2px 8px;
+  min-width: 50px;
+  max-width: 80px;
+  outline: none;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.policy-edit-icon {
+  margin-left: 4px;
+  opacity: 0;
+  font-size: 12px;
+  transition: opacity 0.15s;
+}
+
+.policy-editable-value:hover .policy-edit-icon {
+  opacity: 0.7;
+}
+
+.policy-editable-value.non-editable .policy-edit-icon {
+  display: none;
+}
+
+/* Condition-based Policy Display */
+.editable-policy-condition {
+  background-color: #faf9f8;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.policy-condition-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.policy-condition-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0078d4;
+  background-color: #e1f0ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.policy-action-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+  border: 1px solid #a8d5a8;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-weight: 600;
+  color: #107c10;
+  font-size: 13px;
+  margin: 0 4px;
+}
+
+.policy-fallback {
+  font-style: italic;
+  color: #605e5c;
 }
 

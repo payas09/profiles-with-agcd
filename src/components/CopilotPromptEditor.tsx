@@ -1,181 +1,355 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './CopilotPromptEditor.css';
 
+// ============================================
+// Scenario Templates
+// ============================================
+
+interface ScenarioTemplate {
+  id: string;
+  name: string;
+  description: string;
+  keywords: string[]; // Keywords to match from user input
+  template: string;
+  placeholders: PlaceholderConfig[];
+}
+
+interface PlaceholderConfig {
+  id: string;
+  label: string;
+  type: 'variable-select' | 'value-select' | 'number' | 'multi-condition';
+  variableType?: 'context' | 'lwi' | 'both';
+  dependsOn?: string; // For value-select that depends on a variable
+  options?: { id: string; label: string }[];
+  defaultValue?: string;
+}
+
+// Available variables
+const contextVariables = [
+  { id: 'IsVIP', label: 'Is VIP Customer', values: ['True', 'False'] },
+  { id: 'CustomerTier', label: 'Customer Tier', values: ['Gold', 'Silver', 'Bronze', 'Standard', 'Platinum', 'Diamond', 'Enterprise', 'SMB', 'Startup'] },
+  { id: 'Language', label: 'Preferred Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese', 'Italian', 'Korean', 'Arabic', 'Hindi', 'Dutch'] },
+  { id: 'Region', label: 'Customer Region', values: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa', 'Australia', 'India', 'China', 'Japan'] },
+  { id: 'AccountType', label: 'Account Type', values: ['Premium', 'Standard', 'Trial', 'Free', 'Enterprise', 'Government', 'Education', 'Non-Profit'] },
+];
+
+const liveWorkItemVariables = [
+  { id: 'Intent', label: 'Conversation Intent', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns', 'Shipping', 'Product Info', 'Subscription', 'Cancellation'] },
+  { id: 'Channel', label: 'Channel', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
+  { id: 'Priority', label: 'Priority', values: ['Urgent', 'High', 'Medium', 'Low'] },
+  { id: 'Sentiment', label: 'Customer Sentiment', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
+  { id: 'ProductCategory', label: 'Product Category', values: ['Software', 'Hardware', 'Services', 'Subscription', 'Support', 'Training', 'Consulting'] },
+];
+
+const allVariables = [
+  ...contextVariables.map(v => ({ ...v, type: 'context' as const })),
+  ...liveWorkItemVariables.map(v => ({ ...v, type: 'lwi' as const }))
+];
+
+// Scenario Templates
+const scenarioTemplates: ScenarioTemplate[] = [
+  {
+    id: 'preferred-expert-assignment',
+    name: 'Assign to Preferred Expert',
+    description: 'Route customers to their designated preferred expert based on conditions',
+    keywords: ['preferred', 'expert', 'designated', 'mapped', 'assigned agent', 'specific agent', 'gold', 'vip', 'priority'],
+    template: `Get {variables}.
+
+When {conditions}, assign to the customer's preferred expert.
+
+If no preferred expert is available, assign to a previous expert who helped the customer in the last {lookback_days} days.
+
+For all other cases, use the queue's assignment strategy.`,
+    placeholders: [
+      { id: 'variables', label: 'Variables to check', type: 'variable-select', variableType: 'both' },
+      { id: 'conditions', label: 'Conditions', type: 'multi-condition' },
+      { id: 'lookback_days', label: 'Lookback period', type: 'number', defaultValue: '14' }
+    ]
+  },
+  {
+    id: 'previous-expert-assignment',
+    name: 'Assign to Previous Expert',
+    description: 'Route customers to an expert they have interacted with before',
+    keywords: ['previous', 'last', 'interacted', 'history', 'familiar', 'continuity', 'same agent'],
+    template: `Get {variables}.
+
+When {conditions}, assign to a previous expert who helped the customer in the last {lookback_days} days{expert_requirements}.
+
+For all other cases, use the queue's assignment strategy.`,
+    placeholders: [
+      { id: 'variables', label: 'Variables to check', type: 'variable-select', variableType: 'both' },
+      { id: 'conditions', label: 'Conditions', type: 'multi-condition' },
+      { id: 'lookback_days', label: 'Lookback period', type: 'number', defaultValue: '14' },
+      { id: 'expert_requirements', label: 'Expert requirements', type: 'variable-select', variableType: 'context' }
+    ]
+  },
+  {
+    id: 'tiered-assignment',
+    name: 'Tiered Assignment Policy',
+    description: 'Different assignment actions for different customer segments',
+    keywords: ['tier', 'segment', 'different', 'gold silver', 'premium standard', 'vip regular', 'based on'],
+    template: `Get {variables}.
+
+{tier_conditions}
+
+For all other cases, use the queue's assignment strategy.`,
+    placeholders: [
+      { id: 'variables', label: 'Variables to check', type: 'variable-select', variableType: 'both' },
+      { id: 'tier_conditions', label: 'Tier-based conditions', type: 'multi-condition' }
+    ]
+  }
+];
+
+// ============================================
+// Interfaces
+// ============================================
+
 interface Message {
   id: string;
   role: 'user' | 'copilot';
   content: string;
   timestamp: Date;
+  showScenarioSelector?: boolean;
+  showTemplateEditor?: boolean;
+  selectedScenario?: ScenarioTemplate;
+}
+
+interface ConditionRow {
+  id: string;
+  variable: string;
+  variableLabel: string;
+  variableType: 'context' | 'lwi';
+  values: string[];
+  action: 'preferred-expert' | 'previous-expert' | 'queue-strategy';
+  lookbackDays?: number;
+}
+
+interface PolicyConfig {
+  selectedVariables: { id: string; label: string; type: 'context' | 'lwi' }[];
+  conditions: {
+    id: string;
+    conditions: { variableId: string; variableLabel: string; variableType: 'context' | 'lwi'; values: string[] }[];
+    action: 'preferred-expert' | 'previous-expert' | 'queue-strategy';
+    lookbackPeriod?: number;
+    userAttributes?: { id: string; value: string }[];
+  }[];
+  defaultAction: 'queue-strategy';
 }
 
 interface CopilotPromptEditorProps {
   scenario?: string;
   onPromptGenerated?: (prompt: string) => void;
+  onPolicyConfigChange?: (config: PolicyConfig) => void;
 }
+
+// ============================================
+// Main Component
+// ============================================
 
 const CopilotPromptEditor: React.FC<CopilotPromptEditorProps> = ({
   scenario = 'Assignment Policy',
-  onPromptGenerated
+  onPromptGenerated,
+  onPolicyConfigChange
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'copilot',
-      content: `Hi! I'm here to help you create an ${scenario}. Tell me about your requirements in plain English, and I'll generate the policy for you.\n\nFor example, you could say:\n"I want VIP customers calling for fraud issues to be routed to their preferred expert."`,
+      content: `Hi! I'll help you create an assignment policy.\n\nTell me what you'd like to set up. For example:\n• "Gold tier customers should go to their preferred expert"\n• "Route billing inquiries to previous experts"\n• "Different handling for VIP vs regular customers"`,
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioTemplate | null>(null);
+  const [conditionRows, setConditionRows] = useState<ConditionRow[]>([]);
+  const [lookbackDays, setLookbackDays] = useState(14);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Generate a prompt based on user input
-  const generatePromptFromInput = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
+  // Detect scenario from user message
+  const detectScenario = (message: string): ScenarioTemplate | null => {
+    const lowerMessage = message.toLowerCase();
 
-    if (lowerMessage.includes('vip') && lowerMessage.includes('fraud')) {
-      return `Get the customer's VIP status from ContextVariable.IsVIP and the Intent of the conversation from LiveWorkItem.Intent.
+    // Score each scenario based on keyword matches
+    let bestMatch: ScenarioTemplate | null = null;
+    let bestScore = 0;
 
-All VIP customers reaching out for Fraud Assist related conversations should be first offered to one of the preferred experts mapped to them.
-
-If no preferred agents are available, assign the conversation to a previous expert who has interacted with the customer in the last 10 days and has a minimum CSAT of 7.
-
-In case of no previous expert, assign to the next best expert in the queue.`;
-    } else if (lowerMessage.includes('vip') && (lowerMessage.includes('billing') || lowerMessage.includes('bill'))) {
-      return `Get the customer's VIP status from ContextVariable.IsVIP and the Intent of the conversation from LiveWorkItem.Intent.
-
-All VIP customers reaching out for Billing Inquiry related conversations should be routed to agents with Billing Expert skill.
-
-If no billing experts are available, assign to the previous expert who has handled this customer's billing issues in the last 30 days.
-
-In case of no previous expert, assign to the next available agent in the billing queue.`;
-    } else if (lowerMessage.includes('vip')) {
-      return `Get the customer's VIP status from ContextVariable.IsVIP.
-
-All VIP customers should be first offered to one of the preferred experts mapped to them.
-
-If no preferred agents are available, assign the conversation to a previous expert who has interacted with the customer in the last 14 days.
-
-All other VIP customers should be offered to agents with high CSAT scores (minimum 8).
-
-In case of no previous expert, assign to the next best expert in the queue.`;
-    } else if (lowerMessage.includes('fraud')) {
-      return `Get the Intent of the conversation from LiveWorkItem.Intent.
-
-All customers reaching out for Fraud Assist related conversations should be routed to agents with Fraud Investigation skill.
-
-These conversations should be assigned to agents with minimum CSAT of 8 and Resolution Rate above 90%.
-
-In case of no available fraud specialists, escalate to the fraud team queue.`;
-    } else if (lowerMessage.includes('language') || lowerMessage.includes('spanish') || lowerMessage.includes('french')) {
-      const language = lowerMessage.includes('spanish') ? 'Spanish' : lowerMessage.includes('french') ? 'French' : 'the requested language';
-      return `Get the customer's preferred language from ContextVariable.Language.
-
-Customers requesting support in ${language} should be routed to agents who speak ${language}.
-
-If no ${language}-speaking agents are available, offer the conversation to bilingual agents.
-
-In case of no language match, assign to the next available agent with translation support enabled.`;
-    } else if (lowerMessage.includes('technical') || lowerMessage.includes('tech support')) {
-      return `Get the Intent of the conversation from LiveWorkItem.Intent.
-
-All Technical Support conversations should be routed to agents with Technical Support skill.
-
-Priority should be given to agents with:
-- Skill Level: Advanced or Expert
-- Resolution Rate above 85%
-- Average Handle Time under 15 minutes
-
-In case of no technical experts available, assign to the technical support queue.`;
-    } else if (lowerMessage.includes('previous') || lowerMessage.includes('same agent') || lowerMessage.includes('last agent')) {
-      return `Get the customer's interaction history.
-
-All returning customers should be offered to the previous expert who last handled their conversation within the last 30 days.
-
-If the previous expert is not available, route to an agent with similar skills and CSAT score.
-
-In case of no match, assign to the next best expert in the queue based on skills and availability.`;
-    } else {
-      // Generic response
-      return `Based on your requirements:
-
-${userMessage}
-
-Get the relevant customer context and conversation details.
-
-Route conversations based on the specified criteria to the most suitable available agent.
-
-If no matching agents are available, assign to the next best expert in the queue.`;
+    for (const template of scenarioTemplates) {
+      let score = 0;
+      for (const keyword of template.keywords) {
+        if (lowerMessage.includes(keyword.toLowerCase())) {
+          score += keyword.split(' ').length; // Multi-word keywords score higher
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = template;
+      }
     }
+
+    return bestScore > 0 ? bestMatch : scenarioTemplates[0]; // Default to first if no match
   };
 
-  // Generate Copilot response based on user message
-  const generateCopilotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-
-    if (lowerMessage.includes('change') || lowerMessage.includes('update') || lowerMessage.includes('modify')) {
-      return "I've updated the policy based on your feedback. You can see the changes in the Generated Policy section on the right. Let me know if you'd like any further adjustments.";
-    }
-
-    if (lowerMessage.includes('add') && (lowerMessage.includes('condition') || lowerMessage.includes('rule'))) {
-      return "I've added the new condition to your policy. Check the Generated Policy section for the updated version. Would you like to add anything else?";
-    }
-
-    if (lowerMessage.includes('looks good') || lowerMessage.includes('perfect') || lowerMessage.includes('that works')) {
-      return "Great! Your policy is ready. You can review it in the Generated Policy section and click Save or Publish when you're satisfied.";
-    }
-
-    if (lowerMessage.includes('csat') || lowerMessage.includes('rating') || lowerMessage.includes('score')) {
-      return "I've incorporated the CSAT requirements into your policy. Agents will be filtered based on their customer satisfaction scores. Check the Generated Policy section.";
-    }
-
-    if (lowerMessage.includes('skill') || lowerMessage.includes('expertise')) {
-      return "I've added skill-based routing to your policy. The system will match customers with agents who have the relevant expertise. See the Generated Policy section.";
-    }
-
-    // Default response for new policy creation
-    return "I've created an assignment policy based on your requirements. You can see the generated policy on the right.\n\nWould you like me to:\n• Add more conditions?\n• Modify the routing logic?\n• Include additional agent attributes like CSAT or skills?";
+  // Add a condition row
+  const addConditionRow = () => {
+    const newRow: ConditionRow = {
+      id: Date.now().toString(),
+      variable: '',
+      variableLabel: '',
+      variableType: 'context',
+      values: [],
+      action: 'preferred-expert'
+    };
+    setConditionRows(prev => [...prev, newRow]);
   };
 
+  // Update a condition row
+  const updateConditionRow = (id: string, updates: Partial<ConditionRow>) => {
+    setConditionRows(prev => prev.map(row =>
+      row.id === id ? { ...row, ...updates } : row
+    ));
+  };
+
+  // Remove a condition row
+  const removeConditionRow = (id: string) => {
+    setConditionRows(prev => prev.filter(row => row.id !== id));
+  };
+
+  // Generate the final prompt
+  const generatePrompt = (): string => {
+    if (!selectedScenario || conditionRows.length === 0) return '';
+
+    // Get unique variables
+    const uniqueVars = new Map<string, ConditionRow>();
+    conditionRows.forEach(row => {
+      if (row.variable && !uniqueVars.has(row.variable)) {
+        uniqueVars.set(row.variable, row);
+      }
+    });
+
+    const variablesList = Array.from(uniqueVars.values()).map(row => {
+      if (row.variableType === 'context') {
+        return `the customer's ${row.variableLabel} from ContextVariable.${row.variable}`;
+      } else {
+        return `the ${row.variableLabel} from LiveWorkItem.${row.variable}`;
+      }
+    }).join(' and ');
+
+    const lines: string[] = [];
+    lines.push(`Get ${variablesList}.`);
+    lines.push('');
+
+    // Group by action for cleaner output
+    conditionRows.forEach((row, idx) => {
+      if (!row.variable || row.values.length === 0) return;
+
+      const valueText = row.values.join(' or ');
+      const conditionText = `${row.variableLabel} is ${valueText}`;
+
+      let actionText = '';
+      if (row.action === 'preferred-expert') {
+        actionText = "assign to the customer's preferred expert";
+      } else if (row.action === 'previous-expert') {
+        actionText = `assign to a previous expert who helped them in the last ${row.lookbackDays || lookbackDays} days`;
+      } else {
+        actionText = "use the queue's assignment strategy";
+      }
+
+      lines.push(`${idx === 0 ? 'When' : 'When'} ${conditionText}, ${actionText}.`);
+      lines.push('');
+    });
+
+    lines.push("For all other cases, use the queue's assignment strategy.");
+
+    return lines.join('\n');
+  };
+
+  // Handle generating the policy
+  const handleGeneratePolicy = () => {
+    const prompt = generatePrompt();
+    if (!prompt) return;
+
+    if (onPromptGenerated) {
+      onPromptGenerated(prompt);
+    }
+
+    // Build policy config
+    const config: PolicyConfig = {
+      selectedVariables: conditionRows
+        .filter(r => r.variable)
+        .map(r => ({ id: r.variable, label: r.variableLabel, type: r.variableType }))
+        .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i),
+      conditions: conditionRows
+        .filter(r => r.variable && r.values.length > 0)
+        .map(r => ({
+          id: r.id,
+          conditions: [{
+            variableId: r.variable,
+            variableLabel: r.variableLabel,
+            variableType: r.variableType,
+            values: r.values
+          }],
+          action: r.action,
+          lookbackPeriod: r.action === 'previous-expert' ? (r.lookbackDays || lookbackDays) : undefined
+        })),
+      defaultAction: 'queue-strategy'
+    };
+
+    if (onPolicyConfigChange) {
+      onPolicyConfigChange(config);
+    }
+
+    // Add completion message
+    const completeMsg: Message = {
+      id: Date.now().toString(),
+      role: 'copilot',
+      content: "Your policy has been generated! You can see it on the right panel.\n\n• Click any value to edit it directly\n• Add more conditions below\n• Click **Save** or **Publish** when ready",
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, completeMsg]);
+  };
+
+  // Handle send message
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
 
-    const userMessage: Message = {
+    const userMessage = inputValue.trim();
+    const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim(),
+      content: userMessage,
       timestamp: new Date()
     };
-
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMsg]);
     setInputValue('');
-    setIsTyping(true);
 
-    // Simulate Copilot thinking and responding
+    // Detect scenario and respond
+    setIsTyping(true);
     setTimeout(() => {
-      // Generate the prompt and send to parent
-      const generatedPrompt = generatePromptFromInput(userMessage.content);
-      if (onPromptGenerated) {
-        onPromptGenerated(generatedPrompt);
+      const detected = detectScenario(userMessage);
+      setSelectedScenario(detected);
+
+      // Initialize with one empty condition row
+      if (conditionRows.length === 0) {
+        addConditionRow();
       }
 
-      // Generate Copilot response
-      const copilotResponse: Message = {
+      const response: Message = {
         id: (Date.now() + 1).toString(),
         role: 'copilot',
-        content: generateCopilotResponse(userMessage.content),
-        timestamp: new Date()
+        content: `I'll help you set up a **${detected?.name}** policy.\n\nUse the template below to define your conditions. For each row:\n1. Select a **variable** (customer tier, intent, etc.)\n2. Choose the **values** that should trigger this condition\n3. Pick the **action** to take`,
+        timestamp: new Date(),
+        showTemplateEditor: true,
+        selectedScenario: detected || undefined
       };
-
-      setMessages(prev => [...prev, copilotResponse]);
+      setMessages(prev => [...prev, response]);
       setIsTyping(false);
-    }, 1500);
+    }, 800);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -185,17 +359,11 @@ If no matching agents are available, assign to the next best expert in the queue
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
-    inputRef.current?.focus();
+  // Get values for a selected variable
+  const getValuesForVariable = (variableId: string): string[] => {
+    const variable = allVariables.find(v => v.id === variableId);
+    return variable?.values || [];
   };
-
-  const suggestions = [
-    "VIP customers with fraud issues should go to preferred experts",
-    "Route billing inquiries to billing specialists",
-    "Spanish-speaking customers should get Spanish-speaking agents",
-    "Technical issues should go to senior support"
-  ];
 
   return (
     <div className="copilot-chat-panel-full">
@@ -207,7 +375,7 @@ If no matching agents are available, assign to the next best expert in the queue
         </div>
         <div className="copilot-header-text">
           <h3>Copilot</h3>
-          <span>AI Assistant for Policy Creation</span>
+          <span>Assignment Policy Assistant</span>
         </div>
       </div>
 
@@ -222,7 +390,145 @@ If no matching agents are available, assign to the next best expert in the queue
               </div>
             )}
             <div className="copilot-message-content">
-              <div className="copilot-message-text">{message.content}</div>
+              <div className="copilot-message-text" dangerouslySetInnerHTML={{
+                __html: message.content
+                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  .replace(/\n/g, '<br/>')
+              }} />
+
+              {/* Template Editor */}
+              {message.showTemplateEditor && (
+                <div className="template-editor">
+                  <div className="template-editor-header">
+                    <span className="template-name">{selectedScenario?.name}</span>
+                  </div>
+
+                  {/* Condition Rows */}
+                  <div className="condition-rows">
+                    {conditionRows.map((row, index) => (
+                      <div key={row.id} className="condition-row">
+                        <div className="condition-row-header">
+                          <span className="condition-label">
+                            {index === 0 ? 'When' : 'Or when'}
+                          </span>
+                          {conditionRows.length > 1 && (
+                            <button
+                              className="remove-row-btn"
+                              onClick={() => removeConditionRow(row.id)}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="condition-row-fields">
+                          {/* Variable Select */}
+                          <div className="field-group">
+                            <label>Variable</label>
+                            <select
+                              value={row.variable}
+                              onChange={(e) => {
+                                const varDef = allVariables.find(v => v.id === e.target.value);
+                                updateConditionRow(row.id, {
+                                  variable: e.target.value,
+                                  variableLabel: varDef?.label || '',
+                                  variableType: varDef?.type || 'context',
+                                  values: [] // Reset values when variable changes
+                                });
+                              }}
+                            >
+                              <option value="">Select variable...</option>
+                              <optgroup label="Customer Attributes">
+                                {contextVariables.map(v => (
+                                  <option key={v.id} value={v.id}>{v.label}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="Conversation Attributes">
+                                {liveWorkItemVariables.map(v => (
+                                  <option key={v.id} value={v.id}>{v.label}</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+
+                          {/* Values Multi-Select */}
+                          <div className="field-group values-group">
+                            <label>is</label>
+                            <div className="values-selector">
+                              {row.variable ? (
+                                <MultiSelectDropdown
+                                  options={getValuesForVariable(row.variable)}
+                                  selected={row.values}
+                                  onChange={(values) => updateConditionRow(row.id, { values })}
+                                  placeholder="Select values..."
+                                />
+                              ) : (
+                                <div className="placeholder-text">Select a variable first</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Select */}
+                          <div className="field-group action-group">
+                            <label>then</label>
+                            <select
+                              value={row.action}
+                              onChange={(e) => updateConditionRow(row.id, {
+                                action: e.target.value as ConditionRow['action']
+                              })}
+                            >
+                              <option value="preferred-expert">Assign to Preferred Expert</option>
+                              <option value="previous-expert">Assign to Previous Expert</option>
+                              <option value="queue-strategy">Use Queue Strategy</option>
+                            </select>
+                          </div>
+
+                          {/* Lookback Days (only for previous-expert) */}
+                          {row.action === 'previous-expert' && (
+                            <div className="field-group lookback-group">
+                              <label>lookback</label>
+                              <select
+                                value={row.lookbackDays || lookbackDays}
+                                onChange={(e) => updateConditionRow(row.id, {
+                                  lookbackDays: parseInt(e.target.value)
+                                })}
+                              >
+                                <option value="7">7 days</option>
+                                <option value="14">14 days</option>
+                                <option value="30">30 days</option>
+                                <option value="60">60 days</option>
+                                <option value="90">90 days</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Row Button */}
+                  <button className="add-condition-btn" onClick={addConditionRow}>
+                    + Add another condition
+                  </button>
+
+                  {/* Default Fallback */}
+                  <div className="default-fallback">
+                    <span className="fallback-label">For all other cases:</span>
+                    <span className="fallback-action">Use queue's assignment strategy</span>
+                  </div>
+
+                  {/* Generate Button */}
+                  <div className="template-actions">
+                    <button
+                      className="generate-btn"
+                      onClick={handleGeneratePolicy}
+                      disabled={conditionRows.every(r => !r.variable || r.values.length === 0)}
+                    >
+                      Generate Policy
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -246,22 +552,6 @@ If no matching agents are available, assign to the next best expert in the queue
 
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Suggestions */}
-      {messages.length === 1 && (
-        <div className="copilot-suggestions">
-          <div className="copilot-suggestions-label">Try saying:</div>
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={index}
-              className="copilot-suggestion-chip"
-              onClick={() => handleSuggestionClick(suggestion)}
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="copilot-input-area">
         <textarea
@@ -287,6 +577,99 @@ If no matching agents are available, assign to the next best expert in the queue
       <div className="copilot-disclaimer">
         AI-generated content may be incorrect. <a href="#">View terms</a>
       </div>
+    </div>
+  );
+};
+
+// ============================================
+// Multi-Select Dropdown Component
+// ============================================
+
+interface MultiSelectDropdownProps {
+  options: string[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+  placeholder?: string;
+}
+
+const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
+  options,
+  selected,
+  onChange,
+  placeholder = 'Select...'
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter(opt =>
+    opt.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggleOption = (option: string) => {
+    if (selected.includes(option)) {
+      onChange(selected.filter(s => s !== option));
+    } else {
+      onChange([...selected, option]);
+    }
+  };
+
+  return (
+    <div className="multi-select-dropdown" ref={containerRef}>
+      <div className="dropdown-trigger" onClick={() => setIsOpen(!isOpen)}>
+        {selected.length > 0 ? (
+          <div className="selected-chips">
+            {selected.map(s => (
+              <span key={s} className="selected-chip">
+                {s}
+                <button onClick={(e) => { e.stopPropagation(); toggleOption(s); }}>×</button>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="placeholder">{placeholder}</span>
+        )}
+        <span className="dropdown-arrow">▼</span>
+      </div>
+
+      {isOpen && (
+        <div className="dropdown-menu">
+          <input
+            type="text"
+            className="dropdown-search"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+          />
+          <div className="dropdown-options">
+            {filteredOptions.length === 0 ? (
+              <div className="no-options">No matches found</div>
+            ) : (
+              filteredOptions.map(opt => (
+                <label key={opt} className={`dropdown-option ${selected.includes(opt) ? 'selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(opt)}
+                    onChange={() => toggleOption(opt)}
+                  />
+                  <span>{opt}</span>
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

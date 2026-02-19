@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import './AgCDPromptEdit.css';
 import { savePrompt, getPrompt, SelectionMode } from '../utils/promptStorage';
 import TemplatePromptEditor from './TemplatePromptEditor';
 import CopilotPromptEditor from './CopilotPromptEditor';
+import TemplateBasedEditor from './TemplateBasedEditor';
+
+// Policy config interface for editable display
+interface ConditionDef {
+  variableId: string;
+  variableLabel: string;
+  variableType: 'context' | 'lwi';
+  values: string[];
+}
+
+interface AssignmentCondition {
+  id: string;
+  conditions: ConditionDef[];
+  action: 'preferred-expert' | 'previous-expert' | 'queue-strategy';
+  lookbackPeriod?: number;
+  userAttributes?: { id: string; value: string }[];
+}
+
+interface PolicyConfig {
+  selectedVariables: { id: string; label: string; type: 'context' | 'lwi' }[];
+  conditions: AssignmentCondition[];
+  defaultAction: 'queue-strategy';
+}
 
 // Engagement profiles data
 const engagementProfiles = [
@@ -162,14 +185,326 @@ interface ProfileWithQueues {
   queues: string[];
 }
 
+// User attributes for editable display
+const userAttributeDefinitions = [
+  { id: 'CSAT', label: 'CSAT Score', type: 'number', placeholder: 'e.g., 7' },
+  { id: 'Skills', label: 'Skills', values: ['Billing Expert', 'Technical Support', 'Fraud Investigation', 'Sales', 'General Support'] },
+  { id: 'Language', label: 'Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin'] },
+  { id: 'ResolutionRate', label: 'Resolution Rate', type: 'percentage', placeholder: 'e.g., 85%' },
+];
+
+// Generate prompt from policy config
+const generatePromptFromConfig = (config: PolicyConfig): string => {
+  const lines: string[] = [];
+
+  // Variables section
+  if (config.selectedVariables.length > 0) {
+    const varParts = config.selectedVariables.map(v => {
+      if (v.type === 'context') {
+        return `the customer's ${v.label} from ContextVariable.${v.id}`;
+      } else {
+        return `the ${v.label} from LiveWorkItem.${v.id}`;
+      }
+    });
+    lines.push(`Get ${varParts.join(' and ')}.`);
+    lines.push('');
+  }
+
+  // Conditions
+  config.conditions.forEach((cond, index) => {
+    const conditionParts = cond.conditions.map(c => {
+      const valueText = c.values.length > 1 ? c.values.join(' or ') : c.values[0];
+      return `${c.variableLabel} is ${valueText}`;
+    });
+
+    const conditionText = conditionParts.join(' and ');
+
+    let actionText = '';
+    if (cond.action === 'preferred-expert') {
+      actionText = 'should be first offered to one of the preferred experts mapped to them';
+    } else if (cond.action === 'previous-expert') {
+      actionText = `should be assigned to a previous expert who has interacted with the customer in the last ${cond.lookbackPeriod || 14} days`;
+
+      if (cond.userAttributes && cond.userAttributes.length > 0) {
+        const attrParts = cond.userAttributes.filter(a => a.value).map(attr => {
+          if (attr.id === 'CSAT') return `minimum CSAT of ${attr.value}`;
+          if (attr.id === 'ResolutionRate') return `Resolution Rate above ${attr.value}`;
+          if (attr.id === 'Skills') return `${attr.value} skill`;
+          if (attr.id === 'Language') return `speaks ${attr.value}`;
+          return '';
+        }).filter(Boolean);
+
+        if (attrParts.length > 0) {
+          actionText += ` and has ${attrParts.join(' and ')}`;
+        }
+      }
+    } else {
+      actionText = "should be assigned based on the queue's assignment strategy";
+    }
+
+    lines.push(`${index === 0 ? 'All' : 'For'} customers where ${conditionText} ${actionText}.`);
+    lines.push('');
+  });
+
+  // Default fallback
+  lines.push("For all other cases, assign to the next best expert in the queue based on the queue's assignment strategy.");
+
+  return lines.join('\n');
+};
+
+// Editable Policy Display Component
+interface EditablePolicyDisplayProps {
+  config: PolicyConfig;
+  onConfigChange: (config: PolicyConfig) => void;
+}
+
+const EditablePolicyDisplay: React.FC<EditablePolicyDisplayProps> = ({ config, onConfigChange }) => {
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  // Update condition values
+  const handleConditionValueChange = (condId: string, conditionVarId: string, newValue: string) => {
+    const updatedConditions = config.conditions.map(cond => {
+      if (cond.id === condId) {
+        return {
+          ...cond,
+          conditions: cond.conditions.map(c =>
+            c.variableId === conditionVarId
+              ? { ...c, values: newValue.split(',').map(v => v.trim()).filter(Boolean) }
+              : c
+          )
+        };
+      }
+      return cond;
+    });
+    onConfigChange({ ...config, conditions: updatedConditions });
+    setEditingField(null);
+  };
+
+  // Update lookback period
+  const handleLookbackChange = (condId: string, value: number) => {
+    const updatedConditions = config.conditions.map(cond =>
+      cond.id === condId ? { ...cond, lookbackPeriod: value } : cond
+    );
+    onConfigChange({ ...config, conditions: updatedConditions });
+    setEditingField(null);
+  };
+
+  // Update user attribute
+  const handleUserAttrChange = (condId: string, attrId: string, newValue: string) => {
+    const updatedConditions = config.conditions.map(cond => {
+      if (cond.id === condId) {
+        const existingAttrs = cond.userAttributes || [];
+        const updatedAttrs = existingAttrs.filter(a => a.id !== attrId);
+        if (newValue) {
+          updatedAttrs.push({ id: attrId, value: newValue });
+        }
+        return { ...cond, userAttributes: updatedAttrs };
+      }
+      return cond;
+    });
+    onConfigChange({ ...config, conditions: updatedConditions });
+    setEditingField(null);
+  };
+
+  // Get action display text
+  const getActionText = (action: string) => {
+    switch (action) {
+      case 'preferred-expert': return 'Assign to Preferred Expert';
+      case 'previous-expert': return 'Assign to Previous Expert';
+      case 'queue-strategy': return 'Use Queue Strategy';
+      default: return action;
+    }
+  };
+
+  return (
+    <div className="editable-policy-container">
+      {/* Variables Section */}
+      {config.selectedVariables.length > 0 && (
+        <div className="editable-policy-line">
+          <span className="policy-text">Get </span>
+          {config.selectedVariables.map((v, idx) => (
+            <React.Fragment key={v.id}>
+              {idx > 0 && <span className="policy-text"> and </span>}
+              {v.type === 'context' ? (
+                <>
+                  <span className="policy-text">the customer's {v.label} from </span>
+                  <span className="policy-editable-value non-editable">ContextVariable.{v.id}</span>
+                </>
+              ) : (
+                <>
+                  <span className="policy-text">the {v.label} from </span>
+                  <span className="policy-editable-value non-editable">LiveWorkItem.{v.id}</span>
+                </>
+              )}
+            </React.Fragment>
+          ))}
+          <span className="policy-text">.</span>
+        </div>
+      )}
+
+      {/* Conditions Section */}
+      {config.conditions.map((cond, condIdx) => (
+        <div key={cond.id} className="editable-policy-condition" style={{ marginTop: '16px' }}>
+          <div className="policy-condition-header">
+            <span className="policy-condition-number">Condition {condIdx + 1}</span>
+          </div>
+          <div className="editable-policy-line">
+            <span className="policy-text">{condIdx === 0 ? 'All' : 'For'} customers where </span>
+            {cond.conditions.map((condition, idx) => (
+              <React.Fragment key={condition.variableId}>
+                {idx > 0 && <span className="policy-text"> and </span>}
+                <span className="policy-text">{condition.variableLabel} is </span>
+                {editingField === `cond-${cond.id}-var-${condition.variableId}` ? (
+                  <span className="policy-editable-value editing">
+                    <input
+                      type="text"
+                      className="policy-editable-input"
+                      value={condition.values.join(', ')}
+                      onChange={(e) => handleConditionValueChange(cond.id, condition.variableId, e.target.value)}
+                      onBlur={() => setEditingField(null)}
+                      onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                      autoFocus
+                    />
+                  </span>
+                ) : (
+                  <span
+                    className="policy-editable-value"
+                    onClick={() => setEditingField(`cond-${cond.id}-var-${condition.variableId}`)}
+                    title="Click to edit"
+                  >
+                    {condition.values.join(' or ')}
+                    <span className="policy-edit-icon">✎</span>
+                  </span>
+                )}
+              </React.Fragment>
+            ))}
+            <span className="policy-text"> → </span>
+            <span className="policy-action-badge">{getActionText(cond.action)}</span>
+
+            {/* Show lookback period for previous-expert action */}
+            {cond.action === 'previous-expert' && (
+              <>
+                <span className="policy-text"> (last </span>
+                {editingField === `cond-${cond.id}-lookback` ? (
+                  <span className="policy-editable-value editing">
+                    <input
+                      type="number"
+                      className="policy-editable-input"
+                      value={cond.lookbackPeriod || 14}
+                      onChange={(e) => handleLookbackChange(cond.id, parseInt(e.target.value) || 14)}
+                      onBlur={() => setEditingField(null)}
+                      onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                      autoFocus
+                      min={1}
+                      max={90}
+                    />
+                  </span>
+                ) : (
+                  <span
+                    className="policy-editable-value"
+                    onClick={() => setEditingField(`cond-${cond.id}-lookback`)}
+                    title="Click to edit"
+                  >
+                    {cond.lookbackPeriod || 14}
+                    <span className="policy-edit-icon">✎</span>
+                  </span>
+                )}
+                <span className="policy-text"> days</span>
+
+                {/* User attributes */}
+                {cond.userAttributes && cond.userAttributes.some(a => a.value) && (
+                  <>
+                    <span className="policy-text">, </span>
+                    {cond.userAttributes.filter(a => a.value).map((attr, attrIdx) => (
+                      <React.Fragment key={attr.id}>
+                        {attrIdx > 0 && <span className="policy-text">, </span>}
+                        {attr.id === 'CSAT' && (
+                          <>
+                            <span className="policy-text">CSAT ≥ </span>
+                            {editingField === `cond-${cond.id}-attr-${attr.id}` ? (
+                              <span className="policy-editable-value editing">
+                                <input
+                                  type="text"
+                                  className="policy-editable-input"
+                                  value={attr.value}
+                                  onChange={(e) => handleUserAttrChange(cond.id, attr.id, e.target.value)}
+                                  onBlur={() => setEditingField(null)}
+                                  onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                                  autoFocus
+                                />
+                              </span>
+                            ) : (
+                              <span
+                                className="policy-editable-value"
+                                onClick={() => setEditingField(`cond-${cond.id}-attr-${attr.id}`)}
+                                title="Click to edit"
+                              >
+                                {attr.value}
+                                <span className="policy-edit-icon">✎</span>
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {attr.id === 'ResolutionRate' && (
+                          <>
+                            <span className="policy-text">Resolution ≥ </span>
+                            {editingField === `cond-${cond.id}-attr-${attr.id}` ? (
+                              <span className="policy-editable-value editing">
+                                <input
+                                  type="text"
+                                  className="policy-editable-input"
+                                  value={attr.value}
+                                  onChange={(e) => handleUserAttrChange(cond.id, attr.id, e.target.value)}
+                                  onBlur={() => setEditingField(null)}
+                                  onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                                  autoFocus
+                                />
+                              </span>
+                            ) : (
+                              <span
+                                className="policy-editable-value"
+                                onClick={() => setEditingField(`cond-${cond.id}-attr-${attr.id}`)}
+                                title="Click to edit"
+                              >
+                                {attr.value}
+                                <span className="policy-edit-icon">✎</span>
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+                <span className="policy-text">)</span>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {/* Default Fallback */}
+      <div className="editable-policy-line" style={{ marginTop: '16px' }}>
+        <span className="policy-text policy-fallback">For all other cases → Use Queue's Assignment Strategy</span>
+      </div>
+    </div>
+  );
+};
+
 const AgCDPromptEdit: React.FC = () => {
   const { promptType, policyId } = useParams<{ promptType?: string; policyId?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Determine if we're editing an existing policy or creating a new one
   const isEditMode = !!policyId;
   const currentId = policyId || promptType || '';
   const template = promptType ? promptTemplates[promptType] : null;
+
+  // Get URL parameters for template mode
+  const urlMode = searchParams.get('mode');
+  const urlRequirement = searchParams.get('requirement');
+  const urlScenario = searchParams.get('scenario');
 
   const [promptName, setPromptName] = useState('');
   const [policyBehavior, setPolicyBehavior] = useState('');
@@ -183,7 +518,9 @@ const AgCDPromptEdit: React.FC = () => {
   const [tempSelectedProfiles, setTempSelectedProfiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'engagement' | 'conversation'>('engagement');
   const [activePageTab, setActivePageTab] = useState<'home' | 'playbook'>('home');
-  const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot'>('simple');
+  const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot' | 'template'>('simple');
+  const [policyConfig, setPolicyConfig] = useState<PolicyConfig | null>(null);
+  const [nlRequirement, setNlRequirement] = useState<string>('');
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -210,6 +547,16 @@ const AgCDPromptEdit: React.FC = () => {
       setPolicyType(template.type);
     }
   }, [currentId, template, isEditMode]);
+
+  // Handle URL parameters for template mode
+  useEffect(() => {
+    if (urlMode === 'template') {
+      setEditMode('template');
+      if (urlRequirement) {
+        setNlRequirement(decodeURIComponent(urlRequirement));
+      }
+    }
+  }, [urlMode, urlRequirement]);
 
   // Group queues by profile for the side panel
   const profilesWithQueues = engagementProfiles.map(profile => {
@@ -425,6 +772,57 @@ const AgCDPromptEdit: React.FC = () => {
         </div>
       </div>
 
+      {/* Edit Mode Toggle - moved above Policy Behavior Card, only show in non-copilot mode */}
+      {!inCopilotMode && (
+        <div className="edit-mode-card">
+          <div className="edit-mode-toggle">
+            <span className="edit-mode-label">Edit Mode:</span>
+            <div className="toggle-button-group">
+              <button
+                className={`toggle-btn ${editMode === 'simple' ? 'active' : ''}`}
+                onClick={() => setEditMode('simple')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 13.5 2h-11zM2 3.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9z"/>
+                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                Simple Text
+              </button>
+              <button
+                className={`toggle-btn ${editMode === 'builder' ? 'active' : ''}`}
+                onClick={() => setEditMode('builder')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
+                  <path d="M10.5 8a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm0 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+                </svg>
+                Configurable Builder
+              </button>
+              <button
+                className={`toggle-btn toggle-btn-copilot ${editMode === 'copilot' ? 'active' : ''}`}
+                onClick={() => setEditMode('copilot')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
+                Copilot
+              </button>
+              <button
+                className={`toggle-btn toggle-btn-template ${editMode === 'template' ? 'active' : ''}`}
+                onClick={() => setEditMode('template')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 3H1v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6z"/>
+                  <path d="M2 9.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                Template Based
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Policy Behavior Card */}
       <div className="edit-card">
         {/* Policy Behavior Header and Trigger/Status Row */}
@@ -465,50 +863,25 @@ const AgCDPromptEdit: React.FC = () => {
           </div>
         </div>
 
-        {/* Edit Mode Toggle - only show in non-copilot mode */}
-        {!inCopilotMode && (
-          <div className="edit-mode-toggle">
-            <span className="edit-mode-label">Edit Mode:</span>
-            <div className="toggle-button-group">
-              <button
-                className={`toggle-btn ${editMode === 'simple' ? 'active' : ''}`}
-                onClick={() => setEditMode('simple')}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 13.5 2h-11zM2 3.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9z"/>
-                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
-                </svg>
-                Simple Text
-              </button>
-              <button
-                className={`toggle-btn ${editMode === 'builder' ? 'active' : ''}`}
-                onClick={() => setEditMode('builder')}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
-                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
-                  <path d="M10.5 8a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm0 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
-                </svg>
-                Configurable Builder
-              </button>
-              <button
-                className={`toggle-btn toggle-btn-copilot ${editMode === 'copilot' ? 'active' : ''}`}
-                onClick={() => setEditMode('copilot')}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                </svg>
-                Copilot
-              </button>
+        {/* Conditional rendering based on edit mode */}
+        {editMode === 'simple' && !inCopilotMode && (
+          /* Policy Behavior Textarea - Full Width */
+          <div className="policy-behavior-textarea-section">
+            <textarea
+              className="policy-behavior-textarea"
+              value={policyBehavior}
+              onChange={(e) => setPolicyBehavior(e.target.value)}
+              rows={8}
+            />
+            <div className="policy-behavior-hint-text">
+              Only describe condition and actions. Do not mention queues or profiles in this section
             </div>
           </div>
         )}
-
-        {/* Conditional rendering based on edit mode */}
-        {(editMode === 'simple' || inCopilotMode) && (
-          /* Policy Behavior Textarea - Full Width */
+        {inCopilotMode && (
+          /* Editable Policy Display for Copilot Mode */
           <div className="policy-behavior-textarea-section">
-            {inCopilotMode && policyBehavior && (
+            {policyBehavior && (
               <div className="copilot-generated-badge-inline">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
@@ -516,16 +889,19 @@ const AgCDPromptEdit: React.FC = () => {
                 Generated by Copilot
               </div>
             )}
-            <textarea
-              className={`policy-behavior-textarea ${inCopilotMode ? 'copilot-generated-textarea' : ''}`}
-              value={policyBehavior}
-              onChange={(e) => setPolicyBehavior(e.target.value)}
-              rows={inCopilotMode ? 12 : 8}
-              readOnly={inCopilotMode}
-            />
-            {!inCopilotMode && (
-              <div className="policy-behavior-hint-text">
-                Only describe condition and actions. Do not mention queues or profiles in this section
+            {policyConfig ? (
+              <EditablePolicyDisplay
+                config={policyConfig}
+                onConfigChange={(newConfig) => {
+                  setPolicyConfig(newConfig);
+                  // Regenerate prompt from updated config
+                  const newPrompt = generatePromptFromConfig(newConfig);
+                  setPolicyBehavior(newPrompt);
+                }}
+              />
+            ) : (
+              <div className="copilot-waiting-message">
+                <p>Use the Copilot chat on the left to describe your routing requirements. The generated policy will appear here.</p>
               </div>
             )}
           </div>
@@ -535,6 +911,19 @@ const AgCDPromptEdit: React.FC = () => {
           <div className="policy-behavior-builder-section">
             <TemplatePromptEditor
               onPromptChange={(prompt) => setPolicyBehavior(prompt)}
+            />
+          </div>
+        )}
+        {editMode === 'template' && !inCopilotMode && (
+          /* Template Based Editor */
+          <div className="policy-behavior-builder-section template-full-width">
+            <TemplateBasedEditor
+              initialRequirement={nlRequirement}
+              scenarioId={urlScenario || undefined}
+              onPolicyGenerated={(prompt, config) => {
+                setPolicyBehavior(prompt);
+                setPolicyConfig(config);
+              }}
             />
           </div>
         )}
@@ -605,6 +994,7 @@ const AgCDPromptEdit: React.FC = () => {
             <CopilotPromptEditor
               scenario={promptName || 'Assignment Policy'}
               onPromptGenerated={(prompt) => setPolicyBehavior(prompt)}
+              onPolicyConfigChange={(config) => setPolicyConfig(config)}
             />
           </div>
 
