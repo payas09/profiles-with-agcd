@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { APP_CONFIG } from '../config';
 import './AgCDHome.css';
 
 // Prompt gallery data structure with cards
@@ -164,7 +165,7 @@ const AgCDHome: React.FC = () => {
         setSelectedScenario(scenario);
       }
       // Clear URL parameters after reading them
-      window.history.replaceState({}, '', '/profiles-with-agcd/agcd');
+      window.history.replaceState({}, '', `${APP_CONFIG.basePath}/agcd`);
     }
   }, []);
 

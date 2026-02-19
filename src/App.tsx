@@ -17,6 +17,7 @@ import QueueEdit from './components/QueueEdit';
 import AgCDHome from './components/AgCDHome';
 import AgCDPromptEdit from './components/AgCDPromptEdit';
 import AgCDPlaybook from './components/AgCDPlaybook';
+import { APP_CONFIG } from './config';
 import './App.css';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -54,7 +55,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   return (
-    <Router basename="/profiles-with-agcd">
+    <Router basename={APP_CONFIG.basePath}>
       <Layout>
         <Routes>
           <Route path="/" element={<MainContent />} />
