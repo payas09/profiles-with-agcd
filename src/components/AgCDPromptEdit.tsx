@@ -185,14 +185,6 @@ interface ProfileWithQueues {
   queues: string[];
 }
 
-// User attributes for editable display
-const userAttributeDefinitions = [
-  { id: 'CSAT', label: 'CSAT Score', type: 'number', placeholder: 'e.g., 7' },
-  { id: 'Skills', label: 'Skills', values: ['Billing Expert', 'Technical Support', 'Fraud Investigation', 'Sales', 'General Support'] },
-  { id: 'Language', label: 'Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin'] },
-  { id: 'ResolutionRate', label: 'Resolution Rate', type: 'percentage', placeholder: 'e.g., 85%' },
-];
-
 // Generate prompt from policy config
 const generatePromptFromConfig = (config: PolicyConfig): string => {
   const lines: string[] = [];
@@ -920,7 +912,7 @@ const AgCDPromptEdit: React.FC = () => {
             <TemplateBasedEditor
               initialRequirement={nlRequirement}
               scenarioId={urlScenario || undefined}
-              onPolicyGenerated={(prompt, config) => {
+              onPromptGenerated={(prompt: string, config: PolicyConfig) => {
                 setPolicyBehavior(prompt);
                 setPolicyConfig(config);
               }}

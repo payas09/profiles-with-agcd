@@ -147,7 +147,7 @@ interface CopilotPromptEditorProps {
 // ============================================
 
 const CopilotPromptEditor: React.FC<CopilotPromptEditorProps> = ({
-  scenario = 'Assignment Policy',
+  scenario: _scenario = 'Assignment Policy',
   onPromptGenerated,
   onPolicyConfigChange
 }) => {
@@ -163,7 +163,7 @@ const CopilotPromptEditor: React.FC<CopilotPromptEditorProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioTemplate | null>(null);
   const [conditionRows, setConditionRows] = useState<ConditionRow[]>([]);
-  const [lookbackDays, setLookbackDays] = useState(14);
+  const [lookbackDays, _setLookbackDays] = useState(14);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 

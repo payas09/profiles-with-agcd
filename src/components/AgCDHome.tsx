@@ -164,7 +164,7 @@ const AgCDHome: React.FC = () => {
         setSelectedScenario(scenario);
       }
       // Clear URL parameters after reading them
-      window.history.replaceState({}, '', '/agcd-with-profiles/agcd');
+      window.history.replaceState({}, '', '/profiles-with-agcd/agcd');
     }
   }, []);
 

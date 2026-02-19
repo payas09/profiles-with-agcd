@@ -463,7 +463,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     lines.push(`Get ${varParts.join(' and ')}.`);
 
     // Condition branches
-    branches.forEach((branch, idx) => {
+    branches.forEach((branch) => {
       // Filter out disabled variables for this branch
       const activeVariables = allSelectedVariables.filter(
         v => !(branch.disabledVariables || []).includes(v.id)
@@ -874,7 +874,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
               </div>
 
               {/* Condition Branches */}
-              {branches.map((branch, branchIdx) => {
+              {branches.map((branch) => {
                 const activeVariables = allSelectedVariables.filter(
                   v => !(branch.disabledVariables || []).includes(v.id)
                 );
