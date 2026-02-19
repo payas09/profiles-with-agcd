@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './AgCDPlaybook.css';
-import { getAllPrompts, deletePrompt, duplicatePrompt, PromptData } from '../utils/promptStorage';
+import { getAllPrompts, deletePrompt, duplicatePrompt, isNewPolicy, PromptData } from '../utils/promptStorage';
 
 const AgCDPlaybook: React.FC = () => {
   const navigate = useNavigate();
@@ -275,13 +275,18 @@ const AgCDPlaybook: React.FC = () => {
                 filteredPolicies.map((policy) => (
                   <tr key={policy.id}>
                     <td>
-                      <span
-                        className="policy-name-link-text"
-                        onClick={() => handlePolicyClick(policy.id)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {policy.promptName}
-                      </span>
+                      <div className="policy-name-cell">
+                        <span
+                          className="policy-name-link-text"
+                          onClick={() => handlePolicyClick(policy.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {policy.promptName}
+                        </span>
+                        {isNewPolicy(policy) && (
+                          <span className="new-policy-tag">New</span>
+                        )}
+                      </div>
                     </td>
                     <td className="trigger-column-text">
                       {policy.selectedTrigger ?

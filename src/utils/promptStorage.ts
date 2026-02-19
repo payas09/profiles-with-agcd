@@ -19,6 +19,7 @@ export interface PromptData {
   status: 'Draft' | 'Published';
   lastModified: string;
   type: string;
+  createdAt?: number; // Timestamp for sorting and "New" tag
 }
 
 // Load from localStorage
@@ -110,7 +111,13 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
 
 export const savePrompt = (promptId: string, data: PromptData) => {
   const prompts = loadFromStorage();
-  prompts.set(promptId, { ...data, lastModified: getTimeAgo(new Date()) });
+  const existing = prompts.get(promptId);
+  const now = Date.now();
+  prompts.set(promptId, {
+    ...data,
+    lastModified: getTimeAgo(new Date()),
+    createdAt: existing?.createdAt || now // Preserve original createdAt or set new one
+  });
   saveToStorage(prompts);
 };
 
@@ -122,7 +129,20 @@ export const getPrompt = (promptId: string): PromptData | undefined => {
 export const getAllPrompts = (): PromptData[] => {
   const prompts = loadFromStorage();
   initializeSamplePolicies(prompts);
-  return Array.from(prompts.values());
+  // Sort by createdAt (newest first), policies without createdAt go to the end
+  return Array.from(prompts.values()).sort((a, b) => {
+    const aTime = a.createdAt || 0;
+    const bTime = b.createdAt || 0;
+    return bTime - aTime;
+  });
+};
+
+// Check if a policy is "new" (created within last 24 hours)
+export const isNewPolicy = (policy: PromptData): boolean => {
+  if (!policy.createdAt) return false;
+  const now = Date.now();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  return (now - policy.createdAt) < oneDayMs;
 };
 
 export const deletePrompt = (promptId: string) => {

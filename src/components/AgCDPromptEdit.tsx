@@ -915,6 +915,22 @@ const AgCDPromptEdit: React.FC = () => {
               onPromptGenerated={(prompt: string, config: PolicyConfig) => {
                 setPolicyBehavior(prompt);
                 setPolicyConfig(config);
+
+                // Save the policy and navigate to Playbook
+                const id = isEditMode ? currentId : `template-${Date.now()}`;
+                const promptData = {
+                  id,
+                  promptName: promptName || 'Template-based Policy',
+                  policyBehavior: prompt,
+                  selectedProfiles,
+                  selectionMode,
+                  selectedTrigger,
+                  status: 'Draft' as const,
+                  lastModified: 'Just now',
+                  type: policyType
+                };
+                savePrompt(id, promptData);
+                navigate('/agcd/playbook');
               }}
             />
           </div>
