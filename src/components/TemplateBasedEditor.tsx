@@ -85,6 +85,7 @@ interface MultiSelectDropdownProps {
   placeholder?: string;
   excludeMode?: boolean;
   onExcludeModeChange?: (exclude: boolean) => void;
+  hasError?: boolean;
 }
 
 const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -93,7 +94,8 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   onChange,
   placeholder = 'choose',
   excludeMode = false,
-  onExcludeModeChange
+  onExcludeModeChange,
+  hasError = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const isAllSelected = selected.length === options.length && options.every(opt => selected.includes(opt));
@@ -128,7 +130,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     <div className="multi-select-dropdown">
       <button
         type="button"
-        className={`multi-select-trigger ${excludeMode ? 'exclude-mode' : ''} ${isAllSelected && !excludeMode ? 'all-selected' : ''}`}
+        className={`multi-select-trigger ${excludeMode ? 'exclude-mode' : ''} ${isAllSelected && !excludeMode ? 'all-selected' : ''} ${hasError ? 'has-error' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className={selected.length > 0 ? 'has-selection' : 'placeholder'}>
@@ -237,6 +239,9 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   // Section collapse states
   const [isVariablesSectionOpen, setIsVariablesSectionOpen] = useState(true);
   const [isBranchesSectionOpen, setIsBranchesSectionOpen] = useState(true);
+
+  // Validation errors
+  const [validationErrors, setValidationErrors] = useState<{ branchId: string; variableId: string; message: string }[]>([]);
 
   // Get all selected variables
   const allSelectedVariables: SelectedVariable[] = [...selectedContextVars, ...selectedLWIVars];
@@ -520,8 +525,43 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     return lines.join('\n');
   };
 
+  // Validate all branches have values for active variables
+  const validateBranches = (): { branchId: string; variableId: string; message: string }[] => {
+    const errors: { branchId: string; variableId: string; message: string }[] = [];
+
+    branches.forEach((branch, branchIndex) => {
+      // Get active variables (not disabled) for this branch
+      const activeVariables = allSelectedVariables.filter(
+        v => !(branch.disabledVariables || []).includes(v.id)
+      );
+
+      // Check each active variable has values selected
+      activeVariables.forEach(v => {
+        const values = branch.variableValues[v.id] || [];
+        if (values.length === 0) {
+          errors.push({
+            branchId: branch.id,
+            variableId: v.id,
+            message: `Branch ${branchIndex + 1}: Please select a value for "${v.description || v.label}"`
+          });
+        }
+      });
+    });
+
+    return errors;
+  };
+
   // Handle save/apply
   const handleApplyTemplate = () => {
+    // Validate first
+    const errors = validateBranches();
+    setValidationErrors(errors);
+
+    if (errors.length > 0) {
+      // Don't proceed if there are errors
+      return;
+    }
+
     const prompt = generateFinalPrompt();
 
     const config: PolicyConfig = {
@@ -551,6 +591,11 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     if (onPolicyConfigChange) {
       onPolicyConfigChange(config);
     }
+  };
+
+  // Check if a specific variable in a branch has an error
+  const hasError = (branchId: string, variableId: string): boolean => {
+    return validationErrors.some(e => e.branchId === branchId && e.variableId === variableId);
   };
 
   // Get available context variables (not already selected)
@@ -902,10 +947,17 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                               <MultiSelectDropdown
                                 options={v.values}
                                 selected={branch.variableValues[v.id] || []}
-                                onChange={(values) => handleBranchValueChange(branch.id, v.id, values)}
+                                onChange={(values) => {
+                                  handleBranchValueChange(branch.id, v.id, values);
+                                  // Clear errors when value is selected
+                                  if (values.length > 0) {
+                                    setValidationErrors(prev => prev.filter(e => !(e.branchId === branch.id && e.variableId === v.id)));
+                                  }
+                                }}
                                 placeholder="choose"
                                 excludeMode={branch.variableExcludeMode?.[v.id] || false}
                                 onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
+                                hasError={hasError(branch.id, v.id)}
                               />
                             </span>
                           </React.Fragment>
@@ -1085,6 +1137,23 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                 In case of no previous expert, assign to the next best expert in the queue.
               </div>
             </div>
+
+            {/* Validation Errors */}
+            {validationErrors.length > 0 && (
+              <div className="validation-errors">
+                <div className="validation-error-header">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                  </svg>
+                  <span>Please fix the following errors:</span>
+                </div>
+                <ul className="validation-error-list">
+                  {validationErrors.map((error, idx) => (
+                    <li key={idx}>{error.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Apply Button */}
             <div className="template-actions">

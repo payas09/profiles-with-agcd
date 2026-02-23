@@ -692,6 +692,23 @@
   font-weight: 600;
 }
 
+/* Error state for multi-select */
+.multi-select-trigger.has-error {
+  background-color: #fef0f1;
+  border-color: #d13438;
+  animation: shake 0.5s ease-in-out;
+}
+
+.multi-select-trigger.has-error .placeholder {
+  color: #d13438;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
+}
+
 /* All option in dropdown */
 .multi-select-option.all-option {
   border-bottom: 1px solid #e1dfdd;
@@ -895,6 +912,44 @@
   border-style: solid;
   border-color: #0078d4;
   color: #323130;
+}
+
+/* Validation Errors */
+.validation-errors {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #fef0f1;
+  border: 1px solid #d13438;
+  border-radius: 4px;
+}
+
+.validation-error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d13438;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.validation-error-header svg {
+  flex-shrink: 0;
+}
+
+.validation-error-list {
+  margin: 0;
+  padding: 0 0 0 24px;
+  color: #a4262c;
+  font-size: 13px;
+}
+
+.validation-error-list li {
+  margin-bottom: 4px;
+}
+
+.validation-error-list li:last-child {
+  margin-bottom: 0;
 }
 
 /* Template Actions */
