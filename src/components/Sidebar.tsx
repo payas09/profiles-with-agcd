@@ -82,6 +82,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>Intent</span>
           </a>
+          <Link to="/user-groups" className="nav-item">
+            <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="6" cy="5" r="2" />
+              <circle cx="10" cy="5" r="2" />
+              <path d="M2 12c0-2 1.5-3 4-3s4 1 4 3" />
+              <path d="M6 12c0-2 1.5-3 4-3s4 1 4 3" />
+            </svg>
+            <span>User groups</span>
+          </Link>
           <Link to="/queues" className="nav-item">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />

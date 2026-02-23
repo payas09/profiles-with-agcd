@@ -1,23 +1,26 @@
 /**
- * Template-Based Editor for AgCD Policy Creation
+ * Ring Expansion Editor - Specialized template editor for ring expansion scenarios
  *
- * IMPORTANT: For creating new template editors or modifying existing ones,
+ * IMPORTANT: For creating new template editors or modifying this one,
  * refer to the Template Editor Guide: src/components/TEMPLATE_EDITOR_GUIDE.md
  *
- * This guide documents:
- * - Required structure and patterns for all template editors
- * - CSS classes to use from TemplateBasedEditor.css
- * - How to add new scenario-specific editors
- * - Shared components (MultiSelectDropdown, etc.)
+ * This editor follows the standard template structure documented in the guide.
  */
 
 import React, { useState } from 'react';
 import './TemplateBasedEditor.css';
-import RingExpansionEditor from './RingExpansionEditor';
 
-// ============================================
-// Variables Configuration
-// ============================================
+// User groups data
+const userGroups = [
+  { id: 'ug1', name: 'Senior Support Agents' },
+  { id: 'ug2', name: 'Technical Specialists' },
+  { id: 'ug3', name: 'Standard Support Team' },
+  { id: 'ug4', name: 'Escalation Team' },
+  { id: 'ug5', name: 'VIP Support Team' },
+  { id: 'ug6', name: 'Billing Specialists' },
+  { id: 'ug7', name: 'Fraud Prevention Team' },
+  { id: 'ug8', name: 'Account Management Team' },
+];
 
 const contextVariables = [
   { id: 'IsVIP', label: 'Is VIP Customer', values: ['True', 'False'] },
@@ -25,8 +28,6 @@ const contextVariables = [
   { id: 'Language', label: 'Preferred Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese'] },
   { id: 'Region', label: 'Customer Region', values: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa'] },
   { id: 'AccountType', label: 'Account Type', values: ['Premium', 'Standard', 'Trial', 'Free', 'Enterprise', 'Government', 'Education'] },
-  { id: 'LoyaltyYears', label: 'Years as Customer', values: ['< 1 year', '1-3 years', '3-5 years', '5+ years', '10+ years'] },
-  { id: 'SpendTier', label: 'Spend Tier', values: ['High Value', 'Medium Value', 'Low Value', 'New Customer'] },
 ];
 
 const liveWorkItemVariables = [
@@ -34,43 +35,15 @@ const liveWorkItemVariables = [
   { id: 'Channel', label: 'Channel', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
   { id: 'Priority', label: 'Priority', values: ['Urgent', 'High', 'Medium', 'Low'] },
   { id: 'Sentiment', label: 'Customer Sentiment', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
-  { id: 'ProductCategory', label: 'Product Category', values: ['Software', 'Hardware', 'Services', 'Subscription', 'Support', 'Training'] },
-  { id: 'IssueComplexity', label: 'Issue Complexity', values: ['Simple', 'Moderate', 'Complex', 'Escalation Required'] },
 ];
 
-const actionOptions = [
-  { id: 'preferred-expert', label: 'Preferred Expert' },
-  { id: 'previous-expert', label: 'Previous Expert' },
-];
+const waitTimeOptions = [15, 30, 45, 60, 90, 120, 180, 300];
 
-const lookbackOptions = [7, 10, 14, 20, 30, 60, 90];
-
-const userAttributeOptions = [
-  { id: 'Skills', label: 'Skills', values: ['Billing', 'Technical Support', 'Sales', 'Fraud', 'Account Management', 'Escalation', 'VIP Support', 'Returns'] },
-  { id: 'Language', label: 'Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese', 'Hindi'] },
-  { id: 'Region', label: 'Region', values: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa'] },
-  { id: 'CSAT', label: 'CSAT Score', values: ['5', '6', '7', '8', '9', '10'] },
-  { id: 'ResolutionRate', label: 'Resolution Rate', values: ['70%', '75%', '80%', '85%', '90%', '95%'] },
-  { id: 'Availability', label: 'Availability', values: ['Available', 'Busy', 'Away'] },
-  { id: 'ExpertiseLevel', label: 'Expertise Level', values: ['Junior', 'Mid', 'Senior', 'Expert', 'Lead'] },
-  { id: 'Certification', label: 'Certification', values: ['Basic', 'Advanced', 'Expert', 'Master'] },
-];
-
-// Example Playbook
-const examplePlaybook = `Get the customer's VIP status from ContextVariable.IsVIP and the Intent of the conversation from LiveWorkItem.Intent.
-
-For Customer where Is VIP Customer is True AND Conversation Intent is Fraud Assist, offer to Preferred Expert.
-If no preferred agents are available, assign the conversation to an expert who has interacted with the customer in the last 10 days and has minimum CSAT of 7.
-
-For Customer where Is VIP Customer is True AND Conversation Intent is Billing Inquiry, offer to Previous Expert who has interacted with the customer in the last 20 days and has minimum CSAT of 6.
-
-For Customer where Is VIP Customer is False, offer to Previous Expert who has interacted with the customer in the last 60 days.
-
-In case of no previous expert, assign to the next best expert in the queue.`;
-
-// ============================================
-// Interfaces
-// ============================================
+// Example Playbook for Ring Expansion
+const examplePlaybook = `Assign the conversations to Senior Support Agents or Technical Specialists.
+If no support representative is available or the conversation remains unassigned for 30 seconds, expand to Standard Support Team.
+If the conversation is still unassigned after 60 seconds, expand to Escalation Team.
+Do not open the conversation to any other users in the queue.`;
 
 interface SelectedVariable {
   id: string;
@@ -80,18 +53,40 @@ interface SelectedVariable {
   values: string[];
 }
 
-interface ConditionBranch {
+interface ExpansionRule {
   id: string;
-  variableValues: { [variableId: string]: string[] };
-  variableExcludeMode: { [variableId: string]: boolean }; // true = exclude mode ("All except"), false = include mode
-  disabledVariables: string[]; // Variables to skip/grey out for this branch
-  action: string;
-  lookbackDays?: number;
-  enabledAttributes: { [attrId: string]: string[] }; // Enabled attributes with their values (multi-select)
-  attributeExcludeMode: { [attrId: string]: boolean }; // true = exclude mode for attributes
+  waitTimeSeconds: number;
+  userGroupIds: string[];
 }
 
-// Multi-Select Dropdown Component with Include/Exclude mode
+interface RingExpansionBranch {
+  id: string;
+  variableValues: { [variableId: string]: string[] };
+  variableExcludeMode: { [variableId: string]: boolean };
+  disabledVariables: string[];
+  initialUserGroups: string[];
+  expansionRules: ExpansionRule[];
+}
+
+interface PolicyConfig {
+  selectedVariables: { id: string; label: string; type: 'context' | 'lwi' }[];
+  conditions: {
+    id: string;
+    conditions: { variableId: string; variableLabel: string; variableType: 'context' | 'lwi'; values: string[] }[];
+    action: 'preferred-expert' | 'previous-expert' | 'queue-strategy';
+    lookbackPeriod?: number;
+    userAttributes?: { id: string; value: string }[];
+  }[];
+  defaultAction: 'queue-strategy';
+}
+
+interface RingExpansionEditorProps {
+  scenarioId: string;
+  initialRequirement?: string;
+  onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
+}
+
+// Multi-Select Dropdown Component (same as TemplateBasedEditor)
 interface MultiSelectDropdownProps {
   options: string[];
   selected: string[];
@@ -158,7 +153,6 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         <>
           <div className="multi-select-backdrop" onClick={() => setIsOpen(false)} />
           <div className="multi-select-menu">
-            {/* Include/Exclude Mode Toggle */}
             {onExcludeModeChange && (
               <div className="multi-select-mode-toggle">
                 <button
@@ -180,7 +174,6 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             <div className="multi-select-hint">
               {excludeMode ? 'Select values to exclude:' : 'Select values to include:'}
             </div>
-            {/* All Option - only show in Include mode */}
             {!excludeMode && (
               <label className="multi-select-option all-option">
                 <input
@@ -208,58 +201,22 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   );
 };
 
-interface PolicyConfig {
-  selectedVariables: { id: string; label: string; type: 'context' | 'lwi' }[];
-  conditions: {
-    id: string;
-    conditions: { variableId: string; variableLabel: string; variableType: 'context' | 'lwi'; values: string[] }[];
-    action: 'preferred-expert' | 'previous-expert' | 'queue-strategy';
-    lookbackPeriod?: number;
-    userAttributes?: { id: string; value: string }[];
-  }[];
-  defaultAction: 'queue-strategy';
-}
-
-interface TemplateBasedEditorProps {
-  scenarioName?: string;
-  initialRequirement?: string;
-  scenarioId?: string;
-  onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
-  onPolicyConfigChange?: (config: PolicyConfig) => void;
-}
-
-// ============================================
-// Main Component
-// ============================================
-
-const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
-  initialRequirement,
+const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
   scenarioId,
-  onPromptGenerated,
-  onPolicyConfigChange
+  initialRequirement,
+  onPromptGenerated
 }) => {
-  // Check if this is a ring expansion scenario
-  const isRingExpansionScenario = scenarioId === 'ring-expansion-restricted' || scenarioId === 'ring-expansion-open';
+  const isRestrictedFallback = scenarioId === 'ring-expansion-restricted';
 
-  // If ring expansion scenario, render the specialized editor
-  if (isRingExpansionScenario) {
-    return (
-      <RingExpansionEditor
-        scenarioId={scenarioId}
-        initialRequirement={initialRequirement}
-        onPromptGenerated={onPromptGenerated}
-      />
-    );
-  }
-  // Selected variables (multiple)
+  // Selected variables
   const [selectedContextVars, setSelectedContextVars] = useState<SelectedVariable[]>([]);
   const [selectedLWIVars, setSelectedLWIVars] = useState<SelectedVariable[]>([]);
 
   // Number of branches (default 2, range 1-5)
   const [numberOfBranches, setNumberOfBranches] = useState<number>(2);
 
-  // Branch configuration (generated when template is created)
-  const [branches, setBranches] = useState<ConditionBranch[]>([]);
+  // Branch configuration
+  const [branches, setBranches] = useState<RingExpansionBranch[]>([]);
 
   // Template generated flag
   const [isTemplateGenerated, setIsTemplateGenerated] = useState(false);
@@ -269,12 +226,12 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   const [isBranchesSectionOpen, setIsBranchesSectionOpen] = useState(true);
 
   // Validation errors
-  const [validationErrors, setValidationErrors] = useState<{ branchId: string; variableId: string; message: string }[]>([]);
+  const [validationErrors, setValidationErrors] = useState<{ branchId: string; fieldId: string; message: string }[]>([]);
 
   // Get all selected variables
   const allSelectedVariables: SelectedVariable[] = [...selectedContextVars, ...selectedLWIVars];
 
-  // Add a context variable
+  // Add context variable
   const addContextVariable = (varId: string) => {
     if (!varId || selectedContextVars.find(v => v.id === varId)) return;
     const variable = contextVariables.find(v => v.id === varId);
@@ -287,19 +244,16 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     }
   };
 
-  // Remove a context variable
   const removeContextVariable = (varId: string) => {
     setSelectedContextVars(prev => prev.filter(v => v.id !== varId));
   };
 
-  // Update context variable description
   const updateContextVarDescription = (varId: string, description: string) => {
     setSelectedContextVars(prev => prev.map(v =>
       v.id === varId ? { ...v, description } : v
     ));
   };
 
-  // Add a LWI variable
   const addLWIVariable = (varId: string) => {
     if (!varId || selectedLWIVars.find(v => v.id === varId)) return;
     const variable = liveWorkItemVariables.find(v => v.id === varId);
@@ -312,41 +266,69 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     }
   };
 
-  // Remove a LWI variable
   const removeLWIVariable = (varId: string) => {
     setSelectedLWIVars(prev => prev.filter(v => v.id !== varId));
   };
 
-  // Update LWI variable description
   const updateLWIVarDescription = (varId: string, description: string) => {
     setSelectedLWIVars(prev => prev.map(v =>
       v.id === varId ? { ...v, description } : v
     ));
   };
 
-  // Add a new branch
-  const addBranch = () => {
-    const newBranch: ConditionBranch = {
-      id: `branch-${Date.now()}`,
-      variableValues: {},
-      variableExcludeMode: {},
-      disabledVariables: [],
-      action: 'preferred-expert',
-      lookbackDays: 14,
-      enabledAttributes: {},
-      attributeExcludeMode: {}
-    };
-    setBranches(prev => [...prev, newBranch]);
-  };
+  const availableContextVars = contextVariables.filter(
+    v => !selectedContextVars.find(sv => sv.id === v.id)
+  );
+  const availableLWIVars = liveWorkItemVariables.filter(
+    v => !selectedLWIVars.find(sv => sv.id === v.id)
+  );
 
-  // Remove a branch
-  const removeBranch = (branchId: string) => {
-    if (branches.length > 1) {
-      setBranches(prev => prev.filter(b => b.id !== branchId));
+  const canGenerateTemplate = numberOfBranches >= 1;
+
+  const handleGenerateTemplate = () => {
+    const generatedBranches: RingExpansionBranch[] = [];
+    for (let i = 0; i < numberOfBranches; i++) {
+      generatedBranches.push({
+        id: `branch-${i}`,
+        variableValues: {},
+        variableExcludeMode: {},
+        disabledVariables: [],
+        initialUserGroups: [],
+        expansionRules: [
+          { id: `expansion-${i}-0`, waitTimeSeconds: 30, userGroupIds: [] }
+        ]
+      });
     }
+    setBranches(generatedBranches);
+    setIsTemplateGenerated(true);
+    setIsVariablesSectionOpen(false);
+    setIsBranchesSectionOpen(false);
   };
 
-  // Toggle variable enabled/disabled for a branch
+  const handleBranchValueChange = (branchId: string, variableId: string, values: string[]) => {
+    setBranches(prev => prev.map(branch => {
+      if (branch.id === branchId) {
+        return {
+          ...branch,
+          variableValues: { ...branch.variableValues, [variableId]: values }
+        };
+      }
+      return branch;
+    }));
+  };
+
+  const handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
+    setBranches(prev => prev.map(branch => {
+      if (branch.id === branchId) {
+        return {
+          ...branch,
+          variableExcludeMode: { ...(branch.variableExcludeMode || {}), [variableId]: exclude }
+        };
+      }
+      return branch;
+    }));
+  };
+
   const toggleVariableForBranch = (branchId: string, variableId: string) => {
     setBranches(prev => prev.map(branch => {
       if (branch.id === branchId) {
@@ -362,142 +344,121 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     }));
   };
 
-  // Handle branch value change (multi-select)
-  const handleBranchValueChange = (branchId: string, variableId: string, values: string[]) => {
+  const handleInitialUserGroupsChange = (branchId: string, userGroupIds: string[]) => {
+    setBranches(prev => prev.map(branch => {
+      if (branch.id === branchId) {
+        return { ...branch, initialUserGroups: userGroupIds };
+      }
+      return branch;
+    }));
+  };
+
+  const handleExpansionUserGroupsChange = (branchId: string, ruleId: string, userGroupIds: string[]) => {
     setBranches(prev => prev.map(branch => {
       if (branch.id === branchId) {
         return {
           ...branch,
-          variableValues: { ...branch.variableValues, [variableId]: values }
+          expansionRules: branch.expansionRules.map(rule =>
+            rule.id === ruleId ? { ...rule, userGroupIds } : rule
+          )
         };
       }
       return branch;
     }));
   };
 
-  // Handle variable exclude mode toggle
-  const handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
+  const handleExpansionWaitTimeChange = (branchId: string, ruleId: string, waitTime: number) => {
     setBranches(prev => prev.map(branch => {
       if (branch.id === branchId) {
         return {
           ...branch,
-          variableExcludeMode: { ...(branch.variableExcludeMode || {}), [variableId]: exclude }
+          expansionRules: branch.expansionRules.map(rule =>
+            rule.id === ruleId ? { ...rule, waitTimeSeconds: waitTime } : rule
+          )
         };
       }
       return branch;
     }));
   };
 
-  // Handle branch action change
-  const handleBranchActionChange = (branchId: string, action: string) => {
+  const addExpansionRule = (branchId: string) => {
     setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return { ...branch, action };
-      }
-      return branch;
-    }));
-  };
-
-  // Handle branch lookback change
-  const handleBranchLookbackChange = (branchId: string, days: number) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return { ...branch, lookbackDays: days };
-      }
-      return branch;
-    }));
-  };
-
-  // Toggle attribute enabled/disabled for a branch
-  const toggleAttributeForBranch = (branchId: string, attrId: string) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        const isEnabled = branch.enabledAttributes && attrId in branch.enabledAttributes;
-        if (isEnabled) {
-          // Remove the attribute
-          const { [attrId]: _, ...rest } = branch.enabledAttributes || {};
-          return { ...branch, enabledAttributes: rest };
-        } else {
-          // Enable with empty array (user will select values)
-          return {
-            ...branch,
-            enabledAttributes: { ...(branch.enabledAttributes || {}), [attrId]: [] }
-          };
-        }
-      }
-      return branch;
-    }));
-  };
-
-  // Handle attribute values change (multi-select)
-  const handleAttributeValuesChange = (branchId: string, attrId: string, values: string[]) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
+      if (branch.id === branchId && branch.expansionRules.length < 4) {
+        const newRule: ExpansionRule = {
+          id: `expansion-${branchId}-${Date.now()}`,
+          waitTimeSeconds: 60,
+          userGroupIds: []
+        };
         return {
           ...branch,
-          enabledAttributes: { ...(branch.enabledAttributes || {}), [attrId]: values }
+          expansionRules: [...branch.expansionRules, newRule]
         };
       }
       return branch;
     }));
   };
 
-  // Handle attribute exclude mode toggle
-  const handleAttributeExcludeModeChange = (branchId: string, attrId: string, exclude: boolean) => {
+  const removeExpansionRule = (branchId: string, ruleId: string) => {
     setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
+      if (branch.id === branchId && branch.expansionRules.length > 1) {
         return {
           ...branch,
-          attributeExcludeMode: { ...(branch.attributeExcludeMode || {}), [attrId]: exclude }
+          expansionRules: branch.expansionRules.filter(rule => rule.id !== ruleId)
         };
       }
       return branch;
     }));
   };
 
-  // Check if can generate template (variables are now optional)
-  const canGenerateTemplate = numberOfBranches >= 1;
+  const addBranch = () => {
+    const newBranch: RingExpansionBranch = {
+      id: `branch-${Date.now()}`,
+      variableValues: {},
+      variableExcludeMode: {},
+      disabledVariables: [],
+      initialUserGroups: [],
+      expansionRules: [
+        { id: `expansion-new-0`, waitTimeSeconds: 30, userGroupIds: [] }
+      ]
+    };
+    setBranches(prev => [...prev, newBranch]);
+  };
 
-  // Generate template - creates branches based on the number input
-  const handleGenerateTemplate = () => {
-    // Generate branches based on numberOfBranches
-    const generatedBranches: ConditionBranch[] = [];
-    for (let i = 0; i < numberOfBranches; i++) {
-      generatedBranches.push({
-        id: `branch-${i}`,
-        variableValues: {},
-        variableExcludeMode: {},
-        disabledVariables: [],
-        action: 'preferred-expert',
-        lookbackDays: 14,
-        enabledAttributes: {},
-        attributeExcludeMode: {}
-      });
+  const removeBranch = (branchId: string) => {
+    if (branches.length > 1) {
+      setBranches(prev => prev.filter(b => b.id !== branchId));
     }
-    setBranches(generatedBranches);
-    setIsTemplateGenerated(true);
-    setIsVariablesSectionOpen(false);
-    setIsBranchesSectionOpen(false);
   };
 
-  // Generate final prompt from template
+  const getUserGroupName = (id: string) => {
+    const group = userGroups.find(g => g.id === id);
+    return group?.name || '';
+  };
+
+  const formatWaitTime = (seconds: number) => {
+    if (seconds >= 60) {
+      const mins = Math.floor(seconds / 60);
+      return `${mins} minute${mins > 1 ? 's' : ''}`;
+    }
+    return `${seconds} seconds`;
+  };
+
   const generateFinalPrompt = (): string => {
     const lines: string[] = [];
 
-    // Variable declaration line
-    const varParts = allSelectedVariables.map(v => {
-      const desc = v.description || v.label.toLowerCase();
-      if (v.type === 'context') {
-        return `the ${desc} from ContextVariable.${v.id}`;
-      } else {
-        return `the ${desc} from LiveWorkItem.${v.id}`;
-      }
-    });
-    lines.push(`Get ${varParts.join(' and ')}.`);
+    if (allSelectedVariables.length > 0) {
+      const varParts = allSelectedVariables.map(v => {
+        const desc = v.description || v.label.toLowerCase();
+        if (v.type === 'context') {
+          return `the ${desc} from ContextVariable.${v.id}`;
+        } else {
+          return `the ${desc} from LiveWorkItem.${v.id}`;
+        }
+      });
+      lines.push(`Get ${varParts.join(' and ')}.`);
+    }
 
-    // Condition branches
     branches.forEach((branch) => {
-      // Filter out disabled variables for this branch
       const activeVariables = allSelectedVariables.filter(
         v => !(branch.disabledVariables || []).includes(v.id)
       );
@@ -505,7 +466,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
       const conditionParts = activeVariables.map(v => {
         const values = branch.variableValues[v.id] || [];
         const isExclude = branch.variableExcludeMode?.[v.id] || false;
-        const isAllSelected = values.length === v.values.length && v.values.every(val => values.includes(val));
+        const isAllSelected = values.length === v.values.length;
         if (values.length === 0) {
           return `${v.description || v.label} is [choose value]`;
         }
@@ -518,59 +479,57 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         return `${v.description || v.label} is ${values.join(' or ')}`;
       });
 
-      const conditionText = conditionParts.length > 0 ? conditionParts.join(' AND ') : '[no conditions]';
+      const conditionText = conditionParts.length > 0 ? conditionParts.join(' AND ') : '';
 
-      // Build attribute text from enabled attributes
-      const enabledAttrs = branch.enabledAttributes || {};
-      const attrParts = Object.entries(enabledAttrs).map(([attrId, values]) => {
-        const attr = userAttributeOptions.find(a => a.id === attrId);
-        const isExclude = branch.attributeExcludeMode?.[attrId] || false;
-        if (values.length === 0) {
-          return `has ${attr?.label || attrId} of [choose value]`;
-        }
-        if (isExclude) {
-          return `has ${attr?.label || attrId} of All except ${values.join(', ')}`;
-        }
-        return `has ${attr?.label || attrId} of ${values.join(' or ')}`;
-      });
-      const attrText = attrParts.length > 0 ? ` and ${attrParts.join(' and ')}` : '';
+      const initialGroups = branch.initialUserGroups.map(id => getUserGroupName(id));
+      const initialGroupsText = initialGroups.length > 0 ? initialGroups.join(' or ') : '[choose user group]';
 
-      if (branch.action === 'preferred-expert') {
-        lines.push(`For Customer where ${conditionText}, offer to Preferred Expert.`);
-        // Show fallback line for preferred-expert action
-        const lookback = branch.lookbackDays || 14;
-        lines.push(`If no preferred agents are available, assign to an expert who has interacted with the customer in the last ${lookback} days${attrText}.`);
+      if (conditionText) {
+        lines.push(`For Customer where ${conditionText}, assign to ${initialGroupsText}.`);
       } else {
-        // Previous expert action
-        const lookback = branch.lookbackDays || 14;
-        lines.push(`For Customer where ${conditionText}, offer to Previous Expert.`);
-        lines.push(`Route to expert who has interacted with the customer in the last ${lookback} days${attrText}.`);
+        lines.push(`Assign the conversations to ${initialGroupsText}.`);
       }
+
+      branch.expansionRules.forEach((rule, ruleIdx) => {
+        const groupNames = rule.userGroupIds.map(id => getUserGroupName(id)).filter(Boolean);
+        const groupNamesText = groupNames.length > 0 ? groupNames.join(' or ') : '[choose user group(s)]';
+        const waitText = formatWaitTime(rule.waitTimeSeconds);
+
+        if (ruleIdx === 0) {
+          lines.push(`If no support representative is available or the conversation remains unassigned for ${waitText}, expand to ${groupNamesText}.`);
+        } else {
+          lines.push(`If the conversation is still unassigned after ${waitText}, expand to ${groupNamesText}.`);
+        }
+      });
     });
 
-    lines.push("In case of no previous expert, assign to the next best expert in the queue.");
+    if (isRestrictedFallback) {
+      lines.push('Do not open the conversation to any other users in the queue.');
+    } else {
+      lines.push('If the conversation still remains unassigned, assign to any member of the queue.');
+    }
 
     return lines.join('\n');
   };
 
-  // Validate all branches have values for active variables
-  const validateBranches = (): { branchId: string; variableId: string; message: string }[] => {
-    const errors: { branchId: string; variableId: string; message: string }[] = [];
+  const validateBranches = (): { branchId: string; fieldId: string; message: string }[] => {
+    const errors: { branchId: string; fieldId: string; message: string }[] = [];
 
     branches.forEach((branch, branchIndex) => {
-      // Get active variables (not disabled) for this branch
-      const activeVariables = allSelectedVariables.filter(
-        v => !(branch.disabledVariables || []).includes(v.id)
-      );
+      if (branch.initialUserGroups.length === 0) {
+        errors.push({
+          branchId: branch.id,
+          fieldId: 'initialUserGroups',
+          message: `Branch ${branchIndex + 1}: Please select initial user group(s)`
+        });
+      }
 
-      // Check each active variable has values selected
-      activeVariables.forEach(v => {
-        const values = branch.variableValues[v.id] || [];
-        if (values.length === 0) {
+      branch.expansionRules.forEach((rule, ruleIndex) => {
+        if (rule.userGroupIds.length === 0) {
           errors.push({
             branchId: branch.id,
-            variableId: v.id,
-            message: `Branch ${branchIndex + 1}: Please select a value for "${v.description || v.label}"`
+            fieldId: rule.id,
+            message: `Branch ${branchIndex + 1}: Please select user group(s) for expansion rule ${ruleIndex + 1}`
           });
         }
       });
@@ -579,14 +538,15 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     return errors;
   };
 
-  // Handle save/apply
+  const hasError = (branchId: string, fieldId: string): boolean => {
+    return validationErrors.some(e => e.branchId === branchId && e.fieldId === fieldId);
+  };
+
   const handleApplyTemplate = () => {
-    // Validate first
     const errors = validateBranches();
     setValidationErrors(errors);
 
     if (errors.length > 0) {
-      // Don't proceed if there are errors
       return;
     }
 
@@ -606,9 +566,8 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
           variableType: v.type,
           values: b.variableValues[v.id] || []
         })),
-        action: b.action as 'preferred-expert' | 'previous-expert' | 'queue-strategy',
-        lookbackPeriod: b.lookbackDays,
-        userAttributes: Object.entries(b.enabledAttributes || {}).map(([id, values]) => ({ id, value: values.join(', ') }))
+        action: 'queue-strategy' as const,
+        userAttributes: []
       })),
       defaultAction: 'queue-strategy'
     };
@@ -616,29 +575,11 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     if (onPromptGenerated) {
       onPromptGenerated(prompt, config);
     }
-    if (onPolicyConfigChange) {
-      onPolicyConfigChange(config);
-    }
   };
-
-  // Check if a specific variable in a branch has an error
-  const hasError = (branchId: string, variableId: string): boolean => {
-    return validationErrors.some(e => e.branchId === branchId && e.variableId === variableId);
-  };
-
-  // Get available context variables (not already selected)
-  const availableContextVars = contextVariables.filter(
-    v => !selectedContextVars.find(sv => sv.id === v.id)
-  );
-
-  // Get available LWI variables (not already selected)
-  const availableLWIVars = liveWorkItemVariables.filter(
-    v => !selectedLWIVars.find(sv => sv.id === v.id)
-  );
 
   return (
     <div className="template-editor-container">
-      {/* Header with requirement */}
+      {/* Requirement Banner */}
       {initialRequirement && (
         <div className="template-requirement-banner">
           <span className="req-icon">
@@ -651,18 +592,13 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         </div>
       )}
 
-      {/* Example Playbook Reference */}
+      {/* Example Playbook Section */}
       <div className="example-playbook-section">
         <div className="example-playbook-header">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
           </svg>
-          <span>Example Playbook</span>
-          <button className="example-toggle-btn" id="example-toggle">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M6 4l4 4-4 4"/>
-            </svg>
-          </button>
+          <span>Example Playbook - Ring Expansion ({isRestrictedFallback ? 'Restricted' : 'Open'} Fallback)</span>
         </div>
         <div className="example-playbook-content">
           <pre className="example-playbook-text">{examplePlaybook}</pre>
@@ -701,7 +637,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         {isVariablesSectionOpen && (
           <div className="section-content">
             <p className="section-desc">
-              Optionally choose the variables you want to use in your routing policy. You can select multiple variables from each category. Skip this if you want the same routing logic for all conversations.
+              Optionally select variables to create conditional ring expansion rules. Skip this if you want the same expansion logic for all conversations.
             </p>
 
             <div className="variables-grid">
@@ -714,7 +650,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                   Customer Attributes (Context Variables)
                 </h4>
 
-                {/* Selected context variables */}
                 {selectedContextVars.length > 0 && (
                   <div className="selected-variables-list">
                     {selectedContextVars.map(v => (
@@ -743,7 +678,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                   </div>
                 )}
 
-                {/* Add more dropdown */}
                 {availableContextVars.length > 0 && (
                   <select
                     className="add-variable-dropdown"
@@ -768,7 +702,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                   Conversation Attributes (Live Work Item)
                 </h4>
 
-                {/* Selected LWI variables */}
                 {selectedLWIVars.length > 0 && (
                   <div className="selected-variables-list">
                     {selectedLWIVars.map(v => (
@@ -797,7 +730,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                   </div>
                 )}
 
-                {/* Add more dropdown */}
                 {availableLWIVars.length > 0 && (
                   <select
                     className="add-variable-dropdown"
@@ -848,7 +780,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         {isBranchesSectionOpen && (
           <div className="section-content">
             <p className="section-desc">
-              Enter the number of condition branches you need. Each branch represents a unique routing rule.
+              Enter the number of condition branches. Each branch defines a ring expansion rule with initial assignment and time-based expansion.
             </p>
 
             <div className="branch-number-input-group">
@@ -863,18 +795,17 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
               />
             </div>
 
-            {/* Example explanation */}
             <div className="branch-example-box">
-              <h5 className="example-title">What are condition branches?</h5>
+              <h5 className="example-title">What are ring expansion branches?</h5>
               <p className="example-desc">
-                Each branch defines a routing rule for a specific combination of variable values. For example:
+                Each branch defines initial user group assignment and how it expands over time:
               </p>
               <ul className="example-list">
-                <li><strong>Branch 1:</strong> VIP = True AND Intent = Fraud Assist → Route to Preferred Expert</li>
-                <li><strong>Branch 2:</strong> VIP = True AND Intent = Billing → Route to Previous Expert (14 days)</li>
-                <li><strong>Branch 3:</strong> VIP = False → Route to Previous Expert (60 days)</li>
+                <li><strong>Initial:</strong> Assign to Senior Support Agents</li>
+                <li><strong>After 30s:</strong> Expand to Standard Support Team</li>
+                <li><strong>After 60s:</strong> Expand to Escalation Team</li>
               </ul>
-              <p className="example-note">You'll configure the specific values and actions for each branch after generating the template.</p>
+              <p className="example-note">You can add multiple expansion rules with the + button after generating.</p>
             </div>
           </div>
         )}
@@ -896,9 +827,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
             </svg>
             Generate Template
           </button>
-          {!canGenerateTemplate && (
-            <p className="generate-hint">Enter the number of branches to generate the template</p>
-          )}
         </div>
       )}
 
@@ -928,23 +856,25 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
 
           <div className="section-content template-output-content">
             <p className="template-instruction">
-              Fill in the <span className="highlight-text">blue dropdowns</span> to customize your policy.
+              Fill in the <span className="highlight-text">blue dropdowns</span> to customize your ring expansion policy.
             </p>
 
             <div className="template-output">
               {/* Variable Declaration */}
-              <div className="template-line">
-                Get{' '}
-                {allSelectedVariables.map((v, idx) => (
-                  <React.Fragment key={v.id}>
-                    {idx > 0 && ' and '}
-                    the {v.description || v.label.toLowerCase()} from{' '}
-                    <span className="template-variable">
-                      {v.type === 'context' ? 'ContextVariable' : 'LiveWorkItem'}.{v.id}
-                    </span>
-                  </React.Fragment>
-                ))}.
-              </div>
+              {allSelectedVariables.length > 0 && (
+                <div className="template-line">
+                  Get{' '}
+                  {allSelectedVariables.map((v, idx) => (
+                    <React.Fragment key={v.id}>
+                      {idx > 0 && ' and '}
+                      the {v.description || v.label.toLowerCase()} from{' '}
+                      <span className="template-variable">
+                        {v.type === 'context' ? 'ContextVariable' : 'LiveWorkItem'}.{v.id}
+                      </span>
+                    </React.Fragment>
+                  ))}.
+                </div>
+              )}
 
               {/* Condition Branches */}
               {branches.map((branch) => {
@@ -959,65 +889,63 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                   <React.Fragment key={branch.id}>
                     {/* Main condition line */}
                     <div className="template-line condition-line">
-                      For Customer where{' '}
                       {activeVariables.length > 0 ? (
-                        activeVariables.map((v, varIdx) => (
-                          <React.Fragment key={v.id}>
-                            {varIdx > 0 && ' AND '}
-                            <span className="variable-condition">
-                              <button
-                                className="variable-toggle-btn"
-                                onClick={() => toggleVariableForBranch(branch.id, v.id)}
-                                title="Click to disable this variable for this branch"
-                              >×</button>
-                              {v.description || v.label}{' '}
-                              {branch.variableExcludeMode?.[v.id] ? 'is not' : 'is'}{' '}
-                              <MultiSelectDropdown
-                                options={v.values}
-                                selected={branch.variableValues[v.id] || []}
-                                onChange={(values) => {
-                                  handleBranchValueChange(branch.id, v.id, values);
-                                  // Clear errors when value is selected
-                                  if (values.length > 0) {
-                                    setValidationErrors(prev => prev.filter(e => !(e.branchId === branch.id && e.variableId === v.id)));
-                                  }
-                                }}
-                                placeholder="choose"
-                                excludeMode={branch.variableExcludeMode?.[v.id] || false}
-                                onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
-                                hasError={hasError(branch.id, v.id)}
-                              />
-                            </span>
-                          </React.Fragment>
-                        ))
-                      ) : (
-                        <span className="no-conditions">[no conditions selected]</span>
-                      )}
-                      {/* Show disabled variables as greyed out chips */}
-                      {disabledVariables.length > 0 && (
-                        <span className="disabled-variables">
-                          {disabledVariables.map(v => (
-                            <button
-                              key={v.id}
-                              className="disabled-variable-chip"
-                              onClick={() => toggleVariableForBranch(branch.id, v.id)}
-                              title="Click to enable this variable"
-                            >
-                              + {v.description || v.label}
-                            </button>
+                        <>
+                          For Customer where{' '}
+                          {activeVariables.map((v, varIdx) => (
+                            <React.Fragment key={v.id}>
+                              {varIdx > 0 && ' AND '}
+                              <span className="variable-condition">
+                                <button
+                                  className="variable-toggle-btn"
+                                  onClick={() => toggleVariableForBranch(branch.id, v.id)}
+                                  title="Click to disable this variable for this branch"
+                                >×</button>
+                                {v.description || v.label}{' '}
+                                {branch.variableExcludeMode?.[v.id] ? 'is not' : 'is'}{' '}
+                                <MultiSelectDropdown
+                                  options={v.values}
+                                  selected={branch.variableValues[v.id] || []}
+                                  onChange={(values) => handleBranchValueChange(branch.id, v.id, values)}
+                                  placeholder="choose"
+                                  excludeMode={branch.variableExcludeMode?.[v.id] || false}
+                                  onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
+                                />
+                              </span>
+                            </React.Fragment>
                           ))}
-                        </span>
+                          {disabledVariables.length > 0 && (
+                            <span className="disabled-variables">
+                              {disabledVariables.map(v => (
+                                <button
+                                  key={v.id}
+                                  className="disabled-variable-chip"
+                                  onClick={() => toggleVariableForBranch(branch.id, v.id)}
+                                  title="Click to enable this variable"
+                                >
+                                  + {v.description || v.label}
+                                </button>
+                              ))}
+                            </span>
+                          )}
+                          , assign to{' '}
+                        </>
+                      ) : (
+                        <>Assign the conversations to{' '}</>
                       )}
-                      , offer to{' '}
-                      <select
-                        className="template-dropdown"
-                        value={branch.action}
-                        onChange={(e) => handleBranchActionChange(branch.id, e.target.value)}
-                      >
-                        {actionOptions.map(opt => (
-                          <option key={opt.id} value={opt.id}>{opt.label}</option>
-                        ))}
-                      </select>.
+                      <MultiSelectDropdown
+                        options={userGroups.map(g => g.name)}
+                        selected={branch.initialUserGroups.map(id => getUserGroupName(id)).filter(Boolean)}
+                        onChange={(selectedNames) => {
+                          const selectedIds = selectedNames.map(name => userGroups.find(g => g.name === name)?.id).filter(Boolean) as string[];
+                          handleInitialUserGroupsChange(branch.id, selectedIds);
+                          if (selectedIds.length > 0) {
+                            setValidationErrors(prev => prev.filter(err => !(err.branchId === branch.id && err.fieldId === 'initialUserGroups')));
+                          }
+                        }}
+                        placeholder="choose user group(s)"
+                        hasError={hasError(branch.id, 'initialUserGroups')}
+                      />.
                       <button
                         className="inline-add-btn"
                         onClick={addBranch}
@@ -1032,137 +960,65 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                       )}
                     </div>
 
-                    {/* Fallback line - shows when action is "preferred-expert" */}
-                    {branch.action === 'preferred-expert' && (
-                      <div className="template-line fallback-line">
-                        If no preferred agents are available, assign to an expert who has interacted with the customer in the last{' '}
+                    {/* Expansion Rules */}
+                    {branch.expansionRules.map((rule, ruleIdx) => (
+                      <div key={rule.id} className="template-line fallback-line">
+                        {ruleIdx === 0 ? (
+                          <>If no support representative is available or the conversation remains unassigned for{' '}</>
+                        ) : (
+                          <>If the conversation is still unassigned after{' '}</>
+                        )}
                         <select
                           className="template-dropdown small"
-                          value={branch.lookbackDays || 14}
-                          onChange={(e) => handleBranchLookbackChange(branch.id, parseInt(e.target.value))}
+                          value={rule.waitTimeSeconds}
+                          onChange={(e) => handleExpansionWaitTimeChange(branch.id, rule.id, parseInt(e.target.value))}
                         >
-                          {lookbackOptions.map(days => (
-                            <option key={days} value={days}>{days}</option>
+                          {waitTimeOptions.map(seconds => (
+                            <option key={seconds} value={seconds}>
+                              {formatWaitTime(seconds)}
+                            </option>
                           ))}
                         </select>
-                        {' '}days
-                        {/* Enabled attributes with toggle and multi-select values */}
-                        {userAttributeOptions.map(attr => {
-                          const isEnabled = branch.enabledAttributes && attr.id in branch.enabledAttributes;
-                          if (isEnabled) {
-                            return (
-                              <span key={attr.id} className="attribute-condition">
-                                {' '}and has{' '}
-                                <button
-                                  className="attribute-toggle-btn"
-                                  onClick={() => toggleAttributeForBranch(branch.id, attr.id)}
-                                  title="Click to remove this attribute"
-                                >×</button>
-                                {attr.label}:{' '}
-                                <MultiSelectDropdown
-                                  options={attr.values}
-                                  selected={branch.enabledAttributes[attr.id] || []}
-                                  onChange={(values) => handleAttributeValuesChange(branch.id, attr.id, values)}
-                                  placeholder="choose"
-                                  excludeMode={branch.attributeExcludeMode?.[attr.id] || false}
-                                  onExcludeModeChange={(exclude) => handleAttributeExcludeModeChange(branch.id, attr.id, exclude)}
-                                />
-                              </span>
-                            );
-                          }
-                          return null;
-                        })}
-                        {/* User Attributes dropdown for adding more */}
-                        {userAttributeOptions.some(attr => !(branch.enabledAttributes && attr.id in branch.enabledAttributes)) && (
-                          <select
-                            className="user-attributes-dropdown"
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                toggleAttributeForBranch(branch.id, e.target.value);
-                              }
-                            }}
-                          >
-                            <option value="">+ User Attributes</option>
-                            {userAttributeOptions
-                              .filter(attr => !(branch.enabledAttributes && attr.id in branch.enabledAttributes))
-                              .map(attr => (
-                                <option key={attr.id} value={attr.id}>{attr.label}</option>
-                              ))}
-                          </select>
-                        )}.
+                        , expand to{' '}
+                        <MultiSelectDropdown
+                          options={userGroups.map(g => g.name)}
+                          selected={rule.userGroupIds.map(id => getUserGroupName(id)).filter(Boolean)}
+                          onChange={(selectedNames) => {
+                            const selectedIds = selectedNames.map(name => userGroups.find(g => g.name === name)?.id).filter(Boolean) as string[];
+                            handleExpansionUserGroupsChange(branch.id, rule.id, selectedIds);
+                            if (selectedIds.length > 0) {
+                              setValidationErrors(prev => prev.filter(err => !(err.branchId === branch.id && err.fieldId === rule.id)));
+                            }
+                          }}
+                          placeholder="choose user group(s)"
+                          hasError={hasError(branch.id, rule.id)}
+                        />.
+                        {branch.expansionRules.length < 4 && (
+                          <button
+                            className="inline-add-btn"
+                            onClick={() => addExpansionRule(branch.id)}
+                            title="Add expansion rule (max 4)"
+                          >+</button>
+                        )}
+                        {branch.expansionRules.length > 1 && (
+                          <button
+                            className="inline-remove-btn"
+                            onClick={() => removeExpansionRule(branch.id, rule.id)}
+                            title="Remove this expansion rule"
+                          >×</button>
+                        )}
                       </div>
-                    )}
-
-                    {/* Additional line - shows when action is "previous-expert" */}
-                    {branch.action === 'previous-expert' && (
-                      <div className="template-line fallback-line">
-                        Route to expert who has interacted with the customer in the last{' '}
-                        <select
-                          className="template-dropdown small"
-                          value={branch.lookbackDays || 14}
-                          onChange={(e) => handleBranchLookbackChange(branch.id, parseInt(e.target.value))}
-                        >
-                          {lookbackOptions.map(days => (
-                            <option key={days} value={days}>{days}</option>
-                          ))}
-                        </select>
-                        {' '}days
-                        {/* Enabled attributes with toggle and multi-select values */}
-                        {userAttributeOptions.map(attr => {
-                          const isEnabled = branch.enabledAttributes && attr.id in branch.enabledAttributes;
-                          if (isEnabled) {
-                            return (
-                              <span key={attr.id} className="attribute-condition">
-                                {' '}and has{' '}
-                                <button
-                                  className="attribute-toggle-btn"
-                                  onClick={() => toggleAttributeForBranch(branch.id, attr.id)}
-                                  title="Click to remove this attribute"
-                                >×</button>
-                                {attr.label}:{' '}
-                                <MultiSelectDropdown
-                                  options={attr.values}
-                                  selected={branch.enabledAttributes[attr.id] || []}
-                                  onChange={(values) => handleAttributeValuesChange(branch.id, attr.id, values)}
-                                  placeholder="choose"
-                                  excludeMode={branch.attributeExcludeMode?.[attr.id] || false}
-                                  onExcludeModeChange={(exclude) => handleAttributeExcludeModeChange(branch.id, attr.id, exclude)}
-                                />
-                              </span>
-                            );
-                          }
-                          return null;
-                        })}
-                        {/* User Attributes dropdown for adding more */}
-                        {userAttributeOptions.some(attr => !(branch.enabledAttributes && attr.id in branch.enabledAttributes)) && (
-                          <select
-                            className="user-attributes-dropdown"
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                toggleAttributeForBranch(branch.id, e.target.value);
-                              }
-                            }}
-                          >
-                            <option value="">+ User Attributes</option>
-                            {userAttributeOptions
-                              .filter(attr => !(branch.enabledAttributes && attr.id in branch.enabledAttributes))
-                              .map(attr => (
-                                <option key={attr.id} value={attr.id}>{attr.label}</option>
-                              ))}
-                          </select>
-                        )}.
-                      </div>
-                    )}
-
+                    ))}
                   </React.Fragment>
                 );
               })}
 
               {/* Default Fallback */}
               <div className="template-line default-fallback">
-                In case of no previous expert, assign to the next best expert in the queue.
+                {isRestrictedFallback
+                  ? 'Do not open the conversation to any other users in the queue.'
+                  : 'If the conversation still remains unassigned, assign to any member of the queue.'
+                }
               </div>
             </div>
 
@@ -1199,4 +1055,4 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   );
 };
 
-export default TemplateBasedEditor;
+export default RingExpansionEditor;

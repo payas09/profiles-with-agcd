@@ -146,6 +146,18 @@ const promptTemplates: { [key: string]: { title: string; type: string; descripti
     description: 'If the callback creator is unavailable, retry assignment to them before routing to other experts.',
     defaultPrompt: 'If the callback creator is unavailable, retry assignment to them before routing to other experts.'
   },
+  'ring-expansion-restricted': {
+    title: 'Ring expansion with restricted fallback',
+    type: 'Assignment',
+    description: 'Expand assignment progressively based on wait time, but restrict to defined user groups only.',
+    defaultPrompt: 'Assign the conversations to Senior Support Agents or Technical Specialists. If no support rep is available or the conversation remains unassigned for 30 seconds, expand to Standard Support Team. If the conversation is still unassigned after 60 seconds, expand to Escalation team. Do not open the conversation to any other users in the queue.'
+  },
+  'ring-expansion-open': {
+    title: 'Ring expansion with open fallback',
+    type: 'Assignment',
+    description: 'Expand assignment progressively based on wait time, with final fallback to any queue member.',
+    defaultPrompt: 'Assign the conversations to Senior Support Agents or Technical Specialists. If no support rep is available or the conversation remains unassigned for 30 seconds, expand to Standard Support Team. If the conversation is still unassigned after 60 seconds, expand to Escalation team. If the conversation still remains unassigned, assign to any member of the queue.'
+  },
   // Legacy templates for backward compatibility
   'overflow': {
     title: 'Overflow',

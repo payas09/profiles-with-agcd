@@ -548,7 +548,6 @@
   font-weight: 500;
   cursor: pointer;
   min-width: 60px;
-  max-width: 200px;
 }
 
 .multi-select-trigger:hover {
@@ -561,9 +560,6 @@
 
 .multi-select-trigger .has-selection {
   color: #0078d4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .multi-select-trigger svg {

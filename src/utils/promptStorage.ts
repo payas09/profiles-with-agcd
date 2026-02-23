@@ -60,7 +60,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
         selectionMode: 'list',
         selectedTrigger: 'conversation-waiting',
         status: 'Published',
-        lastModified: '2 hours ago',
+        lastModified: 'Feb 21, 2025',
         type: 'Orchestrator'
       },
       {
@@ -73,7 +73,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
         selectionMode: 'list',
         selectedTrigger: 'conversation-waiting',
         status: 'Published',
-        lastModified: '5 hours ago',
+        lastModified: 'Feb 18, 2025',
         type: 'Assignment'
       },
       {
@@ -84,7 +84,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
         selectionMode: 'all',
         selectedTrigger: 'conversation-waiting',
         status: 'Draft',
-        lastModified: '1 day ago',
+        lastModified: 'Feb 15, 2025',
         type: 'Orchestrator'
       },
       {
@@ -97,7 +97,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
         selectionMode: 'list',
         selectedTrigger: 'conversation-transferred',
         status: 'Draft',
-        lastModified: '3 days ago',
+        lastModified: 'Feb 10, 2025',
         type: 'Assignment'
       }
     ];
@@ -170,7 +170,13 @@ export const duplicatePrompt = (promptId: string): string => {
   return newId;
 };
 
-// Helper to get time ago string
+// Helper to format date
+function formatDate(date: Date): string {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+// Helper to get time ago string or formatted date
 function getTimeAgo(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -181,7 +187,8 @@ function getTimeAgo(date: Date): string {
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  return formatDate(date);
 }
 
 // Helper to get profile display text

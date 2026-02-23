@@ -14,6 +14,8 @@ import EngagementProfiles from './components/EngagementProfiles';
 import EngagementProfileEdit from './components/EngagementProfileEdit';
 import Queues from './components/Queues';
 import QueueEdit from './components/QueueEdit';
+import UserGroups from './components/UserGroups';
+import UserGroupEdit from './components/UserGroupEdit';
 import AgCDHome from './components/AgCDHome';
 import AgCDPromptEdit from './components/AgCDPromptEdit';
 import AgCDPlaybook from './components/AgCDPlaybook';
@@ -66,6 +68,8 @@ const App: React.FC = () => {
           <Route path="/engagement-profiles" element={<EngagementProfiles />} />
           <Route path="/queues" element={<Queues />} />
           <Route path="/queue/:id" element={<QueueEdit />} />
+          <Route path="/user-groups" element={<UserGroups />} />
+          <Route path="/user-group/:id" element={<UserGroupEdit />} />
           <Route path="/channel/:id" element={<ChannelEdit />} />
           <Route path="/voice-channel/:id" element={<VoiceChannelEdit />} />
           <Route path="/conversation-flow/:id" element={<ConversationFlowEdit />} />

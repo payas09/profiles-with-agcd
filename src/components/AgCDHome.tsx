@@ -101,6 +101,20 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
       title: 'Reattempt assignment to expert who created the callback',
       description: 'If the callback creator is unavailable, retry assignment to them before routing to other experts.',
       category: 'Assign personal callbacks'
+    },
+    {
+      id: 'ring-expansion-restricted',
+      title: 'Ring expansion with restricted fallback',
+      description: 'Expand assignment progressively based on wait time, but restrict to defined user groups only.',
+      category: 'Ring expansion',
+      tags: ['Based on wait time']
+    },
+    {
+      id: 'ring-expansion-open',
+      title: 'Ring expansion with open fallback',
+      description: 'Expand assignment progressively based on wait time, with final fallback to any queue member.',
+      category: 'Ring expansion',
+      tags: ['Based on wait time']
     }
   ]
 };
@@ -134,6 +148,27 @@ const scenarioDefinitions = [
     description: 'Route conversations to experts with specific skills matching the inquiry type.',
     category: 'assignment',
     icon: 'skill'
+  },
+  {
+    id: 'ring-expansion',
+    title: 'Ring Expansion',
+    description: 'Expand assignment to additional user groups progressively based on wait time.',
+    category: 'assignment',
+    icon: 'expand'
+  }
+];
+
+// Ring expansion sub-options
+const ringExpansionOptions = [
+  {
+    id: 'ring-expansion-restricted',
+    title: 'Ring expansion with restricted fallback',
+    description: 'Expand assignment progressively based on wait time, but restrict to defined user groups only.'
+  },
+  {
+    id: 'ring-expansion-open',
+    title: 'Ring expansion with open fallback',
+    description: 'Expand assignment progressively based on wait time, with final fallback to any queue member.'
   }
 ];
 
@@ -148,6 +183,7 @@ const AgCDHome: React.FC = () => {
   const [gallerySearchQuery, setGallerySearchQuery] = useState<string>('');
   const [nlRequirement, setNlRequirement] = useState<string>('');
   const [showScenarioSelection, setShowScenarioSelection] = useState(false);
+  const [showRingExpansionOptions, setShowRingExpansionOptions] = useState(false);
 
   // Handle URL parameters to open gallery with specific filters
   React.useEffect(() => {
@@ -255,8 +291,19 @@ const AgCDHome: React.FC = () => {
 
   const handleNlRequirementSubmit = () => {
     if (nlRequirement.trim()) {
-      // Show scenario selection instead of navigating directly
-      setShowScenarioSelection(true);
+      // Check if the requirement is related to ring expansion
+      const ringExpansionKeywords = ['ring expansion', 'expand to user group', 'expand to user groups', 'wait time', 'waiting time', 'expand based on'];
+      const lowerRequirement = nlRequirement.toLowerCase();
+      const isRingExpansion = ringExpansionKeywords.some(keyword => lowerRequirement.includes(keyword));
+
+      if (isRingExpansion) {
+        // Directly show ring expansion options
+        setShowScenarioSelection(true);
+        setShowRingExpansionOptions(true);
+      } else {
+        // Show scenario selection
+        setShowScenarioSelection(true);
+      }
     }
   };
 
@@ -268,12 +315,28 @@ const AgCDHome: React.FC = () => {
   };
 
   const handleScenarioSelect = (scenarioId: string) => {
-    // Navigate to edit page with template mode, requirement, and selected scenario
-    navigate(`/agcd/prompt/assignment?mode=template&requirement=${encodeURIComponent(nlRequirement)}&scenario=${scenarioId}`);
+    if (scenarioId === 'ring-expansion') {
+      // Show ring expansion sub-options instead of navigating
+      setShowRingExpansionOptions(true);
+    } else {
+      // Navigate to edit page with template mode, requirement, and selected scenario
+      navigate(`/agcd/prompt/assignment?mode=template&requirement=${encodeURIComponent(nlRequirement)}&scenario=${scenarioId}`);
+    }
+  };
+
+  const handleRingExpansionSelect = (optionId: string) => {
+    // Navigate to the prompt edit page with template mode for ring expansion
+    // Pass the specific scenario ID (e.g., ring-expansion-restricted or ring-expansion-open)
+    navigate(`/agcd/prompt/${optionId}?mode=template&scenario=${optionId}&requirement=${encodeURIComponent(nlRequirement)}`);
+  };
+
+  const handleBackToScenarios = () => {
+    setShowRingExpansionOptions(false);
   };
 
   const handleBackToInput = () => {
     setShowScenarioSelection(false);
+    setShowRingExpansionOptions(false);
   };
 
   return (
@@ -363,6 +426,55 @@ const AgCDHome: React.FC = () => {
                 >
                   Skill-based routing
                 </button>
+                <button
+                  className="nl-example-chip"
+                  onClick={() => setNlRequirement('Expand to user groups based on wait time')}
+                >
+                  Ring expansion
+                </button>
+              </div>
+            </>
+          ) : showRingExpansionOptions ? (
+            <>
+              {/* Ring Expansion Options View */}
+              <div className="scenario-selection-header">
+                <button className="back-to-input-btn" onClick={handleBackToScenarios}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M10 2l-6 6 6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Back
+                </button>
+                <div className="scenario-header-content">
+                  <h3 className="nl-title">Select a ring expansion approach</h3>
+                  <div className="user-requirement-display">
+                    <span className="requirement-label-small">Your requirement:</span>
+                    <p className="requirement-text-small">"{nlRequirement}"</p>
+                  </div>
+                </div>
+              </div>
+              <div className="scenario-cards-grid ring-expansion-grid">
+                {ringExpansionOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    className="scenario-card ring-expansion-card"
+                    onClick={() => handleRingExpansionSelect(option.id)}
+                  >
+                    <div className="scenario-card-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                      </svg>
+                    </div>
+                    <div className="scenario-card-content">
+                      <h4 className="scenario-card-title">{option.title}</h4>
+                      <p className="scenario-card-desc">{option.description}</p>
+                    </div>
+                    <div className="scenario-card-arrow">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </button>
+                ))}
               </div>
             </>
           ) : (
@@ -409,6 +521,11 @@ const AgCDHome: React.FC = () => {
                       {scenario.icon === 'skill' && (
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      )}
+                      {scenario.icon === 'expand' && (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                         </svg>
                       )}
                     </div>

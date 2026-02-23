@@ -1,0 +1,372 @@
+/* User Groups Page Styles */
+.user-groups-page {
+  padding: 0 24px;
+}
+
+.user-groups-page .toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  gap: 16px;
+}
+
+.user-groups-page .toolbar-left {
+  display: flex;
+  gap: 8px;
+}
+
+.user-groups-page .add-button-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid #8a8886;
+  border-radius: 2px;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  text-decoration: none;
+}
+
+.user-groups-page .add-button-toolbar:hover {
+  background-color: #f3f2f1;
+  border-color: #323130;
+}
+
+.user-groups-page .toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-groups-page .search-box-toolbar {
+  position: relative;
+  min-width: 250px;
+}
+
+.user-groups-page .search-box-toolbar .search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.user-groups-page .search-input-toolbar {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px 0 28px;
+  border: 1px solid #8a8886;
+  border-radius: 2px;
+  font-size: 14px;
+  background-color: white;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .search-input-toolbar:focus {
+  outline: 2px solid #0078d4;
+  outline-offset: -2px;
+  border-color: #0078d4;
+}
+
+.user-groups-page .content-header {
+  margin-bottom: 24px;
+}
+
+.user-groups-page .page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 8px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .page-description {
+  font-size: 14px;
+  color: #605e5c;
+  line-height: 20px;
+  margin: 0;
+  max-width: 800px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Empty State */
+.user-groups-page .empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background-color: white;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+}
+
+.user-groups-page .empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 8px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .empty-state-text {
+  font-size: 14px;
+  color: #605e5c;
+  margin: 0 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .empty-state-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .empty-state-button:hover {
+  background-color: #106ebe;
+}
+
+/* Table Styles */
+.user-groups-page .table-container {
+  background-color: white;
+  border: 1px solid #edebe9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.user-groups-page .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.user-groups-page .data-table thead {
+  background-color: #faf9f8;
+  border-bottom: 1px solid #edebe9;
+}
+
+.user-groups-page .data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: #323130;
+  border-bottom: 1px solid #edebe9;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .th-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-groups-page .sort-icon {
+  color: #605e5c;
+}
+
+.user-groups-page .data-table tbody tr {
+  border-bottom: 1px solid #edebe9;
+}
+
+.user-groups-page .data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.user-groups-page .data-table tbody tr:hover {
+  background-color: #f3f2f1;
+}
+
+.user-groups-page .clickable-row {
+  cursor: pointer;
+}
+
+.user-groups-page .data-table td {
+  padding: 12px 16px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .table-link {
+  color: #0078d4;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.user-groups-page .table-link:hover {
+  text-decoration: underline;
+}
+
+.user-groups-page .count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background-color: #f3f2f1;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #323130;
+}
+
+.user-groups-page .actions-column {
+  width: 48px;
+  text-align: center;
+}
+
+/* Action Menu */
+.user-groups-page .action-menu-container {
+  position: relative;
+}
+
+.user-groups-page .action-menu-button {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.user-groups-page .action-menu-button:hover {
+  background-color: #e1dfdd;
+  color: #242424;
+}
+
+.user-groups-page .action-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 140px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.user-groups-page .dropdown-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #242424;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.user-groups-page .dropdown-menu-item:hover {
+  background-color: #f3f2f1;
+}
+
+.user-groups-page .dropdown-menu-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.user-groups-page .dropdown-menu-item-danger {
+  color: #d13438;
+}
+
+.user-groups-page .dropdown-menu-item-danger:hover {
+  background-color: #fef0f1;
+}
+
+/* Delete Dialog */
+.user-groups-page .dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.user-groups-page .dialog-content {
+  background-color: white;
+  border-radius: 4px;
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.user-groups-page .dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 12px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .dialog-description {
+  font-size: 14px;
+  color: #605e5c;
+  margin: 0 0 24px 0;
+  line-height: 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.user-groups-page .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.user-groups-page .dialog-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.2s;
+}
+
+.user-groups-page .dialog-button-cancel {
+  background-color: white;
+  border: 1px solid #8a8886;
+  color: #323130;
+}
+
+.user-groups-page .dialog-button-cancel:hover {
+  background-color: #f3f2f1;
+}
+
+.user-groups-page .dialog-button-danger {
+  background-color: #d13438;
+  border: none;
+  color: white;
+}
+
+.user-groups-page .dialog-button-danger:hover {
+  background-color: #a4262c;
+}
