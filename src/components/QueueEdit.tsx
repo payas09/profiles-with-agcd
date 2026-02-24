@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import './QueueEdit.css';
+import { getUserGroups } from '../lib/userGroupStorage';
+import type { UserGroup } from '../lib/userGroupTypes';
 
 // Map queue IDs to names and types
 const queueData: { [key: string]: { name: string; type: string; owner: string } } = {
@@ -138,15 +140,33 @@ const engagementProfileConfigs: { [key: string]: any } = {
 const QueueEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchQuery, setSearchQuery] = useState('');
+  const [userGroupSearchQuery, setUserGroupSearchQuery] = useState('');
   const [selectedEngagementProfile, setSelectedEngagementProfile] = useState('');
+  const [activeTab, setActiveTab] = useState<'users' | 'userGroups'>('users');
+  const [associatedUserGroups, setAssociatedUserGroups] = useState<UserGroup[]>([]);
 
   const queue = id ? queueData[id] : null;
   const queueName = queue?.name || 'Unknown Queue';
   const queueType = queue?.type || 'Unknown';
   const queueOwner = queue?.owner || 'Unknown';
 
+  // Fetch user groups associated with this queue
+  useEffect(() => {
+    if (id) {
+      const allUserGroups = getUserGroups();
+      const filtered = allUserGroups.filter(group =>
+        group.associatedQueueIds.includes(id)
+      );
+      setAssociatedUserGroups(filtered);
+    }
+  }, [id]);
+
   const filteredUsers = queueUsers.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredUserGroups = associatedUserGroups.filter(group =>
+    group.name.toLowerCase().includes(userGroupSearchQuery.toLowerCase())
   );
 
   const selectedProfileConfig = engagementProfileConfigs[selectedEngagementProfile];
@@ -189,80 +209,171 @@ const QueueEdit: React.FC = () => {
           </div>
         </div>
 
-        {/* Users Section */}
+        {/* Users and User Groups Section */}
         <div className="queue-section">
           <div className="section-header">
-            <h2 className="section-title">Users</h2>
+            <div className="section-tabs">
+              <button
+                className={`section-tab ${activeTab === 'users' ? 'active' : ''}`}
+                onClick={() => setActiveTab('users')}
+              >
+                Users
+              </button>
+              <button
+                className={`section-tab ${activeTab === 'userGroups' ? 'active' : ''}`}
+                onClick={() => setActiveTab('userGroups')}
+              >
+                User groups
+              </button>
+            </div>
             <div className="section-actions">
-              <div className="search-box-inline">
-                <svg className="search-icon-inline" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M11.5 6.5a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.27 4.27a6 6 0 1 1 1.06-1.06l3.5 3.5-1.06 1.06-3.5-3.5z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="search-input-inline"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <button className="see-more-button">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <circle cx="8" cy="8" r="1.5" />
-                  <circle cx="8" cy="3" r="1.5" />
-                  <circle cx="8" cy="13" r="1.5" />
-                </svg>
-                See more
-              </button>
-              <button className="add-users-button">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                Add users
-              </button>
+              {activeTab === 'users' ? (
+                <>
+                  <div className="search-box-inline">
+                    <svg className="search-icon-inline" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M11.5 6.5a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.27 4.27a6 6 0 1 1 1.06-1.06l3.5 3.5-1.06 1.06-3.5-3.5z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      className="search-input-inline"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <button className="see-more-button">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="8" r="1.5" />
+                      <circle cx="8" cy="3" r="1.5" />
+                      <circle cx="8" cy="13" r="1.5" />
+                    </svg>
+                    See more
+                  </button>
+                  <button className="add-users-button">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Add users
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="search-box-inline">
+                    <svg className="search-icon-inline" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M11.5 6.5a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.27 4.27a6 6 0 1 1 1.06-1.06l3.5 3.5-1.06 1.06-3.5-3.5z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      className="search-input-inline"
+                      value={userGroupSearchQuery}
+                      onChange={(e) => setUserGroupSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <button className="see-more-button">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="8" r="1.5" />
+                      <circle cx="8" cy="3" r="1.5" />
+                      <circle cx="8" cy="13" r="1.5" />
+                    </svg>
+                    See more
+                  </button>
+                  <button className="add-users-button">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Add user groups
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="users-table-container">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>
-                    <div className="th-content-queue">
-                      Name
-                      <svg className="sort-icon-queue" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                        <path d="M6 3l3 4H3l3-4z" />
-                      </svg>
-                    </div>
-                  </th>
-                  <th>Type</th>
-                  <th>Role</th>
-                  <th>Capacity profile</th>
-                  <th>Capacity</th>
-                  <th>Business unit</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <a href="#" className="user-link">{user.name}</a>
-                    </td>
-                    <td>{user.type}</td>
-                    <td>{user.role}</td>
-                    <td>{user.capacityProfile}</td>
-                    <td>{user.capacity}</td>
-                    <td>{user.businessUnit}</td>
-                    <td>{user.date}</td>
+          {activeTab === 'users' ? (
+            <div className="users-table-container">
+              <table className="users-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <div className="th-content-queue">
+                        Name
+                        <svg className="sort-icon-queue" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                          <path d="M6 3l3 4H3l3-4z" />
+                        </svg>
+                      </div>
+                    </th>
+                    <th>Type</th>
+                    <th>Role</th>
+                    <th>Capacity profile</th>
+                    <th>Capacity</th>
+                    <th>Business unit</th>
+                    <th>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="table-footer">
-              <span className="table-count">{filteredUsers.length} of {queueUsers.length}</span>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td>
+                        <a href="#" className="user-link">{user.name}</a>
+                      </td>
+                      <td>{user.type}</td>
+                      <td>{user.role}</td>
+                      <td>{user.capacityProfile}</td>
+                      <td>{user.capacity}</td>
+                      <td>{user.businessUnit}</td>
+                      <td>{user.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="table-footer">
+                <span className="table-count">{filteredUsers.length} of {queueUsers.length}</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="users-table-container">
+              <table className="users-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <div className="th-content-queue">
+                        Name
+                        <svg className="sort-icon-queue" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                          <path d="M6 3l3 4H3l3-4z" />
+                        </svg>
+                      </div>
+                    </th>
+                    <th>Description</th>
+                    <th>Eligibility criteria</th>
+                    <th>Last updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUserGroups.length > 0 ? (
+                    filteredUserGroups.map((group) => (
+                      <tr key={group.id}>
+                        <td>
+                          <Link to={`/user-group/${group.id}`} className="user-link">{group.name}</Link>
+                        </td>
+                        <td>{group.description}</td>
+                        <td>{group.eligibilityCriteria}</td>
+                        <td>{new Date(group.lastUpdated).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="empty-table-message">
+                        No user groups associated with this queue
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <div className="table-footer">
+                <span className="table-count">{filteredUserGroups.length} of {associatedUserGroups.length}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Engagement Profile Section */}
