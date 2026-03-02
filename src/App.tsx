@@ -17,6 +17,7 @@ import QueueEdit from './components/QueueEdit';
 import UserGroups from './components/UserGroups';
 import UserGroupEdit from './components/UserGroupEdit';
 import AgCDHome from './components/AgCDHome';
+import AgCDHomeConversational from './components/AgCDHomeConversational';
 import AgCDPromptEdit from './components/AgCDPromptEdit';
 import AgCDPlaybook from './components/AgCDPlaybook';
 import { APP_CONFIG } from './config';
@@ -75,6 +76,7 @@ const App: React.FC = () => {
           <Route path="/conversation-flow/:id" element={<ConversationFlowEdit />} />
           <Route path="/engagement-profile/:id" element={<EngagementProfileEdit />} />
           <Route path="/agcd" element={<AgCDHome />} />
+          <Route path="/agcd/conversational" element={<AgCDHomeConversational />} />
           <Route path="/agcd/prompt/:promptType" element={<AgCDPromptEdit />} />
           <Route path="/agcd/policy/:policyId" element={<AgCDPromptEdit />} />
           <Route path="/agcd/playbook" element={<AgCDPlaybook />} />

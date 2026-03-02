@@ -834,3 +834,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Subtle conversational experience link */
+.conversational-link-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  margin-top: 32px;
+  border-top: 1px solid #edebe9;
+}
+
+.conversational-link-text {
+  font-size: 13px;
+  color: #8a8886;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.conversational-link-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.conversational-link-btn:hover {
+  color: #0078d4;
+  text-decoration: underline;
+}
