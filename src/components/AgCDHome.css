@@ -190,13 +190,13 @@
   background-color: #f3f2f1;
 }
 
-.canned-prompts-buttons {
+.prompt-template-buttons {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.canned-prompt-btn {
+.prompt-template-btn {
   padding: 8px 20px;
   background-color: #f3f2f1;
   color: #605e5c;
@@ -209,18 +209,18 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-.canned-prompt-btn:hover {
+.prompt-template-btn:hover {
   background-color: #e1dfdd;
   color: #323130;
 }
 
-.canned-prompt-btn.active {
+.prompt-template-btn.active {
   background-color: #0078d4;
   color: white;
   border-color: #0078d4;
 }
 
-.canned-prompt-btn.active:hover {
+.prompt-template-btn.active:hover {
   background-color: #106ebe;
   border-color: #106ebe;
 }

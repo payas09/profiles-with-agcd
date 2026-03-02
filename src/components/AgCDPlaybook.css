@@ -212,7 +212,7 @@
   border-color: #0078d4;
 }
 
-.new-policy-button {
+.new-playbook-button {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -228,12 +228,12 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-.new-policy-button:hover {
+.new-playbook-button:hover {
   background-color: #106ebe;
 }
 
 /* Table */
-.policies-table-wrapper {
+.playbooks-table-wrapper {
   background-color: white;
   border: 1px solid #e1dfdd;
   border-radius: 6px;
@@ -241,18 +241,18 @@
   margin-bottom: 0;
 }
 
-.policies-data-table {
+.playbooks-data-table {
   width: 100%;
   border-collapse: collapse;
   position: relative;
 }
 
-.policies-data-table thead {
+.playbooks-data-table thead {
   background-color: #faf9f8;
   border-bottom: 1px solid #e1dfdd;
 }
 
-.policies-data-table th {
+.playbooks-data-table th {
   text-align: left;
   padding: 12px 16px;
   font-size: 14px;
@@ -262,7 +262,7 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-.policies-data-table td {
+.playbooks-data-table td {
   padding: 12px 16px;
   font-size: 14px;
   color: #242424;
@@ -271,24 +271,24 @@
   position: relative;
 }
 
-.policies-data-table tbody {
+.playbooks-data-table tbody {
   position: relative;
 }
 
-.policies-data-table tbody tr:last-child td {
+.playbooks-data-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.policies-data-table tbody tr:last-child .action-menu-container {
+.playbooks-data-table tbody tr:last-child .action-menu-container {
   position: static;
 }
 
-.policies-data-table tbody tr:last-child .action-dropdown-menu {
+.playbooks-data-table tbody tr:last-child .action-dropdown-menu {
   bottom: auto;
   top: auto;
 }
 
-.policy-name-link-text {
+.playbook-name-link-text {
   color: #0078d4;
   font-weight: 500;
 }
@@ -479,14 +479,14 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* Policy Name Cell with New Tag */
-.policy-name-cell {
+/* Playbook Name Cell with New Tag */
+.playbook-name-cell {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.new-policy-tag {
+.new-playbook-tag {
   display: inline-block;
   padding: 2px 8px;
   background-color: #0078d4;

@@ -126,7 +126,6 @@ const AgCDHome: React.FC = () => {
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [galleryFilterTab, setGalleryFilterTab] = useState<'orchestration' | 'assignment'>('orchestration');
   const [selectedScenario, setSelectedScenario] = useState<string>('');
-  const [selectedSubScenario, setSelectedSubScenario] = useState<string>('');
   const [gallerySearchQuery, setGallerySearchQuery] = useState<string>('');
 
   // Handle URL parameters to open gallery with specific filters
@@ -163,26 +162,22 @@ const AgCDHome: React.FC = () => {
   const handleOpenGallery = () => {
     setShowGalleryModal(true);
     setSelectedScenario('');
-    setSelectedSubScenario('');
     setGallerySearchQuery('');
   };
 
   const handleCloseGallery = () => {
     setShowGalleryModal(false);
     setSelectedScenario('');
-    setSelectedSubScenario('');
     setGallerySearchQuery('');
   };
 
   const handleGalleryFilterChange = (filter: 'orchestration' | 'assignment') => {
     setGalleryFilterTab(filter);
     setSelectedScenario('');
-    setSelectedSubScenario('');
   };
 
   const handleScenarioChange = (scenario: string) => {
     setSelectedScenario(scenario);
-    setSelectedSubScenario('');
   };
 
   // Get unique scenarios for the current filter tab
@@ -192,15 +187,6 @@ const AgCDHome: React.FC = () => {
     return scenarios;
   };
 
-  // Get sub-scenarios (card titles) for the selected scenario
-  const getCurrentSubScenarios = () => {
-    if (!selectedScenario) return [];
-    const cards = promptGalleryCards[galleryFilterTab];
-    return cards
-      .filter(card => card.category === selectedScenario)
-      .map(card => card.title);
-  };
-
   // Filter cards based on selections and search
   const getFilteredCards = () => {
     let cards = promptGalleryCards[galleryFilterTab];
@@ -208,11 +194,6 @@ const AgCDHome: React.FC = () => {
     // Filter by scenario
     if (selectedScenario) {
       cards = cards.filter(card => card.category === selectedScenario);
-    }
-
-    // Filter by sub-scenario (card title)
-    if (selectedSubScenario) {
-      cards = cards.filter(card => card.title === selectedSubScenario);
     }
 
     // Filter by search query
@@ -260,7 +241,7 @@ const AgCDHome: React.FC = () => {
           <span className="preview-badge-inline">Preview: Testing</span>
         </div>
         <p className="agcd-subtitle">
-          Use our intuitive natural language prompting to create routing scenarios. Create policies to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.
+          Use our intuitive natural language prompting to create routing scenarios. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.
         </p>
       </div>
 
@@ -271,7 +252,7 @@ const AgCDHome: React.FC = () => {
           <div className="step-item-horizontal">
             <div className="step-number-circle">1</div>
             <div className="step-text-content">
-              <h3 className="step-heading">Start with a canned prompt</h3>
+              <h3 className="step-heading">Start with a prompt template</h3>
               <p className="step-text">
                 Select one of the pre-configured templates below. These templates provide starting points for common routing scenarios, which you can customize using natural language. Edit the prompt and fine-tune it to match your exact needs and business requirements.
               </p>
@@ -281,9 +262,9 @@ const AgCDHome: React.FC = () => {
           <div className="step-item-horizontal">
             <div className="step-number-circle">2</div>
             <div className="step-text-content">
-              <h3 className="step-heading">Add and Edit policies</h3>
+              <h3 className="step-heading">Create and Edit playbooks</h3>
               <p className="step-text">
-                Create or add to existing policies using natural language. A policy cannot work out of the box without any user instruction (customization).
+                Create or add to existing playbooks using natural language. A playbook cannot work out of the box without any user instruction (customization).
               </p>
             </div>
           </div>
@@ -292,24 +273,24 @@ const AgCDHome: React.FC = () => {
 
       <div className="agcd-prompts-section">
         <div className="prompts-section-header">
-          <h2 className="section-title-medium">Get Started with Canned Prompts</h2>
+          <h2 className="section-title-medium">Get Started with Prompt Templates</h2>
           <button className="prompt-gallery-button" onClick={handleOpenGallery}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path d="M4 3a2 2 0 0 0-2 2v3.5a.5.5 0 0 0 1 0V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 1 0V5a2 2 0 0 0-2-2H4zm0 8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4zm-1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"/>
             </svg>
-            Prompt Gallery
+            Template Gallery
           </button>
         </div>
 
-        <div className="canned-prompts-buttons">
+        <div className="prompt-template-buttons">
           <button
-            className={`canned-prompt-btn ${activePromptFilter === 'orchestration' ? 'active' : ''}`}
+            className={`prompt-template-btn ${activePromptFilter === 'orchestration' ? 'active' : ''}`}
             onClick={() => handlePromptFilterClick('orchestration')}
           >
             Orchestrator
           </button>
           <button
-            className={`canned-prompt-btn ${activePromptFilter === 'assignment' ? 'active' : ''}`}
+            className={`prompt-template-btn ${activePromptFilter === 'assignment' ? 'active' : ''}`}
             onClick={() => handlePromptFilterClick('assignment')}
           >
             Assignment
@@ -338,20 +319,20 @@ const AgCDHome: React.FC = () => {
 
       {/* Subtle link to conversational experience */}
       <div className="conversational-link-section">
-        <span className="conversational-link-text">Looking for natural language policy creation?</span>
+        <span className="conversational-link-text">Looking for natural language playbook creation?</span>
         <button className="conversational-link-btn" onClick={() => navigate('/agcd/conversational')}>
           Try conversational experience →
         </button>
       </div>
       </div>
 
-      {/* Prompt Gallery Modal */}
+      {/* Template Gallery Modal */}
       {showGalleryModal && (
         <>
           <div className="gallery-modal-overlay" onClick={handleCloseGallery}></div>
           <div className="gallery-modal">
             <div className="gallery-modal-header">
-              <h2 className="gallery-modal-title">AgCD Prompt gallery</h2>
+              <h2 className="gallery-modal-title">Template Gallery</h2>
               <button className="gallery-modal-close" onClick={handleCloseGallery}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -386,16 +367,15 @@ const AgCDHome: React.FC = () => {
                   <input
                     type="text"
                     className="gallery-search-input"
-                    placeholder="Search for prompts"
+                    placeholder="Search templates"
                     value={gallerySearchQuery}
                     onChange={(e) => setGallerySearchQuery(e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* Dropdown Filters */}
+              {/* Scenario Filter */}
               <div className="gallery-dropdowns-row">
-                {/* Scenario Dropdown */}
                 <div className="gallery-dropdown-group">
                   <select
                     className="gallery-dropdown-select"
@@ -406,23 +386,6 @@ const AgCDHome: React.FC = () => {
                     {getCurrentScenarios().map((scenario) => (
                       <option key={scenario} value={scenario}>
                         {scenario}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Sub-scenario Dropdown */}
-                <div className="gallery-dropdown-group">
-                  <select
-                    className="gallery-dropdown-select"
-                    value={selectedSubScenario}
-                    onChange={(e) => setSelectedSubScenario(e.target.value)}
-                    disabled={!selectedScenario}
-                  >
-                    <option value="">All sub-scenarios</option>
-                    {getCurrentSubScenarios().map((subScenario) => (
-                      <option key={subScenario} value={subScenario}>
-                        {subScenario}
                       </option>
                     ))}
                   </select>
@@ -449,13 +412,13 @@ const AgCDHome: React.FC = () => {
                         className="gallery-card-view-btn"
                         onClick={() => handleViewSamplePrompt(card.id)}
                       >
-                        View sample prompt →
+                        Use this template →
                       </button>
                     </div>
                   ))
                 ) : (
                   <div className="gallery-no-results">
-                    <p>No prompts found matching your filters.</p>
+                    <p>No templates found matching your filters.</p>
                   </div>
                 )}
               </div>

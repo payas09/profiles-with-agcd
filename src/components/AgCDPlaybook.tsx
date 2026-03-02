@@ -63,14 +63,14 @@ const AgCDPlaybook: React.FC = () => {
     const newId = duplicatePrompt(policyId);
     if (newId) {
       loadPrompts();
-      alert('Policy duplicated successfully!');
+      alert('Playbook duplicated successfully!');
     }
   };
 
   const handleDelete = (policyId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setOpenMenuId(null);
-    if (confirm('Are you sure you want to delete this policy?')) {
+    if (confirm('Are you sure you want to delete this playbook?')) {
       deletePrompt(policyId);
       loadPrompts();
     }
@@ -206,7 +206,7 @@ const AgCDPlaybook: React.FC = () => {
             <span className="preview-badge-style">Preview: Testing</span>
           </div>
           <p className="playbook-page-desc">
-            View and manage all your routing policies. Create policies to control routing patterns, working hours, assignment logic, and automated actions.
+            View and manage all your playbooks. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions.
           </p>
         </div>
 
@@ -235,7 +235,7 @@ const AgCDPlaybook: React.FC = () => {
           </div>
         </div>
 
-        {/* Search and New Policy Button */}
+        {/* Search and New Playbook Button */}
         <div className="search-and-new-container">
           <div className="search-box-wrapper">
             <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -244,25 +244,25 @@ const AgCDPlaybook: React.FC = () => {
             <input
               type="text"
               className="search-input-field"
-              placeholder="Search policies"
+              placeholder="Search playbooks"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="new-policy-button" onClick={() => navigate('/agcd')}>
+          <button className="new-playbook-button" onClick={() => navigate('/agcd')}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
             </svg>
-            New policy
+            New playbook
           </button>
         </div>
 
-        {/* Policies Table */}
-        <div className="policies-table-wrapper">
-          <table className="policies-data-table">
+        {/* Playbooks Table */}
+        <div className="playbooks-table-wrapper">
+          <table className="playbooks-data-table">
             <thead>
               <tr>
-                <th>Policy Name</th>
+                <th>Playbook Name</th>
                 <th>Trigger</th>
                 <th>Status</th>
                 <th>Profiles</th>
@@ -275,16 +275,16 @@ const AgCDPlaybook: React.FC = () => {
                 filteredPolicies.map((policy) => (
                   <tr key={policy.id}>
                     <td>
-                      <div className="policy-name-cell">
+                      <div className="playbook-name-cell">
                         <span
-                          className="policy-name-link-text"
+                          className="playbook-name-link-text"
                           onClick={() => handlePolicyClick(policy.id)}
                           style={{ cursor: 'pointer' }}
                         >
                           {policy.promptName}
                         </span>
                         {isNewPolicy(policy) && (
-                          <span className="new-policy-tag">New</span>
+                          <span className="new-playbook-tag">New</span>
                         )}
                       </div>
                     </td>
@@ -356,7 +356,7 @@ const AgCDPlaybook: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={6} className="no-results-text">
-                    No policies found. Create a new policy from the Home tab.
+                    No playbooks found. Create a new playbook from the Home tab.
                   </td>
                 </tr>
               )}
