@@ -1004,3 +1004,99 @@
     font-size: 13px;
   }
 }
+
+/* ================================================
+   Overflow Handling Editor Specific Styles
+   ================================================ */
+
+/* Overflow Conditions Line */
+.overflow-conditions-line {
+  padding-left: 20px;
+  margin-bottom: 4px;
+}
+
+.condition-bracket {
+  font-weight: 600;
+  color: #8a8886;
+  font-size: 16px;
+}
+
+.condition-or {
+  color: #605e5c;
+  font-style: italic;
+  margin: 0 4px;
+}
+
+.overflow-condition-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 2px 0;
+}
+
+.overflow-condition-dropdown {
+  min-width: 180px;
+}
+
+.value-label {
+  font-size: 12px;
+  color: #605e5c;
+  margin-left: 2px;
+}
+
+/* Action Line */
+.action-line {
+  padding-left: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-arrow {
+  font-weight: 600;
+  color: #107c10;
+  font-size: 16px;
+}
+
+.action-dropdown {
+  min-width: 180px;
+}
+
+/* Template Input for phone numbers etc */
+.template-input {
+  padding: 4px 8px;
+  border: 1px solid #0078d4;
+  border-radius: 3px;
+  background-color: #e1f0ff;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #0078d4;
+  font-weight: 500;
+  min-width: 140px;
+}
+
+.template-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px #0078d4;
+}
+
+.template-input::placeholder {
+  color: #8eb8e5;
+  font-weight: 400;
+}
+
+.template-input.has-error {
+  background-color: #fef0f1;
+  border-color: #d13438;
+  color: #d13438;
+}
+
+/* Error state for dropdowns */
+.template-dropdown.has-error {
+  background-color: #fef0f1;
+  border-color: #d13438;
+  color: #d13438;
+}

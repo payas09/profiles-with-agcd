@@ -14,6 +14,7 @@
 import React, { useState } from 'react';
 import './TemplateBasedEditor.css';
 import RingExpansionEditor from './RingExpansionEditor';
+import OverflowHandlingEditor from './OverflowHandlingEditor';
 
 // ============================================
 // Variables Configuration
@@ -241,10 +242,29 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   // Check if this is a ring expansion scenario
   const isRingExpansionScenario = scenarioId === 'ring-expansion-restricted' || scenarioId === 'ring-expansion-open';
 
+  // Check if this is an overflow handling scenario
+  const isOverflowScenario = scenarioId === 'scheduled-callback-overflow' ||
+    scenarioId === 'did-overflow' ||
+    scenarioId === 'agent-availability-overflow' ||
+    scenarioId === 'offline-overflow' ||
+    scenarioId === 'recurring-overflow' ||
+    scenarioId === 'messages-with-overflow';
+
   // If ring expansion scenario, render the specialized editor
   if (isRingExpansionScenario) {
     return (
       <RingExpansionEditor
+        scenarioId={scenarioId}
+        initialRequirement={initialRequirement}
+        onPromptGenerated={onPromptGenerated}
+      />
+    );
+  }
+
+  // If overflow scenario, render the overflow handling editor
+  if (isOverflowScenario) {
+    return (
+      <OverflowHandlingEditor
         scenarioId={scenarioId}
         initialRequirement={initialRequirement}
         onPromptGenerated={onPromptGenerated}
