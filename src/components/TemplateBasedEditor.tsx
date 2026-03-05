@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import './TemplateBasedEditor.css';
 import RingExpansionEditor from './RingExpansionEditor';
 import OverflowHandlingEditor from './OverflowHandlingEditor';
+import PriorityEscalationEditor from './PriorityEscalationEditor';
 
 // ============================================
 // Variables Configuration
@@ -280,6 +281,10 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     scenarioId === 'overflow-conversation-rejected' ||
     scenarioId === 'overflow-missed-notification';
 
+  // Check if this is a priority escalation scenario
+  const isPriorityEscalationScenario = scenarioId === 'wait-time-escalation' ||
+    scenarioId === 'queue-transfer-escalation';
+
   // If ring expansion scenario, render the specialized editor
   if (isRingExpansionScenario) {
     return (
@@ -300,6 +305,19 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         scenarioId={scenarioId}
         initialRequirement={initialRequirement}
         initialState={initialState as TemplateEditorState}
+        onPromptGenerated={onPromptGenerated}
+        onStateChange={onStateChange as any}
+      />
+    );
+  }
+
+  // If priority escalation scenario, render the priority escalation editor
+  if (isPriorityEscalationScenario) {
+    return (
+      <PriorityEscalationEditor
+        scenarioId={scenarioId}
+        initialRequirement={initialRequirement}
+        initialState={initialState as any}
         onPromptGenerated={onPromptGenerated}
         onStateChange={onStateChange as any}
       />
