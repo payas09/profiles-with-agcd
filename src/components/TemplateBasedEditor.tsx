@@ -258,6 +258,7 @@ interface TemplateBasedEditorProps {
   onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
   onPolicyConfigChange?: (config: PolicyConfig) => void;
   onStateChange?: (state: TemplateEditorState | ExpertRoutingEditorState, prompt: string) => void;
+  isPublicPreview?: boolean;
 }
 
 // ============================================
@@ -270,7 +271,8 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   initialState,
   onPromptGenerated,
   onPolicyConfigChange,
-  onStateChange
+  onStateChange,
+  isPublicPreview = false
 }) => {
   // Check if this is a ring expansion scenario
   const isRingExpansionScenario = scenarioId === 'ring-expansion-restricted' || scenarioId === 'ring-expansion-open';
@@ -307,6 +309,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         initialState={initialState as TemplateEditorState}
         onPromptGenerated={onPromptGenerated}
         onStateChange={onStateChange as any}
+        isPublicPreview={isPublicPreview}
       />
     );
   }

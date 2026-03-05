@@ -363,7 +363,7 @@ const AgCDHomeConversational: React.FC = () => {
         <div className="agcd-home-header">
         <div className="agcd-title-row">
           <h1 className="agcd-main-title">Orchestration Agent (Preview)</h1>
-          <span className="preview-badge-inline">Preview: Testing</span>
+          <span className="preview-badge-inline">Preview</span>
         </div>
         <p className="agcd-subtitle">
           Use our intuitive natural language prompting to create routing scenarios. Create policies to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.

@@ -437,6 +437,29 @@
   flex: 1;
 }
 
+/* Gallery Modal Tabs */
+.gallery-modal-tabs {
+  margin-bottom: 16px;
+}
+
+/* Tabs and Search Row for Public Preview */
+.gallery-tabs-search-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.gallery-tabs-search-row .gallery-modal-tabs {
+  margin-bottom: 0;
+}
+
+/* Narrow dropdown for scenario filter */
+.gallery-dropdown-narrow {
+  flex: none;
+  width: 200px;
+}
+
 /* Top Controls - Filter Buttons and Search */
 .gallery-top-controls {
   display: flex;

@@ -402,7 +402,7 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-.status-badge.published {
+.status-badge.active {
   background-color: #dff6dd;
   color: #107c10;
 }
@@ -1166,5 +1166,143 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Publish Confirmation Modal */
+.publish-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.publish-confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 1001;
+  width: 480px;
+  max-width: 90vw;
+}
+
+.publish-confirm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #edebe9;
+}
+
+.publish-confirm-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.publish-confirm-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.publish-confirm-close:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+.publish-confirm-content {
+  padding: 24px;
+}
+
+.publish-confirm-message {
+  font-size: 14px;
+  color: #323130;
+  line-height: 1.6;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.publish-confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #edebe9;
+}
+
+/* Disabled button state for menu buttons */
+.menu-btn-secondary.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Success Banner Styles */
+.success-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: #dff6dd;
+  border-bottom: 1px solid #c8e6c9;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.success-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.success-banner-icon {
+  flex-shrink: 0;
+}
+
+.success-banner-text {
+  font-size: 14px;
+  color: #242424;
+}
+
+.success-banner-link {
+  color: #0078d4;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.success-banner-link:hover {
+  text-decoration: underline;
+  color: #005a9e;
+}
+
+.success-banner-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.success-banner-close:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #242424;
 }
 

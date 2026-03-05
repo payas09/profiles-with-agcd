@@ -320,7 +320,7 @@
   display: inline-block;
 }
 
-.status-pill.published {
+.status-pill.active {
   background-color: #dff6dd;
   color: #107c10;
 }
@@ -520,5 +520,191 @@
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+/* Action Buttons Container */
+.action-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* View Toggle Buttons */
+.view-toggle-buttons {
+  display: flex;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  background-color: white;
+  border: none;
+  border-right: 1px solid #e1dfdd;
+  cursor: pointer;
+  color: #605e5c;
+  transition: all 0.2s;
+}
+
+.view-toggle-btn:last-child {
+  border-right: none;
+}
+
+.view-toggle-btn:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+.view-toggle-btn.active {
+  background-color: #e1dfdd;
+  color: #242424;
+}
+
+/* Playbook Name with Content */
+.playbook-name-with-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.playbook-content-preview {
+  font-size: 13px;
+  color: #605e5c;
+  font-style: italic;
+  line-height: 1.4;
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Grid View */
+.playbooks-grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.playbook-grid-card {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.playbook-grid-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.grid-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.grid-card-title-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.grid-card-title-header .playbook-name-link-text {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-card-title-header .new-playbook-tag {
+  flex-shrink: 0;
+}
+
+.grid-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #605e5c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.grid-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  line-height: 1.4;
+}
+
+.grid-card-title .playbook-name-link-text {
+  font-size: 14px;
+}
+
+.grid-card-content {
+  font-size: 13px;
+  color: #605e5c;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.grid-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grid-card-field .status-pill {
+  align-self: flex-start;
+}
+
+.grid-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #242424;
+}
+
+.grid-field-value {
+  font-size: 13px;
+  color: #605e5c;
+}
+
+.no-results-grid {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #605e5c;
+  font-style: italic;
+  padding: 32px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+}
+
+/* Responsive grid */
+@media (max-width: 1200px) {
+  .playbooks-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .playbooks-grid-container {
+    grid-template-columns: 1fr;
   }
 }

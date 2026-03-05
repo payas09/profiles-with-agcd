@@ -518,12 +518,11 @@ const AgCDPromptEdit: React.FC = () => {
   const [selectedProfiles, setSelectedProfiles] = useState<ProfileWithQueues[]>([]);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('all');
   const [selectedTrigger, setSelectedTrigger] = useState('conversation-waiting');
-  const [status, setStatus] = useState<'Draft' | 'Published'>('Draft');
+  const [status, setStatus] = useState<'Draft' | 'Active'>('Draft');
   const [policyType, setPolicyType] = useState<string>('Orchestrator');
   const [showSidePanel, setShowSidePanel] = useState(false);
   const [tempSelectionMode, setTempSelectionMode] = useState<SelectionMode>('all');
   const [tempSelectedProfiles, setTempSelectedProfiles] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'engagement' | 'conversation'>('engagement');
   const [activePageTab, setActivePageTab] = useState<'home' | 'playbook'>('home');
   const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot' | 'template'>('template');
   const [policyConfig, setPolicyConfig] = useState<PolicyConfig | null>(null);
@@ -536,6 +535,11 @@ const AgCDPromptEdit: React.FC = () => {
   const isInitialLoadRef = useRef(true);
   // Track the actual policy ID - set when editing existing or after first save of new policy
   const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
+  // Confirmation modal state
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  // Success banner states
+  const [showSaveBanner, setShowSaveBanner] = useState(false);
+  const [showPublishBanner, setShowPublishBanner] = useState(false);
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -547,7 +551,14 @@ const AgCDPromptEdit: React.FC = () => {
         setPolicyBehavior(savedPrompt.policyBehavior);
         setSelectedProfiles(savedPrompt.selectedProfiles);
         setSelectionMode(savedPrompt.selectionMode);
-        setSelectedTrigger(savedPrompt.selectedTrigger);
+        // Fix trigger for existing playbooks based on scenarioId
+        if (savedPrompt.scenarioId === 'queue-transfer-escalation') {
+          setSelectedTrigger('conversation-transferred');
+        } else if (savedPrompt.scenarioId === 'wait-time-escalation') {
+          setSelectedTrigger('conversation-waiting');
+        } else {
+          setSelectedTrigger(savedPrompt.selectedTrigger);
+        }
         setStatus(savedPrompt.status);
         setPolicyType(savedPrompt.type);
         // Load template state for restoration
@@ -567,7 +578,12 @@ const AgCDPromptEdit: React.FC = () => {
       setPolicyBehavior(template.defaultPrompt);
       setSelectedProfiles([]);
       setSelectionMode('all');
-      setSelectedTrigger('conversation-waiting');
+      // Set trigger based on scenario type
+      if (promptType === 'queue-transfer-escalation') {
+        setSelectedTrigger('conversation-transferred');
+      } else {
+        setSelectedTrigger('conversation-waiting');
+      }
       setStatus('Draft');
       setPolicyType(template.type);
       setTemplateState(undefined); // No saved state for new policies
@@ -628,7 +644,8 @@ const AgCDPromptEdit: React.FC = () => {
         lastModified: 'Auto-saved',
         type: policyType,
         templateState,
-        scenarioId: effectiveScenarioId
+        scenarioId: effectiveScenarioId,
+        isPublicPreview
       };
       savePrompt(id, promptData);
       setLastAutoSaved(new Date());
@@ -679,11 +696,24 @@ const AgCDPromptEdit: React.FC = () => {
     if (tempSelectionMode === 'all') {
       setSelectedProfiles([]);
     } else {
-      const newSelectedProfiles = tempSelectedProfiles.map(profileId => {
-        const profile = profilesWithQueues.find(p => p.profileId === profileId);
-        return profile!;
-      });
-      setSelectedProfiles(newSelectedProfiles);
+      if (isPublicPreview) {
+        // For public preview, map queue IDs to profile-like structure for storage
+        const newSelectedQueues = tempSelectedProfiles.map(queueId => {
+          const queue = queueProfileMappings.find(q => q.queueId === queueId);
+          return {
+            profileId: queue!.queueId,
+            profileName: queue!.queueName,
+            queues: [queue!.queueName]
+          };
+        });
+        setSelectedProfiles(newSelectedQueues);
+      } else {
+        const newSelectedProfiles = tempSelectedProfiles.map(profileId => {
+          const profile = profilesWithQueues.find(p => p.profileId === profileId);
+          return profile!;
+        });
+        setSelectedProfiles(newSelectedProfiles);
+      }
     }
     setShowSidePanel(false);
   };
@@ -716,10 +746,13 @@ const AgCDPromptEdit: React.FC = () => {
       lastModified: 'Just now',
       type: policyType,
       templateState, // Include template state for restoration on edit
-      scenarioId: effectiveScenarioId // Store which scenario/template was used
+      scenarioId: effectiveScenarioId, // Store which scenario/template was used
+      isPublicPreview
     };
     savePrompt(id, promptData);
-    alert('Playbook saved successfully!');
+
+    // Show success banner
+    setShowSaveBanner(true);
 
     // If this was a new policy (first save), store the ID and navigate to edit mode
     if (!savedPolicyId) {
@@ -728,7 +761,12 @@ const AgCDPromptEdit: React.FC = () => {
     }
   };
 
-  const handlePublish = () => {
+  const handlePublishClick = () => {
+    // Show confirmation modal
+    setShowPublishConfirm(true);
+  };
+
+  const handlePublishConfirm = () => {
     // Use savedPolicyId if available (existing policy or already auto-saved)
     // Only generate new ID if this is the first save of a new policy
     const id = savedPolicyId || `${promptType}-${Date.now()}`;
@@ -742,11 +780,12 @@ const AgCDPromptEdit: React.FC = () => {
       selectedProfiles,
       selectionMode,
       selectedTrigger,
-      status: 'Published' as const,
+      status: 'Active' as const,
       lastModified: 'Just now',
       type: policyType,
       templateState, // Include template state for restoration on edit
-      scenarioId: effectiveScenarioId // Store which scenario/template was used
+      scenarioId: effectiveScenarioId, // Store which scenario/template was used
+      isPublicPreview
     };
     savePrompt(id, promptData);
 
@@ -755,9 +794,14 @@ const AgCDPromptEdit: React.FC = () => {
       setSavedPolicyId(id);
     }
 
-    setStatus('Published');
-    alert('Playbook published successfully!');
-    navigate(`${basePath}/playbook`);
+    setStatus('Active');
+    setShowPublishConfirm(false);
+    // Show success banner instead of navigating away
+    setShowPublishBanner(true);
+  };
+
+  const handlePublishCancel = () => {
+    setShowPublishConfirm(false);
   };
 
   const handleBack = () => {
@@ -785,20 +829,26 @@ const AgCDPromptEdit: React.FC = () => {
   // Render profile display based on selection mode
   const renderProfileDisplay = () => {
     if (selectionMode === 'all') {
-      return <div className="profile-display-text">All Engagement profiles</div>;
+      return <div className="profile-display-text">{isPublicPreview ? 'All queues' : 'All Engagement profiles'}</div>;
     } else if (selectionMode === 'list' && selectedProfiles.length > 0) {
       return (
         <div className="profile-list-display">
           {selectedProfiles.map(profile => (
             <div key={profile.profileId} className="profile-list-item">
               <div className="profile-info-group">
-                <span className="profile-list-name">{profile.profileName}</span>
-                <span className="profile-list-queues">({profile.queues.join(', ')})</span>
+                {isPublicPreview ? (
+                  <span className="profile-list-name">{profile.profileName}</span>
+                ) : (
+                  <>
+                    <span className="profile-list-name">{profile.profileName}</span>
+                    <span className="profile-list-queues">({profile.queues.join(', ')})</span>
+                  </>
+                )}
               </div>
               <button
                 className="profile-list-remove"
                 onClick={() => handleRemoveProfile(profile.profileId)}
-                aria-label="Remove profile"
+                aria-label={isPublicPreview ? "Remove queue" : "Remove profile"}
               >
                 ×
               </button>
@@ -809,18 +859,24 @@ const AgCDPromptEdit: React.FC = () => {
     } else if (selectionMode === 'except' && selectedProfiles.length > 0) {
       return (
         <div className="profile-except-display">
-          <div className="profile-display-text">All engagement profiles except:</div>
+          <div className="profile-display-text">{isPublicPreview ? 'All queues except:' : 'All engagement profiles except:'}</div>
           <div className="profile-list-display">
             {selectedProfiles.map(profile => (
               <div key={profile.profileId} className="profile-list-item">
                 <div className="profile-info-group">
-                  <span className="profile-list-name">{profile.profileName}</span>
-                  <span className="profile-list-queues">({profile.queues.join(', ')})</span>
+                  {isPublicPreview ? (
+                    <span className="profile-list-name">{profile.profileName}</span>
+                  ) : (
+                    <>
+                      <span className="profile-list-name">{profile.profileName}</span>
+                      <span className="profile-list-queues">({profile.queues.join(', ')})</span>
+                    </>
+                  )}
                 </div>
                 <button
                   className="profile-list-remove"
                   onClick={() => handleRemoveProfile(profile.profileId)}
-                  aria-label="Remove profile"
+                  aria-label={isPublicPreview ? "Remove queue" : "Remove profile"}
                 >
                   ×
                 </button>
@@ -830,7 +886,7 @@ const AgCDPromptEdit: React.FC = () => {
         </div>
       );
     }
-    return <div className="profile-display-text">No profiles selected</div>;
+    return <div className="profile-display-text">{isPublicPreview ? 'No queues selected' : 'No profiles selected'}</div>;
   };
 
   // Render the main form content (used in both normal and copilot layouts)
@@ -840,7 +896,7 @@ const AgCDPromptEdit: React.FC = () => {
       <div className="prompt-header-section">
         <div className="header-title-group">
           <h1 className="prompt-page-title">{inCopilotMode ? promptName || 'Assignment Policy' : 'Orchestration Agent (Preview)'}</h1>
-          {!inCopilotMode && <span className="preview-badge-header">Preview: Testing</span>}
+          {!inCopilotMode && <span className="preview-badge-header">Preview</span>}
         </div>
         {!inCopilotMode && (
           <p className="prompt-page-subtitle">
@@ -863,11 +919,11 @@ const AgCDPromptEdit: React.FC = () => {
         </div>
       )}
 
-      {/* Profiles Section - Card */}
+      {/* Profiles/Queues Section - Card */}
       <div className="edit-card">
         <div className="profile-section-full">
           <div className="profile-section-header">
-            <h2 className="profile-section-title">Profiles</h2>
+            <h2 className="profile-section-title">{isPublicPreview ? 'Queues' : 'Profiles'}</h2>
             <button className="profile-edit-link" onClick={handleAddProfile}>
               Edit
             </button>
@@ -934,6 +990,7 @@ const AgCDPromptEdit: React.FC = () => {
               initialRequirement={nlRequirement}
               scenarioId={promptType || savedScenarioId || urlScenario || undefined}
               initialState={templateState}
+              isPublicPreview={isPublicPreview}
               onStateChange={(state: TemplateEditorState, prompt: string) => {
                 // Update local state for persistence
                 setTemplateState(state);
@@ -958,7 +1015,8 @@ const AgCDPromptEdit: React.FC = () => {
                   lastModified: 'Just now',
                   type: policyType,
                   templateState,
-                  scenarioId: effectiveScenarioId
+                  scenarioId: effectiveScenarioId,
+                  isPublicPreview
                 };
                 savePrompt(id, promptData);
 
@@ -1006,6 +1064,48 @@ const AgCDPromptEdit: React.FC = () => {
 
   return (
     <div className={`agcd-prompt-edit-page ${editMode === 'copilot' ? 'copilot-layout' : ''}`}>
+      {/* Success Banners */}
+      {showSaveBanner && (
+        <div className="success-banner">
+          <div className="success-banner-content">
+            <svg className="success-banner-icon" width="16" height="16" viewBox="0 0 16 16" fill="#107c10">
+              <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.854 6.354l-4.5 4.5a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7 9.793l4.146-4.147a.5.5 0 0 1 .708.708z"/>
+            </svg>
+            <span className="success-banner-text">
+              Playbook saved successfully!{' '}
+              <a href="#" className="success-banner-link" onClick={(e) => { e.preventDefault(); navigate(`${basePath}/playbook`); }}>
+                Back to Playbook page
+              </a>
+            </span>
+          </div>
+          <button className="success-banner-close" onClick={() => setShowSaveBanner(false)}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+      {showPublishBanner && (
+        <div className="success-banner">
+          <div className="success-banner-content">
+            <svg className="success-banner-icon" width="16" height="16" viewBox="0 0 16 16" fill="#107c10">
+              <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.854 6.354l-4.5 4.5a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7 9.793l4.146-4.147a.5.5 0 0 1 .708.708z"/>
+            </svg>
+            <span className="success-banner-text">
+              Playbook published successfully!{' '}
+              <a href="#" className="success-banner-link" onClick={(e) => { e.preventDefault(); navigate(`${basePath}/playbook`); }}>
+                Back to Playbook page
+              </a>
+            </span>
+          </div>
+          <button className="success-banner-close" onClick={() => setShowPublishBanner(false)}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Top Menu Bar */}
       <div className="top-menu-bar">
         <div className="menu-left-actions">
@@ -1015,18 +1115,23 @@ const AgCDPromptEdit: React.FC = () => {
             </svg>
             Back
           </button>
-          <button className="menu-btn-secondary" onClick={handleSave}>
+          <button
+            className={`menu-btn-secondary ${status === 'Active' ? 'disabled' : ''}`}
+            onClick={handleSave}
+            disabled={status === 'Active'}
+            title={status === 'Active' ? 'Save is disabled when editing a published playbook' : ''}
+          >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M2 1.5A1.5 1.5 0 0 1 3.5 0h9A1.5 1.5 0 0 1 14 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-13zM3.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-9z"/>
               <path d="M11 3H5v4h6V3zM5 2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H5z"/>
             </svg>
             Save
           </button>
-          <button className="menu-btn-primary" onClick={handlePublish}>
+          <button className="menu-btn-primary" onClick={handlePublishClick}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.695 8.695 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.75.75 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75zM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5zM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75z"/>
             </svg>
-            Publish
+            {status === 'Active' ? 'Save & publish' : 'Publish'}
           </button>
           {editMode === 'copilot' && (
             <button className="menu-btn-exit-copilot" onClick={() => setEditMode('simple')}>
@@ -1110,7 +1215,7 @@ const AgCDPromptEdit: React.FC = () => {
           <div className="side-panel-overlay" onClick={handleCancelProfiles}></div>
           <div className="side-panel-drawer">
             <div className="side-panel-header">
-              <h2 className="side-panel-title">Profiles</h2>
+              <h2 className="side-panel-title">{isPublicPreview ? 'Queues' : 'Profiles'}</h2>
               <button className="side-panel-close-btn" onClick={handleCancelProfiles}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1118,27 +1223,21 @@ const AgCDPromptEdit: React.FC = () => {
               </button>
             </div>
 
-            {/* Tabs */}
+            {/* Tab Header */}
             <div className="side-panel-tabs">
               <button
-                className={`side-panel-tab ${activeTab === 'engagement' ? 'active' : ''}`}
-                onClick={() => setActiveTab('engagement')}
+                className="side-panel-tab active"
               >
-                Engagement profile
-              </button>
-              <button
-                className={`side-panel-tab ${activeTab === 'conversation' ? 'active' : ''}`}
-                onClick={() => setActiveTab('conversation')}
-              >
-                Conversation flow
+                {isPublicPreview ? 'Queue' : 'Engagement profile'}
               </button>
             </div>
 
             <div className="side-panel-content">
-              {activeTab === 'engagement' ? (
-                <>
                   <p className="side-panel-description">
-                    Select how you want to apply this playbook to engagement profiles.
+                    {isPublicPreview
+                      ? 'Select how you want to apply this playbook to queues.'
+                      : 'Select how you want to apply this playbook to engagement profiles.'
+                    }
                   </p>
 
                   {/* Selection Mode Radio Buttons */}
@@ -1151,7 +1250,7 @@ const AgCDPromptEdit: React.FC = () => {
                         checked={tempSelectionMode === 'all'}
                         onChange={() => setTempSelectionMode('all')}
                       />
-                      <span className="radio-label">All Engagement profiles</span>
+                      <span className="radio-label">{isPublicPreview ? 'All queues' : 'All Engagement profiles'}</span>
                     </label>
 
                     <label className="radio-option">
@@ -1162,7 +1261,7 @@ const AgCDPromptEdit: React.FC = () => {
                         checked={tempSelectionMode === 'list'}
                         onChange={() => setTempSelectionMode('list')}
                       />
-                      <span className="radio-label">List of engagement profiles</span>
+                      <span className="radio-label">{isPublicPreview ? 'List of queues' : 'List of engagement profiles'}</span>
                     </label>
 
                     <label className="radio-option">
@@ -1173,55 +1272,77 @@ const AgCDPromptEdit: React.FC = () => {
                         checked={tempSelectionMode === 'except'}
                         onChange={() => setTempSelectionMode('except')}
                       />
-                      <span className="radio-label">All engagement profiles except</span>
+                      <span className="radio-label">{isPublicPreview ? 'All queues except' : 'All engagement profiles except'}</span>
                     </label>
                   </div>
 
-                  {/* Profile List (shown for 'list' and 'except' modes) */}
+                  {/* Profile/Queue List (shown for 'list' and 'except' modes) */}
                   {(tempSelectionMode === 'list' || tempSelectionMode === 'except') && (
                     <div className="profiles-table-container">
-                      <table className="profiles-selection-table">
-                        <thead>
-                          <tr>
-                            <th style={{ width: '40px' }}></th>
-                            <th>Engagement Profile</th>
-                            <th>Queue Names</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {profilesWithQueues.map(profile => (
-                            <tr key={profile.profileId}>
-                              <td>
-                                <input
-                                  type="checkbox"
-                                  checked={tempSelectedProfiles.includes(profile.profileId)}
-                                  onChange={() => handleProfileCheckbox(profile.profileId)}
-                                  className="profile-checkbox-input"
-                                />
-                              </td>
-                              <td className="profile-name-cell">
-                                <Link
-                                  to={`/engagement-profile/${profile.profileId}`}
-                                  className="profile-name-link"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  {profile.profileName}
-                                </Link>
-                              </td>
-                              <td className="queue-names-cell">{profile.queues.join(', ')}</td>
+                      {isPublicPreview ? (
+                        /* Public Preview - Show only Queues */
+                        <table className="profiles-selection-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '40px' }}></th>
+                              <th>Queue</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {queueProfileMappings.map(queue => (
+                              <tr key={queue.queueId}>
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    checked={tempSelectedProfiles.includes(queue.queueId)}
+                                    onChange={() => handleProfileCheckbox(queue.queueId)}
+                                    className="profile-checkbox-input"
+                                  />
+                                </td>
+                                <td className="queue-names-cell">{queue.queueName}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        /* Regular flow - Show Engagement Profiles with Queue Names */
+                        <table className="profiles-selection-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '40px' }}></th>
+                              <th>Engagement Profile</th>
+                              <th>Queue Names</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {profilesWithQueues.map(profile => (
+                              <tr key={profile.profileId}>
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    checked={tempSelectedProfiles.includes(profile.profileId)}
+                                    onChange={() => handleProfileCheckbox(profile.profileId)}
+                                    className="profile-checkbox-input"
+                                  />
+                                </td>
+                                <td className="profile-name-cell">
+                                  <Link
+                                    to={`/engagement-profile/${profile.profileId}`}
+                                    className="profile-name-link"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {profile.profileName}
+                                  </Link>
+                                </td>
+                                <td className="queue-names-cell">{profile.queues.join(', ')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
                     </div>
                   )}
-                </>
-              ) : (
-                <div className="conversation-flow-placeholder">
-                  <p>Conversation flow configuration will be available here.</p>
-                </div>
-              )}
             </div>
 
             <div className="side-panel-footer">
@@ -1230,6 +1351,41 @@ const AgCDPromptEdit: React.FC = () => {
               </button>
               <button className="btn-primary-action" onClick={handleSaveProfiles}>
                 Save
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Publish Confirmation Modal */}
+      {showPublishConfirm && (
+        <>
+          <div className="publish-confirm-overlay" onClick={handlePublishCancel}></div>
+          <div className="publish-confirm-modal">
+            <div className="publish-confirm-header">
+              <h2 className="publish-confirm-title">
+                {status === 'Active' ? 'Update Playbook' : 'Publish Playbook'}
+              </h2>
+              <button className="publish-confirm-close" onClick={handlePublishCancel}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div className="publish-confirm-content">
+              <p className="publish-confirm-message">
+                {status === 'Active'
+                  ? 'This will update the previously published playbook and the conversations will be routed as per this updated playbook for the selected queues.'
+                  : 'This will make the playbook active and the conversations will be routed as per this playbook for the selected queues.'
+                }
+              </p>
+            </div>
+            <div className="publish-confirm-footer">
+              <button className="btn-secondary-action" onClick={handlePublishCancel}>
+                Cancel
+              </button>
+              <button className="btn-primary-action" onClick={handlePublishConfirm}>
+                {status === 'Active' ? 'Save & publish' : 'Publish'}
               </button>
             </div>
           </div>

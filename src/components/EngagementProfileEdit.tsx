@@ -18,11 +18,9 @@ const getPlaybookTab = (prompt: PromptData): string => {
   const name = prompt.promptName.toLowerCase();
 
   if (name.includes('overflow')) {
-    return 'overflow';
+    return 'overflowManagement';
   } else if (name.includes('automated') || name.includes('message')) {
     return 'automatedMessages';
-  } else if (name.includes('priorit')) {
-    return 'dynamicPrioritization';
   } else if (name.includes('assignment') || name.includes('vip') || name.includes('expert') || name.includes('callback')) {
     return 'assignmentMethod';
   }
@@ -31,7 +29,7 @@ const getPlaybookTab = (prompt: PromptData): string => {
   if (prompt.type === 'Assignment') {
     return 'assignmentMethod';
   }
-  return 'overflow'; // Default for Orchestrator type
+  return 'overflowManagement'; // Default for Orchestrator type
 };
 
 const EngagementProfileEdit: React.FC = () => {
@@ -243,6 +241,12 @@ const EngagementProfileEdit: React.FC = () => {
                 Automated messages
               </button>
               <button
+                className={`edit-tab ${activeTab === 'customerWaitTime' ? 'active' : ''}`}
+                onClick={() => setActiveTab('customerWaitTime')}
+              >
+                Customer wait time
+              </button>
+              <button
                 className={`edit-tab ${activeTab === 'notifications' ? 'active' : ''}`}
                 onClick={() => setActiveTab('notifications')}
               >
@@ -253,18 +257,6 @@ const EngagementProfileEdit: React.FC = () => {
                 onClick={() => setActiveTab('workDistribution')}
               >
                 Work distribution
-              </button>
-              <button
-                className={`edit-tab ${activeTab === 'overflow' ? 'active' : ''}`}
-                onClick={() => setActiveTab('overflow')}
-              >
-                Overflow
-              </button>
-              <button
-                className={`edit-tab ${activeTab === 'dynamicPrioritization' ? 'active' : ''}`}
-                onClick={() => setActiveTab('dynamicPrioritization')}
-              >
-                Dynamic prioritization
               </button>
               <button
                 className={`edit-tab ${activeTab === 'assignmentMethod' ? 'active' : ''}`}
@@ -295,6 +287,18 @@ const EngagementProfileEdit: React.FC = () => {
                 onClick={() => setActiveTab('sessionTemplate')}
               >
                 Session template
+              </button>
+              <button
+                className={`edit-tab ${activeTab === 'overflowManagement' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overflowManagement')}
+              >
+                Overflow management
+              </button>
+              <button
+                className={`edit-tab ${activeTab === 'conversationTimeout' ? 'active' : ''}`}
+                onClick={() => setActiveTab('conversationTimeout')}
+              >
+                Conversation timeout rules
               </button>
             </nav>
           </aside>
@@ -411,6 +415,79 @@ const EngagementProfileEdit: React.FC = () => {
                       </svg>
                       Add message trigger
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'customerWaitTime' && (
+              <div className="form-section">
+                <h2 className="section-label">Customer Wait Time</h2>
+                <p className="form-help-text">
+                  Configure how customer wait time is calculated and displayed. These settings affect the wait time
+                  shown to customers in automated messages and queue position updates.
+                </p>
+
+                <div className="form-group-section">
+                  <div className="form-group">
+                    <label className="form-label">Wait time calculation method</label>
+                    <select className="form-select" defaultValue="average">
+                      <option value="average">Average wait time - Based on recent conversations</option>
+                      <option value="real-time">Real-time estimation - Based on current queue</option>
+                      <option value="historical">Historical average - Based on historical data</option>
+                      <option value="sla-based">SLA-based - Based on service level agreements</option>
+                    </select>
+                    <p className="form-help-text">
+                      Choose how wait times are calculated for customer messaging
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Wait time display interval (seconds)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      defaultValue="60"
+                      min="30"
+                      max="300"
+                    />
+                    <p className="form-help-text">
+                      How often to update the wait time shown to customers (30-300 seconds)
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span>Show wait time to customers</span>
+                    </label>
+                    <p className="form-help-text">
+                      Display estimated wait time in automated messages to customers
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span>Show position in queue</span>
+                    </label>
+                    <p className="form-help-text">
+                      Display the customer's position in the queue along with wait time
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Maximum displayed wait time (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      defaultValue="30"
+                      min="5"
+                      max="120"
+                    />
+                    <p className="form-help-text">
+                      Cap the displayed wait time at this value to manage customer expectations
+                    </p>
                   </div>
                 </div>
               </div>
@@ -569,29 +646,16 @@ const EngagementProfileEdit: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'overflow' && (
+            {activeTab === 'overflowManagement' && (
               <div className="form-section">
-                <h2 className="section-label">Overflow</h2>
+                <h2 className="section-label">Overflow Management</h2>
                 <p className="form-help-text">
                   Configure overflow routing rules to handle scenarios when queues reach capacity or wait times exceed thresholds.
                   Overflow strategies ensure customers receive timely assistance even during high-demand periods.
                 </p>
 
                 {/* AgCD Section */}
-                {renderAgCDSection('Overflow', 'orchestration', 'Overflow handling', 'overflow')}
-              </div>
-            )}
-
-            {activeTab === 'dynamicPrioritization' && (
-              <div className="form-section">
-                <h2 className="section-label">Dynamic Prioritization</h2>
-                <p className="form-help-text">
-                  Configure rules to dynamically adjust work item priorities based on real-time conditions such as wait time,
-                  customer sentiment, transfer events, and business requirements. Ensure critical issues receive immediate attention.
-                </p>
-
-                {/* AgCD Section */}
-                {renderAgCDSection('Dynamic prioritization', 'orchestration', 'Dynamic prioritization', 'dynamicPrioritization')}
+                {renderAgCDSection('Overflow', 'orchestration', 'Overflow handling', 'overflowManagement')}
               </div>
             )}
 
@@ -952,6 +1016,134 @@ const EngagementProfileEdit: React.FC = () => {
                       </svg>
                       Customize session templates in App Profile Manager
                     </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'conversationTimeout' && (
+              <div className="form-section">
+                <h2 className="section-label">Conversation Timeout Rules</h2>
+                <p className="form-help-text">
+                  Configure timeout rules for conversations. These settings determine when conversations are
+                  automatically closed due to customer or agent inactivity.
+                </p>
+
+                <div className="form-group-section">
+                  <h3 className="subsection-title">Customer inactivity timeout</h3>
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span>Enable customer inactivity timeout</span>
+                    </label>
+                    <p className="form-help-text">
+                      Automatically close conversations when customers stop responding
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Customer timeout duration (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      defaultValue="10"
+                      min="1"
+                      max="60"
+                    />
+                    <p className="form-help-text">
+                      Time to wait before closing a conversation due to customer inactivity (1-60 minutes)
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span>Send warning message before timeout</span>
+                    </label>
+                    <p className="form-help-text">
+                      Notify customers before the conversation is closed due to inactivity
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Warning message timing (minutes before timeout)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      defaultValue="2"
+                      min="1"
+                      max="10"
+                    />
+                    <p className="form-help-text">
+                      How many minutes before timeout to send the warning message
+                    </p>
+                  </div>
+                </div>
+
+                <div className="form-group-section">
+                  <h3 className="subsection-title">Agent inactivity timeout</h3>
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" className="form-checkbox" />
+                      <span>Enable agent inactivity timeout</span>
+                    </label>
+                    <p className="form-help-text">
+                      Automatically reassign conversations when agents stop responding
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Agent timeout duration (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      defaultValue="5"
+                      min="1"
+                      max="30"
+                    />
+                    <p className="form-help-text">
+                      Time to wait before reassigning a conversation due to agent inactivity (1-30 minutes)
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Agent timeout action</label>
+                    <select className="form-select" defaultValue="reassign">
+                      <option value="reassign">Reassign to another agent</option>
+                      <option value="return-to-queue">Return to queue</option>
+                      <option value="escalate">Escalate to supervisor</option>
+                      <option value="notify-only">Notify supervisor only</option>
+                    </select>
+                    <p className="form-help-text">
+                      Action to take when an agent is inactive for too long
+                    </p>
+                  </div>
+                </div>
+
+                <div className="form-group-section">
+                  <h3 className="subsection-title">Maximum conversation duration</h3>
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" className="form-checkbox" />
+                      <span>Enable maximum conversation duration</span>
+                    </label>
+                    <p className="form-help-text">
+                      Set a maximum time limit for conversations
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Maximum duration (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      defaultValue="60"
+                      min="15"
+                      max="480"
+                    />
+                    <p className="form-help-text">
+                      Maximum time a conversation can remain open (15-480 minutes)
+                    </p>
                   </div>
                 </div>
               </div>

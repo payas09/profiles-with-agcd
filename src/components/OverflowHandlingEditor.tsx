@@ -267,6 +267,7 @@ interface OverflowHandlingEditorProps {
   initialState?: TemplateEditorState; // For restoring saved state
   onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
   onStateChange?: (state: TemplateEditorState, prompt: string) => void; // Called on every state change
+  isPublicPreview?: boolean; // When true, shows static condition instead of dropdown
 }
 
 // Multi-Select Dropdown Component for variable values
@@ -569,16 +570,18 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   initialRequirement,
   initialState,
   onPromptGenerated,
-  onStateChange
+  onStateChange,
+  isPublicPreview = false
 }) => {
   // Create default branch helper function with sensible defaults
+  // For public preview, always use 'no-agents-available' as the only condition
   const createDefaultBranch = (index: number): OverflowBranch => ({
     id: `branch-${index}`,
     variableValues: {},
     variableExcludeMode: {},
     disabledVariables: [],
-    selectedConditionIds: ['estimated-wait-time'],
-    conditionValues: { 'estimated-wait-time': 5 },
+    selectedConditionIds: isPublicPreview ? ['no-agents-available'] : ['estimated-wait-time'],
+    conditionValues: isPublicPreview ? {} : { 'estimated-wait-time': 5 },
     overflowConditionExcludeMode: false,
     actionId: 'transfer-queue',
     actionValue: 'q8'
@@ -894,7 +897,10 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       });
 
       let overflowConditionText = '';
-      if (branch.overflowConditionExcludeMode) {
+      if (isPublicPreview) {
+        // Public preview: always use static condition
+        overflowConditionText = 'no agents are available immediately';
+      } else if (branch.overflowConditionExcludeMode) {
         // Exclude mode: "all conditions except X"
         const excludedConditions = branch.selectedConditionIds.map(condId => {
           const option = overflowConditionOptions.find(o => o.id === condId);
@@ -913,13 +919,17 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
 
       let conditionText = '';
       if (customerConditionParts.length > 0) {
-        if (branch.overflowConditionExcludeMode) {
+        if (isPublicPreview) {
+          conditionText = `For customers where ${customerConditionParts.join(' AND ')} and ${overflowConditionText}`;
+        } else if (branch.overflowConditionExcludeMode) {
           conditionText = `For customers where ${customerConditionParts.join(' AND ')} and ${overflowConditionText}`;
         } else {
           conditionText = `For customers where ${customerConditionParts.join(' AND ')} and (${overflowConditionText})`;
         }
       } else {
-        if (branch.overflowConditionExcludeMode) {
+        if (isPublicPreview) {
+          conditionText = `For all customers where ${overflowConditionText}`;
+        } else if (branch.overflowConditionExcludeMode) {
           conditionText = `For all customers, where ${overflowConditionText}`;
         } else {
           conditionText = `For all customers where ${overflowConditionText}`;
@@ -972,27 +982,30 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     const errors: { branchId: string; fieldId: string; message: string }[] = [];
 
     branches.forEach((branch, branchIndex) => {
-      // Validate at least one overflow condition is selected
-      if (branch.selectedConditionIds.length === 0) {
-        errors.push({
-          branchId: branch.id,
-          fieldId: 'conditions',
-          message: branch.overflowConditionExcludeMode
-            ? `Rule ${branchIndex + 1}: Please select at least one condition to exclude`
-            : `Rule ${branchIndex + 1}: Please select at least one overflow condition`
-        });
-      } else if (!branch.overflowConditionExcludeMode) {
-        // Only validate values for include mode (exclude mode doesn't need values)
-        branch.selectedConditionIds.forEach((condId) => {
-          const option = overflowConditionOptions.find(o => o.id === condId);
-          if (option?.requiresValue && !branch.conditionValues[condId]) {
-            errors.push({
-              branchId: branch.id,
-              fieldId: condId,
-              message: `Rule ${branchIndex + 1}: Please enter a value for "${option.label}"`
-            });
-          }
-        });
+      // For public preview, condition is static - no validation needed
+      // For regular flow, validate condition selection
+      if (!isPublicPreview) {
+        if (branch.selectedConditionIds.length === 0) {
+          errors.push({
+            branchId: branch.id,
+            fieldId: 'conditions',
+            message: branch.overflowConditionExcludeMode
+              ? `Rule ${branchIndex + 1}: Please select at least one condition to exclude`
+              : `Rule ${branchIndex + 1}: Please select at least one overflow condition`
+          });
+        } else if (!branch.overflowConditionExcludeMode) {
+          // Only validate values for include mode (exclude mode doesn't need values)
+          branch.selectedConditionIds.forEach((condId) => {
+            const option = overflowConditionOptions.find(o => o.id === condId);
+            if (option?.requiresValue && !branch.conditionValues[condId]) {
+              errors.push({
+                branchId: branch.id,
+                fieldId: condId,
+                message: `Rule ${branchIndex + 1}: Please enter a value for "${option.label}"`
+              });
+            }
+          });
+        }
       }
 
       // Validate action is selected
@@ -1087,31 +1100,35 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
         </div>
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
-            {/* Presets Section */}
-            <div className="presets-section">
-              <h4 className="presets-title">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
-                  <path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
-                </svg>
-                Start with a preset
-              </h4>
-              <p className="presets-desc">Choose a common overflow scenario to get started quickly</p>
-              <div className="presets-grid">
-                {overflowPresets.map(preset => (
-                  <button
-                    key={preset.id}
-                    className="preset-card"
-                    onClick={() => applyPreset(preset.id)}
-                  >
-                    <span className="preset-name">{preset.name}</span>
-                    <span className="preset-description">{preset.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Presets Section - Only show for non-public-preview */}
+            {!isPublicPreview && (
+              <>
+                <div className="presets-section">
+                  <h4 className="presets-title">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                      <path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                    </svg>
+                    Start with a preset
+                  </h4>
+                  <p className="presets-desc">Choose a common overflow scenario to get started quickly</p>
+                  <div className="presets-grid">
+                    {overflowPresets.map(preset => (
+                      <button
+                        key={preset.id}
+                        className="preset-card"
+                        onClick={() => applyPreset(preset.id)}
+                      >
+                        <span className="preset-name">{preset.name}</span>
+                        <span className="preset-description">{preset.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="tips-divider" />
+                <div className="tips-divider" />
+              </>
+            )}
 
             <h4 className="tips-subtitle">Tips</h4>
             <ul className="tips-list">
@@ -1119,12 +1136,16 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               <li>Custom overflow rules will not apply to queues with predefined overflow logic.</li>
               <li>Please ensure that the queues referenced in the prompt contain at least one member.</li>
               <li>Minimum wait time threshold is 30 seconds.</li>
-              <li>You can combine multiple overflow conditions using OR logic within a single rule.</li>
+              <li>{isPublicPreview ? 'The overflow condition triggers when no agents are available immediately.' : 'You can combine multiple overflow conditions using OR logic within a single rule.'}</li>
               <li>Add variables from the section below to create advanced conditions based on customer or conversation attributes.</li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>
-              <pre className="tips-example-text">{examplePlaybook}</pre>
+              <pre className="tips-example-text">{isPublicPreview
+                ? `For VIP customers where no agents are available immediately, transfer to VIP Support Queue.
+
+For all other customers where no agents are available immediately, offer direct callback.`
+                : examplePlaybook}</pre>
             </div>
           </div>
         )}
@@ -1212,48 +1233,54 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
                   <>For all customers where{' '}</>
                 )}
 
-                {/* Overflow Conditions - Single clickable box with conditions and values */}
-                {branch.overflowConditionExcludeMode && (
-                  <span className="condition-text-static">all conditions <strong>except</strong> </span>
+                {/* Overflow Condition - Static field for public preview, dropdown for regular */}
+                {isPublicPreview ? (
+                  <span className="overflow-condition-static">no agents are available immediately</span>
+                ) : (
+                  <>
+                    {branch.overflowConditionExcludeMode && (
+                      <span className="condition-text-static">all conditions <strong>except</strong> </span>
+                    )}
+                    <OverflowConditionMultiSelect
+                      selectedIds={branch.selectedConditionIds}
+                      excludeMode={branch.overflowConditionExcludeMode}
+                      conditionValues={branch.conditionValues}
+                      onSelectionChange={(selectedIds) => {
+                        setBranches(prev => prev.map(b => {
+                          if (b.id === branch.id) {
+                            // Initialize default values for newly selected conditions
+                            const newConditionValues = { ...b.conditionValues };
+                            selectedIds.forEach(condId => {
+                              const option = overflowConditionOptions.find(o => o.id === condId);
+                              if (option?.requiresValue && !(condId in newConditionValues)) {
+                                newConditionValues[condId] = option.valueType === 'number' ? 10 : 5;
+                              }
+                            });
+                            // Remove values for deselected conditions
+                            Object.keys(newConditionValues).forEach(key => {
+                              if (!selectedIds.includes(key)) {
+                                delete newConditionValues[key];
+                              }
+                            });
+                            return {
+                              ...b,
+                              selectedConditionIds: selectedIds,
+                              conditionValues: newConditionValues
+                            };
+                          }
+                          return b;
+                        }));
+                      }}
+                      onExcludeModeChange={(exclude) => {
+                        setBranches(prev => prev.map(b =>
+                          b.id === branch.id ? { ...b, overflowConditionExcludeMode: exclude } : b
+                        ));
+                      }}
+                      onValueChange={(conditionId, value) => handleConditionValueChange(branch.id, conditionId, value)}
+                      hasError={hasError(branch.id, 'conditions')}
+                    />
+                  </>
                 )}
-                <OverflowConditionMultiSelect
-                  selectedIds={branch.selectedConditionIds}
-                  excludeMode={branch.overflowConditionExcludeMode}
-                  conditionValues={branch.conditionValues}
-                  onSelectionChange={(selectedIds) => {
-                    setBranches(prev => prev.map(b => {
-                      if (b.id === branch.id) {
-                        // Initialize default values for newly selected conditions
-                        const newConditionValues = { ...b.conditionValues };
-                        selectedIds.forEach(condId => {
-                          const option = overflowConditionOptions.find(o => o.id === condId);
-                          if (option?.requiresValue && !(condId in newConditionValues)) {
-                            newConditionValues[condId] = option.valueType === 'number' ? 10 : 5;
-                          }
-                        });
-                        // Remove values for deselected conditions
-                        Object.keys(newConditionValues).forEach(key => {
-                          if (!selectedIds.includes(key)) {
-                            delete newConditionValues[key];
-                          }
-                        });
-                        return {
-                          ...b,
-                          selectedConditionIds: selectedIds,
-                          conditionValues: newConditionValues
-                        };
-                      }
-                      return b;
-                    }));
-                  }}
-                  onExcludeModeChange={(exclude) => {
-                    setBranches(prev => prev.map(b =>
-                      b.id === branch.id ? { ...b, overflowConditionExcludeMode: exclude } : b
-                    ));
-                  }}
-                  onValueChange={(conditionId, value) => handleConditionValueChange(branch.id, conditionId, value)}
-                  hasError={hasError(branch.id, 'conditions')}
-                />
 
                 {/* Action */}
                 <span className="action-arrow">→</span>

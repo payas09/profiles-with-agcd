@@ -144,7 +144,7 @@ const AgCDHomePublicPreview: React.FC = () => {
         <div className="agcd-home-header">
         <div className="agcd-title-row">
           <h1 className="agcd-main-title">Orchestration Agent (Preview)</h1>
-          <span className="preview-badge-inline">Preview: Testing</span>
+          <span className="preview-badge-inline">Preview</span>
         </div>
         <p className="agcd-subtitle">
           Use our intuitive natural language prompting to create routing scenarios. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.
@@ -247,9 +247,17 @@ const AgCDHomePublicPreview: React.FC = () => {
             </div>
 
             <div className="gallery-modal-content">
-              {/* Filter Buttons and Search Row */}
-              <div className="gallery-top-controls">
-                {/* Search Box */}
+              {/* Orchestrator / Assignment Tabs with Search */}
+              <div className="gallery-tabs-search-row">
+                <div className="prompt-template-buttons gallery-modal-tabs">
+                  <button className="prompt-template-btn active">
+                    Orchestrator
+                  </button>
+                  <button className="prompt-template-btn disabled" disabled title="Coming soon">
+                    Assignment
+                  </button>
+                </div>
+                {/* Search Box on Right */}
                 <div className="gallery-search-wrapper">
                   <svg className="gallery-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -265,8 +273,8 @@ const AgCDHomePublicPreview: React.FC = () => {
               </div>
 
               {/* Scenario Filter */}
-              <div className="gallery-dropdowns-row">
-                <div className="gallery-dropdown-group">
+              <div className="gallery-top-controls">
+                <div className="gallery-dropdown-group gallery-dropdown-narrow">
                   <select
                     className="gallery-dropdown-select"
                     value={selectedScenario}

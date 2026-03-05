@@ -2047,3 +2047,19 @@
   font-family: 'Segoe UI', sans-serif;
   background: transparent;
 }
+
+/* Static Overflow Condition - non-clickable display */
+.overflow-condition-static {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  background-color: #f3f2f1;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #323130;
+  min-height: 28px;
+  white-space: nowrap;
+  font-weight: 500;
+}

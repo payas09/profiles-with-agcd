@@ -44,12 +44,15 @@ export interface PromptData {
   selectedProfiles: ProfileWithQueues[];
   selectionMode: SelectionMode;
   selectedTrigger: string;
-  status: 'Draft' | 'Published';
+  status: 'Draft' | 'Active';
   lastModified: string;
   type: string;
-  createdAt?: number; // Timestamp for sorting and "New" tag
+  createdAt?: number; // Timestamp for when the playbook was first created
+  updatedAt?: number; // Timestamp for when the playbook was last saved (for sorting and "New" tag)
   templateState?: TemplateState; // Stores the template editor state for restoration
   scenarioId?: string; // The scenario/template type used (e.g., 'overflow-conditions-actions')
+  selectedQueue?: string; // Selected queue for public preview flow
+  isPublicPreview?: boolean; // True if created in "Agentic routing public preview" flow
 }
 
 // Load from localStorage
@@ -58,7 +61,14 @@ const loadFromStorage = (): Map<string, PromptData> => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const data = JSON.parse(stored);
-      return new Map(Object.entries(data));
+      // Migrate "Published" status to "Active" for backwards compatibility
+      const entries = Object.entries(data).map(([key, value]: [string, any]) => {
+        if (value.status === 'Published') {
+          value.status = 'Active';
+        }
+        return [key, value];
+      });
+      return new Map(entries);
     }
   } catch (error) {
     console.error('Error loading prompts from localStorage:', error);
@@ -80,55 +90,67 @@ const saveToStorage = (prompts: Map<string, PromptData>) => {
 const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
   if (prompts.size === 0) {
     const samplePolicies: PromptData[] = [
+      // Regular "Agentic routing" flow samples
       {
         id: 'sample-1',
         promptName: 'Overflow routing policy',
-        policyBehavior: 'If queue wait time is greater than 5 minutes, then route to available overflow queue. Communicate with customer whenever overflow is triggered.',
+        policyBehavior: 'For all customers, when no agents are available immediately, route to the overflow queue "General Overflow Queue". For customers where Is VIP Customer is True, route to the overflow queue "VIP Overflow Queue". For all other customers, end the conversation.',
         selectedProfiles: [
           { profileId: 'profile1', profileName: 'Standard Support Profile', queues: ['General Support Queue', 'Chat Support Queue'] }
         ],
         selectionMode: 'list',
         selectedTrigger: 'conversation-waiting',
-        status: 'Published',
+        status: 'Active',
         lastModified: 'Feb 21, 2025',
-        type: 'Orchestrator'
+        type: 'Orchestrator',
+        scenarioId: 'overflow-conditions-actions',
+        isPublicPreview: false
       },
       {
         id: 'sample-2',
         promptName: 'VIP customer routing',
-        policyBehavior: 'Route VIP customers to available VIP agents immediately. If no VIP agents available, escalate to supervisor queue.',
+        policyBehavior: 'For all customers, increase the priority score of the conversation by 10 for every 30 seconds increase in wait time. For customers where Is VIP Customer is True, increase the priority score of the conversation by 25 for every 30 seconds increase in wait time. For all other customers, increase priority score by 5.',
         selectedProfiles: [
           { profileId: 'profile2', profileName: 'VIP Customer Profile', queues: ['VIP Support Queue', 'Emergency Queue'] }
         ],
         selectionMode: 'list',
         selectedTrigger: 'conversation-waiting',
-        status: 'Published',
+        status: 'Active',
         lastModified: 'Feb 18, 2025',
-        type: 'Assignment'
+        type: 'Orchestrator',
+        scenarioId: 'wait-time-escalation',
+        isPublicPreview: false
       },
+      // Public preview flow samples
       {
         id: 'sample-3',
         promptName: 'After hours automated response',
-        policyBehavior: 'Send automated message to customers during after hours. Inform about business hours and expected response time.',
-        selectedProfiles: [],
-        selectionMode: 'all',
+        policyBehavior: 'For all customers, when no agents are available immediately, send a message to customer "Thank you for contacting us. Our business hours are 9 AM to 5 PM. We will respond to your inquiry during the next business day." and then end the conversation.',
+        selectedProfiles: [
+          { profileId: 'q1', profileName: 'General Support Queue', queues: ['General Support Queue'] }
+        ],
+        selectionMode: 'list',
         selectedTrigger: 'conversation-waiting',
         status: 'Draft',
         lastModified: 'Feb 15, 2025',
-        type: 'Orchestrator'
+        type: 'Orchestrator',
+        scenarioId: 'overflow-conditions-actions',
+        isPublicPreview: true
       },
       {
         id: 'sample-4',
-        promptName: 'Prioritize for technical issues',
-        policyBehavior: 'Prioritize work items with technical issues and route to specialist agents first.',
+        promptName: 'Escalate priority on transfer',
+        policyBehavior: 'For all customers, increase priority score of conversations by 20. For customers where Is VIP Customer is True, increase priority score of conversations by 50. For all other customers, increase priority score by 10.',
         selectedProfiles: [
-          { profileId: 'profile3', profileName: 'Technical Support Profile', queues: ['Technical Support Queue'] }
+          { profileId: 'q3', profileName: 'Technical Support Queue', queues: ['Technical Support Queue'] }
         ],
         selectionMode: 'list',
         selectedTrigger: 'conversation-transferred',
         status: 'Draft',
         lastModified: 'Feb 10, 2025',
-        type: 'Assignment'
+        type: 'Orchestrator',
+        scenarioId: 'queue-transfer-escalation',
+        isPublicPreview: true
       }
     ];
 
@@ -146,7 +168,8 @@ export const savePrompt = (promptId: string, data: PromptData) => {
   prompts.set(promptId, {
     ...data,
     lastModified: getTimeAgo(new Date()),
-    createdAt: existing?.createdAt || now // Preserve original createdAt or set new one
+    createdAt: existing?.createdAt || now, // Preserve original createdAt or set new one
+    updatedAt: now // Always update to current time on save
   });
   saveToStorage(prompts);
 };
@@ -159,10 +182,10 @@ export const getPrompt = (promptId: string): PromptData | undefined => {
 export const getAllPrompts = (): PromptData[] => {
   const prompts = loadFromStorage();
   initializeSamplePolicies(prompts);
-  // Sort by createdAt (newest first), policies without createdAt go to the end
+  // Sort by updatedAt (most recently saved first), fall back to createdAt, policies without timestamps go to the end
   return Array.from(prompts.values()).sort((a, b) => {
-    const aTime = a.createdAt || 0;
-    const bTime = b.createdAt || 0;
+    const aTime = a.updatedAt || a.createdAt || 0;
+    const bTime = b.updatedAt || b.createdAt || 0;
     return bTime - aTime;
   });
 };
