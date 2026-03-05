@@ -112,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>Agentic routing</span>
           </Link>
-          <Link to="/agcd-preview" className="nav-item">
+          <Link to="/agcd-preview" className="nav-item" title="Agentic routing public preview">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
               <circle cx="8" cy="6" r="1" fill="currentColor"/>
