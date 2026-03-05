@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import './AgCDPromptEdit.css';
 import { savePrompt, getPrompt, SelectionMode, TemplateState } from '../utils/promptStorage';
 import TemplatePromptEditor from './TemplatePromptEditor';
@@ -496,7 +496,12 @@ const EditablePolicyDisplay: React.FC<EditablePolicyDisplayProps> = ({ config, o
 const AgCDPromptEdit: React.FC = () => {
   const { promptType, policyId } = useParams<{ promptType?: string; policyId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  // Detect if we're in the public preview flow
+  const isPublicPreview = location.pathname.startsWith('/agcd-preview');
+  const basePath = isPublicPreview ? '/agcd-preview' : '/agcd';
 
   // Determine if we're editing an existing policy or creating a new one
   const isEditMode = !!policyId;
@@ -719,7 +724,7 @@ const AgCDPromptEdit: React.FC = () => {
     // If this was a new policy (first save), store the ID and navigate to edit mode
     if (!savedPolicyId) {
       setSavedPolicyId(id);
-      navigate(`/agcd/policy/${id}`, { replace: true });
+      navigate(`${basePath}/policy/${id}`, { replace: true });
     }
   };
 
@@ -752,19 +757,19 @@ const AgCDPromptEdit: React.FC = () => {
 
     setStatus('Published');
     alert('Playbook published successfully!');
-    navigate('/agcd/playbook');
+    navigate(`${basePath}/playbook`);
   };
 
   const handleBack = () => {
-    navigate('/agcd');
+    navigate(basePath);
   };
 
   const handlePageTabChange = (tab: 'home' | 'playbook') => {
     setActivePageTab(tab);
     if (tab === 'home') {
-      navigate('/agcd');
+      navigate(basePath);
     } else {
-      navigate('/agcd/playbook');
+      navigate(`${basePath}/playbook`);
     }
   };
 
@@ -962,7 +967,7 @@ const AgCDPromptEdit: React.FC = () => {
                   setSavedPolicyId(id);
                 }
 
-                navigate('/agcd/playbook');
+                navigate(`${basePath}/playbook`);
               }}
             />
           </div>
