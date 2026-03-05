@@ -190,25 +190,6 @@
   background-color: #f3f2f1;
 }
 
-.header-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.prompt-gallery-button.copilot-button {
-  background: linear-gradient(135deg, #6264a7 0%, #464775 100%);
-  color: white;
-  border: none;
-}
-
-.prompt-gallery-button.copilot-button:hover {
-  background: linear-gradient(135deg, #7375b5 0%, #545593 100%);
-}
-
-.prompt-gallery-button.copilot-button svg {
-  fill: white;
-}
-
 .prompt-template-buttons {
   display: flex;
   gap: 12px;
@@ -885,4 +866,23 @@
 .conversational-link-btn:hover {
   color: #0078d4;
   text-decoration: underline;
+}
+
+/* Discreet footer link - intentionally subtle */
+.footer-links-discreet {
+  margin-top: 60px;
+  padding: 20px 0 10px 0;
+  text-align: center;
+  border-top: 1px solid #f3f2f1;
+}
+
+.copilot-link-discreet {
+  font-size: 11px;
+  color: #c8c6c4;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.copilot-link-discreet:hover {
+  color: #a19f9d;
 }
