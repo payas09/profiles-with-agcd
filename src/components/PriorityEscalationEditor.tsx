@@ -71,13 +71,14 @@ const scenarioConfig: { [key: string]: {
 
 const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
   scenarioId,
+  initialRequirement,
   initialState,
   onStateChange
 }) => {
   const config = scenarioConfig[scenarioId] || scenarioConfig['wait-time-escalation'];
 
   // State for tips accordion
-  const [isTipsOpen, setIsTipsOpen] = useState(true);
+  const [isTipsSectionOpen, setIsTipsSectionOpen] = useState(true);
 
   // State for the template values
   const [priorityScore, setPriorityScore] = useState(
@@ -120,21 +121,34 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
   }, [priorityScore, timeInterval, timeUnit, defaultScore, scenarioId]);
 
   return (
-    <div className="template-based-editor">
+    <div className="template-editor-container">
+      {/* Requirement Banner */}
+      {initialRequirement && (
+        <div className="template-requirement-banner">
+          <span className="req-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </span>
+          <span className="req-label">Your requirement:</span>
+          <span className="req-text">"{initialRequirement}"</span>
+        </div>
+      )}
+
       {/* Tips Accordion */}
       <div className="tips-accordion">
         <div
           className="tips-accordion-header"
-          onClick={() => setIsTipsOpen(!isTipsOpen)}
+          onClick={() => setIsTipsSectionOpen(!isTipsSectionOpen)}
         >
-          <span className={`tips-chevron ${isTipsOpen ? 'open' : ''}`}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M4.5 2L8.5 6L4.5 10" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <span className={`tips-chevron ${isTipsSectionOpen ? 'open' : ''}`}>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M6 4l4 4-4 4" />
             </svg>
           </span>
-          <span className="tips-title">Tips for {config.title}</span>
+          <span className="tips-title">Tips</span>
         </div>
-        {isTipsOpen && (
+        {isTipsSectionOpen && (
           <div className="tips-accordion-content">
             <ul className="tips-list">
               {config.tips.map((tip, index) => (
@@ -151,84 +165,70 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
         )}
       </div>
 
-      {/* Main Template Section */}
+      {/* Main Template Section - Always visible */}
       <div className="template-output-section-main">
         {/* Trigger Event - Static Display */}
-        <div className="trigger-event-static">
+        <div className="trigger-event-display">
           <span className="trigger-label">Trigger Event:</span>
           <span className="trigger-value">{config.triggerEvent}</span>
         </div>
 
-        {/* Policy Template */}
-        <div className="policy-template-section">
-          <h3 className="template-section-title">Policy Behavior</h3>
-          <p className="template-instruction">
-            Configure the priority escalation values below. The policy will be automatically generated.
-          </p>
+        <div className="template-instruction">
+          Click on the <span className="highlight-text">blue inputs</span> below to edit values. Then Save or Publish your policy.
+        </div>
 
-          <div className="priority-template-container">
-            {/* Main Rule */}
-            <div className="priority-rule-box">
-              <span className="rule-text">For all customers, increase the priority score of the conversation by</span>
+        <div className="template-output">
+          {/* Main Rule */}
+          <div className="template-line">
+            For all customers, increase the priority score of the conversation by{' '}
+            <input
+              type="number"
+              className="template-input-inline"
+              value={priorityScore}
+              onChange={(e) => setPriorityScore(e.target.value)}
+              min="1"
+              max="1000"
+            />
+            {config.hasTimeInterval && (
+              <>
+                {' '}for every{' '}
+                <input
+                  type="number"
+                  className="template-input-inline"
+                  value={timeInterval}
+                  onChange={(e) => setTimeInterval(e.target.value)}
+                  min="1"
+                  max="3600"
+                />
+                {' '}
+                <select
+                  className="template-dropdown-inline"
+                  value={timeUnit}
+                  onChange={(e) => setTimeUnit(e.target.value as 'seconds' | 'minutes')}
+                >
+                  <option value="seconds">seconds</option>
+                  <option value="minutes">minutes</option>
+                </select>
+                {' '}increase in wait time.
+              </>
+            )}
+            {!config.hasTimeInterval && '.'}
+          </div>
+
+          {/* Default Fallback Rule */}
+          <div className="template-line" style={{ marginTop: '16px' }}>
+            <span className="policy-text policy-fallback">
+              For all other customers, increase priority score by{' '}
               <input
                 type="number"
-                className="priority-input"
-                value={priorityScore}
-                onChange={(e) => setPriorityScore(e.target.value)}
-                min="1"
-                max="1000"
-                placeholder="10"
-              />
-              {config.hasTimeInterval && (
-                <>
-                  <span className="rule-text">for every</span>
-                  <input
-                    type="number"
-                    className="priority-input time-input"
-                    value={timeInterval}
-                    onChange={(e) => setTimeInterval(e.target.value)}
-                    min="1"
-                    max="3600"
-                    placeholder="30"
-                  />
-                  <select
-                    className="time-unit-select"
-                    value={timeUnit}
-                    onChange={(e) => setTimeUnit(e.target.value as 'seconds' | 'minutes')}
-                  >
-                    <option value="seconds">seconds</option>
-                    <option value="minutes">minutes</option>
-                  </select>
-                  <span className="rule-text">increase in wait time.</span>
-                </>
-              )}
-              {!config.hasTimeInterval && (
-                <span className="rule-text">.</span>
-              )}
-            </div>
-
-            {/* Default Fallback Rule */}
-            <div className="priority-rule-box fallback-rule">
-              <span className="rule-text">For all other customers, increase priority score by</span>
-              <input
-                type="number"
-                className="priority-input"
+                className="template-input-inline"
                 value={defaultScore}
                 onChange={(e) => setDefaultScore(e.target.value)}
                 min="0"
                 max="1000"
-                placeholder="5"
               />
-              <span className="rule-text">.</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Generated Policy Preview */}
-        <div className="generated-policy-preview">
-          <h4 className="preview-title">Generated Policy</h4>
-          <div className="preview-text">
-            {generatePolicyText()}
+              .
+            </span>
           </div>
         </div>
       </div>
