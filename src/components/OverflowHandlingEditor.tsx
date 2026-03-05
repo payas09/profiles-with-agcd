@@ -929,8 +929,6 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       lines.push(`${conditionText}, ${actionText.toLowerCase()}.`);
     });
 
-    lines.push('For all other cases, continue with normal queue processing.');
-
     return lines.join('\n\n');
   };
 
