@@ -382,6 +382,16 @@
   border-color: #0078d4;
 }
 
+.trigger-text-display {
+  padding: 8px 12px;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f3f2f1;
+  color: #323130;
+}
+
 .status-badge {
   padding: 6px 16px;
   border-radius: 12px;

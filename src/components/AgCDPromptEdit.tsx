@@ -894,17 +894,24 @@ const AgCDPromptEdit: React.FC = () => {
           <div className="trigger-status-section-right">
             <div className="field-group">
               <label className="field-label-small">Trigger Event</label>
-              <select
-                className="field-select"
-                value={selectedTrigger}
-                onChange={(e) => setSelectedTrigger(e.target.value)}
-              >
-                {triggerEvents.map(trigger => (
-                  <option key={trigger.id} value={trigger.id}>
-                    {trigger.label}
-                  </option>
-                ))}
-              </select>
+              {/* Show plain text for priority escalation scenarios, dropdown for others */}
+              {(promptType === 'wait-time-escalation' || savedScenarioId === 'wait-time-escalation') ? (
+                <div className="trigger-text-display">Conversation is waiting in the queue</div>
+              ) : (promptType === 'queue-transfer-escalation' || savedScenarioId === 'queue-transfer-escalation') ? (
+                <div className="trigger-text-display">Conversation is transferred to the queue</div>
+              ) : (
+                <select
+                  className="field-select"
+                  value={selectedTrigger}
+                  onChange={(e) => setSelectedTrigger(e.target.value)}
+                >
+                  {triggerEvents.map(trigger => (
+                    <option key={trigger.id} value={trigger.id}>
+                      {trigger.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="field-group">
               <label className="field-label-small">Status</label>

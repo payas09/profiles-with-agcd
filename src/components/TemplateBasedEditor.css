@@ -1988,28 +1988,6 @@
    Priority Escalation Editor Styles
    ================================================ */
 
-.trigger-event-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 10px 14px;
-  background-color: #f3f2f1;
-  border-radius: 4px;
-}
-
-.trigger-event-display .trigger-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #323130;
-}
-
-.trigger-event-display .trigger-value {
-  font-size: 13px;
-  color: #0078d4;
-  font-weight: 500;
-}
-
 .template-input-inline {
   width: 60px;
   padding: 4px 8px;
@@ -2028,18 +2006,44 @@
   box-shadow: 0 0 0 1px #005a9e;
 }
 
-.template-dropdown-inline {
-  padding: 4px 8px;
-  border: 1px solid #0078d4;
+/* ================================================
+   Generated Policy Section
+   ================================================ */
+
+.generated-policy-section {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f0f6f0;
+  border: 1px solid #107c10;
   border-radius: 4px;
-  font-size: 14px;
-  background-color: #e6f2ff;
-  color: #0078d4;
-  font-weight: 500;
-  cursor: pointer;
 }
 
-.template-dropdown-inline:focus {
-  outline: none;
-  border-color: #005a9e;
+.generated-policy-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #107c10;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.generated-policy-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #107c10;
+  border-radius: 50%;
+}
+
+.generated-policy-text {
+  font-size: 13px;
+  color: #323130;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: transparent;
 }
