@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -8,6 +8,13 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
+  const location = useLocation();
+
+  // Check if current path matches the nav item
+  const isAgcdActive = location.pathname.startsWith('/agcd') && !location.pathname.startsWith('/agcd-preview');
+  const isAgcdPreviewActive = location.pathname.startsWith('/agcd-preview');
+  const isChannelsActive = location.pathname === '/' || location.pathname.startsWith('/chat-channels') || location.pathname.startsWith('/voice-channels');
+
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <button className="hamburger-menu" onClick={onToggle}>
@@ -61,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>AI Agents</span>
           </a>
-          <Link to="/" className="nav-item active">
+          <Link to="/" className={`nav-item ${isChannelsActive ? 'active' : ''}`}>
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M2 2h12v2H2V2zm0 5h12v2H2V7zm0 5h12v2H2v-2z" />
             </svg>
@@ -104,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>Routing</span>
           </a>
-          <Link to="/agcd" className="nav-item">
+          <Link to="/agcd" className={`nav-item ${isAgcdActive ? 'active' : ''}`}>
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
               <circle cx="8" cy="6" r="1" fill="currentColor"/>
@@ -112,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>Agentic routing</span>
           </Link>
-          <Link to="/agcd-preview" className="nav-item" title="Agentic routing public preview">
+          <Link to="/agcd-preview" className={`nav-item ${isAgcdPreviewActive ? 'active' : ''}`} title="Agentic routing public preview">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
               <circle cx="8" cy="6" r="1" fill="currentColor"/>

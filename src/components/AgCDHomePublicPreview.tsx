@@ -209,12 +209,6 @@ const AgCDHomePublicPreview: React.FC = () => {
             </button>
           ))}
         </div>
-
-        <div className="view-all-prompts">
-          <button className="view-all-button" onClick={() => navigate('/agcd-preview/playbook')}>
-            View all playbooks →
-          </button>
-        </div>
       </div>
       </div>
 
