@@ -143,8 +143,8 @@ const AgCDHomePublicPreview: React.FC = () => {
 
         <div className="agcd-home-header">
         <div className="agcd-title-row">
-          <h1 className="agcd-main-title">Orchestration Agent</h1>
-          <span className="preview-badge-inline">Public Preview</span>
+          <h1 className="agcd-main-title">Orchestration Agent (Preview)</h1>
+          <span className="preview-badge-inline">Preview: Testing</span>
         </div>
         <p className="agcd-subtitle">
           Use our intuitive natural language prompting to create routing scenarios. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.
@@ -185,6 +185,15 @@ const AgCDHomePublicPreview: React.FC = () => {
               <path d="M4 3a2 2 0 0 0-2 2v3.5a.5.5 0 0 0 1 0V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 1 0V5a2 2 0 0 0-2-2H4zm0 8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4zm-1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"/>
             </svg>
             Template Gallery
+          </button>
+        </div>
+
+        <div className="prompt-template-buttons">
+          <button className="prompt-template-btn active">
+            Orchestrator
+          </button>
+          <button className="prompt-template-btn disabled" disabled title="Coming soon">
+            Assignment
           </button>
         </div>
 

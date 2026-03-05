@@ -215,8 +215,8 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
         {/* Page Header */}
         <div className="playbook-page-header">
           <div className="header-title-badge">
-            <h1 className="playbook-page-title">Orchestration Agent</h1>
-            <span className="preview-badge-style">Public Preview</span>
+            <h1 className="playbook-page-title">Orchestration Agent (Preview)</h1>
+            <span className="preview-badge-style">Preview: Testing</span>
           </div>
           <p className="playbook-page-desc">
             View and manage all your playbooks. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions.
@@ -238,6 +238,13 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
               onClick={() => setActiveFilter('orchestrator')}
             >
               Orchestrator
+            </button>
+            <button
+              className="filter-pill disabled"
+              disabled
+              title="Coming soon"
+            >
+              Assignment
             </button>
           </div>
         </div>

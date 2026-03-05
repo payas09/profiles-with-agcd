@@ -225,6 +225,21 @@
   border-color: #106ebe;
 }
 
+.prompt-template-btn.disabled,
+.prompt-template-btn:disabled {
+  background-color: #f3f2f1;
+  color: #a19f9d;
+  border-color: #e1dfdd;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.prompt-template-btn.disabled:hover,
+.prompt-template-btn:disabled:hover {
+  background-color: #f3f2f1;
+  color: #a19f9d;
+}
+
 .prompts-category-title {
   font-size: 18px;
   font-weight: 600;
