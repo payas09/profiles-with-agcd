@@ -571,13 +571,15 @@ const AgCDPromptEdit: React.FC = () => {
     }
   }, [currentId, template, isEditMode, promptType]);
 
-  // Handle URL parameters for template mode
+  // Handle URL parameters for edit mode (template or copilot)
   useEffect(() => {
     if (urlMode === 'template') {
       setEditMode('template');
       if (urlRequirement) {
         setNlRequirement(decodeURIComponent(urlRequirement));
       }
+    } else if (urlMode === 'copilot') {
+      setEditMode('copilot');
     }
   }, [urlMode, urlRequirement]);
 

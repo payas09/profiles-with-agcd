@@ -190,6 +190,25 @@
   background-color: #f3f2f1;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.prompt-gallery-button.copilot-button {
+  background: linear-gradient(135deg, #6264a7 0%, #464775 100%);
+  color: white;
+  border: none;
+}
+
+.prompt-gallery-button.copilot-button:hover {
+  background: linear-gradient(135deg, #7375b5 0%, #545593 100%);
+}
+
+.prompt-gallery-button.copilot-button svg {
+  fill: white;
+}
+
 .prompt-template-buttons {
   display: flex;
   gap: 12px;
