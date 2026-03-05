@@ -237,15 +237,15 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
 }) => {
   const isRestrictedFallback = scenarioId === 'ring-expansion-restricted';
 
-  // Create default branch helper function
+  // Create default branch helper function with sensible defaults
   const createDefaultBranch = (index: number): RingExpansionBranch => ({
     id: `branch-${index}`,
     variableValues: {},
     variableExcludeMode: {},
     disabledVariables: [],
-    initialUserGroups: [],
+    initialUserGroups: ['ug1'],
     expansionRules: [
-      { id: `expansion-${index}-0`, waitTimeSeconds: 30, userGroupIds: [] }
+      { id: `expansion-${index}-0`, waitTimeSeconds: 30, userGroupIds: ['ug3'] }
     ]
   });
 
@@ -290,7 +290,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
         expansionRules: b.expansionRules || [{ id: `expansion-${b.id}-0`, waitTimeSeconds: 30, userGroupIds: [] }]
       }));
     }
-    return [createDefaultBranch(0), createDefaultBranch(1)];
+    return [createDefaultBranch(0)];
   });
 
   // Section collapse states

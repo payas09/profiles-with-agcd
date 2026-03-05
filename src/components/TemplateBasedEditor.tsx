@@ -382,7 +382,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         attributeExcludeMode: b.attributeExcludeMode || {}
       }));
     }
-    return [createDefaultBranch(0), createDefaultBranch(1)];
+    return [createDefaultBranch(0)];
   });
 
   // Section collapse states

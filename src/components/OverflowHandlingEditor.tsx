@@ -571,17 +571,17 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   onPromptGenerated,
   onStateChange
 }) => {
-  // Create default branch helper function
+  // Create default branch helper function with sensible defaults
   const createDefaultBranch = (index: number): OverflowBranch => ({
     id: `branch-${index}`,
     variableValues: {},
     variableExcludeMode: {},
     disabledVariables: [],
-    selectedConditionIds: [],
-    conditionValues: {},
+    selectedConditionIds: ['estimated-wait-time'],
+    conditionValues: { 'estimated-wait-time': 5 },
     overflowConditionExcludeMode: false,
-    actionId: '',
-    actionValue: ''
+    actionId: 'transfer-queue',
+    actionValue: 'q8'
   });
 
   // Helper to restore variables from state
@@ -628,7 +628,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
         actionValue: b.actionValue || ''
       }));
     }
-    return [createDefaultBranch(0), createDefaultBranch(1)];
+    return [createDefaultBranch(0)];
   });
 
   // Section collapse states - open Variables section if we have variables from restored state

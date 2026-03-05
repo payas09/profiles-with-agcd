@@ -266,7 +266,7 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
   const [branches, setBranches] = useState<PriorityBranchState[]>(
     initialState?.branches && initialState.branches.length > 0
       ? initialState.branches
-      : [createDefaultBranch(1), createDefaultBranch(2)]
+      : [createDefaultBranch(1)]
   );
 
   const [defaultScore, setDefaultScore] = useState(initialState?.defaultScore || '5');
