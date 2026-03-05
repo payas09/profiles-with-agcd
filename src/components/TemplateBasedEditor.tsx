@@ -935,6 +935,12 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
             </ul>
           </div>
         )}
+
+        {/* Generated Policy Preview */}
+        <div className="generated-policy-section">
+          <h4 className="generated-policy-title">Generated Policy</h4>
+          <pre className="generated-policy-text">{generateFinalPrompt()}</pre>
+        </div>
       </div>
 
       {/* Variables (Optional) - Collapsible Accordion at bottom */}
