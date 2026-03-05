@@ -31,7 +31,7 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
     {
       id: 'overflow-agent-availability',
       title: 'Configure overflow based on agent availability in queue',
-      description: 'Set up overflow rules based on agent availability conditions (wait time, agent availability, queue status) with actions (transfer, callback, voicemail).',
+      description: 'Set up overflow rules based on agent availability conditions with different overflow actions (transfer, callback, voicemail etc).',
       category: 'Overflow handling'
     }
   ],
