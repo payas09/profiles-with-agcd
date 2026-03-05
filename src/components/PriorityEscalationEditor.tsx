@@ -184,7 +184,7 @@ const scenarioConfig: { [key: string]: {
       'Consider starting with smaller score increments (e.g., 10-20) and shorter intervals (e.g., 30-60 seconds).',
       'The default score applies to all customers not matching specific conditions.',
       'Higher priority scores will cause conversations to be routed before lower-scored ones.',
-      'Add variables to create conditional rules based on customer or conversation attributes.'
+      'Add variables from the section below to create advanced conditions based on customer or conversation attributes.'
     ],
     example: `For all customers, increase the priority score of the conversation by 10 for every 30 seconds increase in wait time.
 
@@ -200,7 +200,7 @@ For all other customers, increase priority score by 5.`
       'The priority score is applied immediately when the conversation is transferred.',
       'The default score applies to all customers not matching specific conditions.',
       'Use this to ensure transferred customers don\'t wait as long as new conversations.',
-      'Add variables to create conditional rules based on customer or conversation attributes.'
+      'Add variables from the section below to create advanced conditions based on customer or conversation attributes.'
     ],
     example: `For all customers, increase priority score of conversations by 20.
 
@@ -641,9 +641,9 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
           </div>
         </div>
 
-        {/* Generated Policy Preview */}
+        {/* Generated Playbook Preview */}
         <div className="generated-policy-section">
-          <h4 className="generated-policy-title">Generated Policy</h4>
+          <h4 className="generated-policy-title">Generated Playbook</h4>
           <pre className="generated-policy-text">{generatePolicyText()}</pre>
         </div>
       </div>

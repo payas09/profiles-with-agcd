@@ -1120,6 +1120,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               <li>Please ensure that the queues referenced in the prompt contain at least one member.</li>
               <li>Minimum wait time threshold is 30 seconds.</li>
               <li>You can combine multiple overflow conditions using OR logic within a single rule.</li>
+              <li>Add variables from the section below to create advanced conditions based on customer or conversation attributes.</li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>
@@ -1325,9 +1326,9 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
           </div>
         )}
 
-        {/* Generated Policy Preview */}
+        {/* Generated Playbook Preview */}
         <div className="generated-policy-section">
-          <h4 className="generated-policy-title">Generated Policy</h4>
+          <h4 className="generated-policy-title">Generated Playbook</h4>
           <pre className="generated-policy-text">{generateFinalPrompt()}</pre>
         </div>
       </div>
