@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import './AgCDPromptEdit.css';
-import { savePrompt, getPrompt, SelectionMode } from '../utils/promptStorage';
+import { savePrompt, getPrompt, SelectionMode, TemplateState } from '../utils/promptStorage';
 import TemplatePromptEditor from './TemplatePromptEditor';
 import CopilotPromptEditor from './CopilotPromptEditor';
 import TemplateBasedEditor from './TemplateBasedEditor';
+import type { TemplateEditorState } from './OverflowHandlingEditor';
 
 // Policy config interface for editable display
 interface ConditionDef {
@@ -60,7 +61,7 @@ const triggerEvents = [
 
 // Prompt templates
 const promptTemplates: { [key: string]: { title: string; type: string; description: string; defaultPrompt: string } } = {
-  // Orchestration prompts
+  // Dynamic prioritization
   'wait-time-escalation': {
     title: 'Escalate priority based on wait time',
     type: 'Orchestrator',
@@ -68,47 +69,37 @@ const promptTemplates: { [key: string]: { title: string; type: string; descripti
     defaultPrompt: 'Automatically increase the priority of conversations that have been waiting in the queue for an extended period of time.'
   },
   'queue-transfer-escalation': {
-    title: 'Escalate priority based on transfer to a queue',
+    title: 'Escalate priority based on transfer to queue',
     type: 'Orchestrator',
     description: 'Increase priority when a conversation is transferred to a specific queue, ensuring faster resolution.',
     defaultPrompt: 'Increase priority when a conversation is transferred to a specific queue, ensuring faster resolution.'
   },
-  'scheduled-callback-overflow': {
-    title: 'Configure scheduled callback as overflow action',
+  // Overflow handling
+  'overflow-conditions-actions': {
+    title: 'Configure combination of overflow conditions and actions',
     type: 'Orchestrator',
-    description: 'When queue capacity is reached, automatically offer customers the option to schedule a callback at their convenience.',
-    defaultPrompt: 'When queue capacity is reached, automatically offer customers the option to schedule a callback at their convenience.'
+    description: 'Set up overflow rules combining multiple conditions (wait time, agent availability, queue status) with actions (transfer, callback, voicemail).',
+    defaultPrompt: 'For customers where the estimated average wait time > 5 minutes or all agents are offline, transfer to Overflow Queue.'
   },
-  'did-overflow': {
-    title: 'Overflow for Direct Inward Dialing',
+  'overflow-conversation-accepted': {
+    title: 'Configure overflow based on conversation accepted by CSR',
     type: 'Orchestrator',
-    description: 'Route incoming DID calls to alternative queues or agents when primary resources are unavailable.',
-    defaultPrompt: 'Route incoming DID calls to alternative queues or agents when primary resources are unavailable.'
+    description: 'Trigger overflow actions when a conversation is accepted by a customer service representative.',
+    defaultPrompt: 'When a conversation is accepted by a CSR, perform the configured overflow action.'
   },
-  'agent-availability-overflow': {
-    title: 'Immediate overflow based on agent availability',
+  'overflow-conversation-rejected': {
+    title: 'Configure overflow based on conversation rejected by CSR',
     type: 'Orchestrator',
-    description: 'Instantly redirect conversations to overflow queues when no agents are available in the primary queue.',
-    defaultPrompt: 'Instantly redirect conversations to overflow queues when no agents are available in the primary queue.'
+    description: 'Trigger overflow actions when a conversation is rejected by a customer service representative.',
+    defaultPrompt: 'When a conversation is rejected by a CSR, transfer to the next available queue or offer callback.'
   },
-  'offline-overflow': {
-    title: 'Immediate overflow when all agents are offline',
+  'overflow-missed-notification': {
+    title: 'Configure overflow based on missed notification',
     type: 'Orchestrator',
-    description: 'Automatically route conversations when all agents in a queue are offline or unavailable.',
-    defaultPrompt: 'Automatically route conversations when all agents in a queue are offline or unavailable.'
+    description: 'Trigger overflow actions when an agent misses a notification for an incoming conversation.',
+    defaultPrompt: 'When an agent misses a notification, expand to additional agents or transfer to overflow queue.'
   },
-  'recurring-overflow': {
-    title: 'Recurring overflow actions',
-    type: 'Orchestrator',
-    description: 'Set up repeating overflow actions based on time patterns or recurring queue conditions.',
-    defaultPrompt: 'Set up repeating overflow actions based on time patterns or recurring queue conditions.'
-  },
-  'messages-with-overflow': {
-    title: 'Combine frequent messages with overflow actions',
-    type: 'Orchestrator',
-    description: 'Send periodic status updates to customers while implementing overflow routing strategies.',
-    defaultPrompt: 'Send periodic status updates to customers while implementing overflow routing strategies.'
-  },
+  // Automated messages
   'interval-messages': {
     title: 'Play message at specific time intervals',
     type: 'Orchestrator',
@@ -120,6 +111,13 @@ const promptTemplates: { [key: string]: { title: string; type: string; descripti
     type: 'Orchestrator',
     description: 'Coordinate automated messaging with overflow routing to keep customers informed.',
     defaultPrompt: 'Coordinate automated messaging with overflow routing to keep customers informed.'
+  },
+  // Callback handling
+  'transfer-callback-queue': {
+    title: 'Transfer to dedicated callback queue',
+    type: 'Orchestrator',
+    description: 'Route callback requests to a dedicated queue optimized for handling scheduled and direct callbacks.',
+    defaultPrompt: 'When a callback is requested, transfer the conversation to the dedicated callback queue for processing.'
   },
   // Assignment prompts
   'preferred-then-last-expert': {
@@ -522,9 +520,17 @@ const AgCDPromptEdit: React.FC = () => {
   const [tempSelectedProfiles, setTempSelectedProfiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'engagement' | 'conversation'>('engagement');
   const [activePageTab, setActivePageTab] = useState<'home' | 'playbook'>('home');
-  const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot' | 'template'>('simple');
+  const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot' | 'template'>('template');
   const [policyConfig, setPolicyConfig] = useState<PolicyConfig | null>(null);
   const [nlRequirement, setNlRequirement] = useState<string>('');
+  const [templateState, setTemplateState] = useState<TemplateState | undefined>(undefined);
+  const [savedScenarioId, setSavedScenarioId] = useState<string | undefined>(undefined);
+  const [lastAutoSaved, setLastAutoSaved] = useState<Date | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoadRef = useRef(true);
+  // Track the actual policy ID - set when editing existing or after first save of new policy
+  const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -539,6 +545,16 @@ const AgCDPromptEdit: React.FC = () => {
         setSelectedTrigger(savedPrompt.selectedTrigger);
         setStatus(savedPrompt.status);
         setPolicyType(savedPrompt.type);
+        // Load template state for restoration
+        if (savedPrompt.templateState) {
+          setTemplateState(savedPrompt.templateState);
+        }
+        // Load scenarioId for correct editor selection
+        // Default to 'overflow-conditions-actions' for existing playbooks without scenarioId
+        // This ensures all playbooks use the new template experience
+        setSavedScenarioId(savedPrompt.scenarioId || 'overflow-conditions-actions');
+        // Set the policy ID for consistent saves - use the ID from URL (currentId = policyId)
+        setSavedPolicyId(currentId);
       }
     } else if (template) {
       // Creating new policy from template - use template defaults
@@ -549,8 +565,11 @@ const AgCDPromptEdit: React.FC = () => {
       setSelectedTrigger('conversation-waiting');
       setStatus('Draft');
       setPolicyType(template.type);
+      setTemplateState(undefined); // No saved state for new policies
+      setSavedScenarioId(promptType); // Store the promptType as scenarioId for new policies
+      setSavedPolicyId(null); // Will be set on first save
     }
-  }, [currentId, template, isEditMode]);
+  }, [currentId, template, isEditMode, promptType]);
 
   // Handle URL parameters for template mode
   useEffect(() => {
@@ -561,6 +580,65 @@ const AgCDPromptEdit: React.FC = () => {
       }
     }
   }, [urlMode, urlRequirement]);
+
+  // Mark initial load as complete after first render
+  useEffect(() => {
+    // Give time for initial state to be set
+    const timer = setTimeout(() => {
+      isInitialLoadRef.current = false;
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-save draft every 5 seconds when state changes
+  useEffect(() => {
+    // Don't auto-save during initial load or if no template state
+    if (isInitialLoadRef.current || !templateState) {
+      return;
+    }
+
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    // Set new timer for auto-save
+    autoSaveTimerRef.current = setTimeout(() => {
+      // Use savedPolicyId if available (existing policy or already saved new policy)
+      // Only generate new ID if this is the first save of a new policy
+      const id = savedPolicyId || `${promptType || 'draft'}-${Date.now()}`;
+      const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
+
+      setIsAutoSaving(true);
+      const promptData = {
+        id,
+        promptName: promptName || 'Untitled Playbook',
+        policyBehavior,
+        selectedProfiles,
+        selectionMode,
+        selectedTrigger,
+        status,
+        lastModified: 'Auto-saved',
+        type: policyType,
+        templateState,
+        scenarioId: effectiveScenarioId
+      };
+      savePrompt(id, promptData);
+      setLastAutoSaved(new Date());
+      setIsAutoSaving(false);
+
+      // If this was a new policy (first save), store the ID for future saves
+      if (!savedPolicyId) {
+        setSavedPolicyId(id);
+      }
+    }, 5000); // 5 second debounce
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [templateState, policyBehavior, promptName, selectedProfiles, selectionMode, selectedTrigger, savedPolicyId, promptType, savedScenarioId, urlScenario, policyType, status]);
 
   // Group queues by profile for the side panel
   const profilesWithQueues = engagementProfiles.map(profile => {
@@ -614,8 +692,11 @@ const AgCDPromptEdit: React.FC = () => {
   };
 
   const handleSave = () => {
-    // Generate unique ID for new policies, use existing ID for edits
-    const id = isEditMode ? currentId : `${promptType}-${Date.now()}`;
+    // Use savedPolicyId if available (existing policy or already auto-saved)
+    // Only generate new ID if this is the first save of a new policy
+    const id = savedPolicyId || `${promptType}-${Date.now()}`;
+    // Use promptType for new, savedScenarioId for existing
+    const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
 
     const promptData = {
       id,
@@ -626,20 +707,26 @@ const AgCDPromptEdit: React.FC = () => {
       selectedTrigger,
       status,
       lastModified: 'Just now',
-      type: policyType
+      type: policyType,
+      templateState, // Include template state for restoration on edit
+      scenarioId: effectiveScenarioId // Store which scenario/template was used
     };
     savePrompt(id, promptData);
     alert('Playbook saved successfully!');
 
-    // If creating new policy, navigate to edit mode with the new ID
-    if (!isEditMode) {
+    // If this was a new policy (first save), store the ID and navigate to edit mode
+    if (!savedPolicyId) {
+      setSavedPolicyId(id);
       navigate(`/agcd/policy/${id}`, { replace: true });
     }
   };
 
   const handlePublish = () => {
-    // Generate unique ID for new policies, use existing ID for edits
-    const id = isEditMode ? currentId : `${promptType}-${Date.now()}`;
+    // Use savedPolicyId if available (existing policy or already auto-saved)
+    // Only generate new ID if this is the first save of a new policy
+    const id = savedPolicyId || `${promptType}-${Date.now()}`;
+    // Use promptType for new, savedScenarioId for existing
+    const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
 
     const promptData = {
       id,
@@ -650,9 +737,17 @@ const AgCDPromptEdit: React.FC = () => {
       selectedTrigger,
       status: 'Published' as const,
       lastModified: 'Just now',
-      type: policyType
+      type: policyType,
+      templateState, // Include template state for restoration on edit
+      scenarioId: effectiveScenarioId // Store which scenario/template was used
     };
     savePrompt(id, promptData);
+
+    // Store the ID if this was a new policy
+    if (!savedPolicyId) {
+      setSavedPolicyId(id);
+    }
+
     setStatus('Published');
     alert('Playbook published successfully!');
     navigate('/agcd/playbook');
@@ -776,56 +871,7 @@ const AgCDPromptEdit: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Mode Toggle - moved above Policy Behavior Card, only show in non-copilot mode */}
-      {!inCopilotMode && (
-        <div className="edit-mode-card">
-          <div className="edit-mode-toggle">
-            <span className="edit-mode-label">Edit Mode:</span>
-            <div className="toggle-button-group">
-              <button
-                className={`toggle-btn ${editMode === 'simple' ? 'active' : ''}`}
-                onClick={() => setEditMode('simple')}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 13.5 2h-11zM2 3.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9z"/>
-                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
-                </svg>
-                Simple Text
-              </button>
-              <button
-                className={`toggle-btn ${editMode === 'builder' ? 'active' : ''}`}
-                onClick={() => setEditMode('builder')}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
-                  <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
-                  <path d="M10.5 8a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm0 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
-                </svg>
-                Configurable Builder
-              </button>
-              <button
-                className={`toggle-btn toggle-btn-copilot ${editMode === 'copilot' ? 'active' : ''}`}
-                onClick={() => setEditMode('copilot')}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                </svg>
-                Copilot
-              </button>
-              <button
-                className={`toggle-btn toggle-btn-template ${editMode === 'template' ? 'active' : ''}`}
-                onClick={() => setEditMode('template')}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 3H1v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6z"/>
-                  <path d="M2 9.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
-                </svg>
-                Template Based
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Edit Mode Toggle - REMOVED, now always showing template-based editor */}
 
       {/* Policy Behavior Card */}
       <div className="edit-card">
@@ -867,19 +913,49 @@ const AgCDPromptEdit: React.FC = () => {
           </div>
         </div>
 
-        {/* Conditional rendering based on edit mode */}
-        {editMode === 'simple' && !inCopilotMode && (
-          /* Policy Behavior Textarea - Full Width */
-          <div className="policy-behavior-textarea-section">
-            <textarea
-              className="policy-behavior-textarea"
-              value={policyBehavior}
-              onChange={(e) => setPolicyBehavior(e.target.value)}
-              rows={8}
+        {/* Template Based Editor - Always shown (no edit mode toggle) */}
+        {!inCopilotMode && (
+          <div className="policy-behavior-builder-section template-full-width">
+            <TemplateBasedEditor
+              initialRequirement={nlRequirement}
+              scenarioId={promptType || savedScenarioId || urlScenario || undefined}
+              initialState={templateState}
+              onStateChange={(state: TemplateEditorState, prompt: string) => {
+                // Update local state for persistence
+                setTemplateState(state);
+                setPolicyBehavior(prompt);
+              }}
+              onPromptGenerated={(prompt: string, config: PolicyConfig) => {
+                setPolicyBehavior(prompt);
+                setPolicyConfig(config);
+
+                // Save the policy and navigate to Playbook
+                // Use savedPolicyId if available (existing policy or already saved)
+                const id = savedPolicyId || `template-${Date.now()}`;
+                const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
+                const promptData = {
+                  id,
+                  promptName: promptName || 'Template-based Policy',
+                  policyBehavior: prompt,
+                  selectedProfiles,
+                  selectionMode,
+                  selectedTrigger,
+                  status: 'Draft' as const,
+                  lastModified: 'Just now',
+                  type: policyType,
+                  templateState,
+                  scenarioId: effectiveScenarioId
+                };
+                savePrompt(id, promptData);
+
+                // Store the ID if this was a new policy
+                if (!savedPolicyId) {
+                  setSavedPolicyId(id);
+                }
+
+                navigate('/agcd/playbook');
+              }}
             />
-            <div className="policy-behavior-hint-text">
-              Only describe conditions and actions. Do not mention queues or profiles in this section.
-            </div>
           </div>
         )}
         {inCopilotMode && (
@@ -908,43 +984,6 @@ const AgCDPromptEdit: React.FC = () => {
                 <p>Use the Copilot chat on the left to describe your routing requirements. The generated policy will appear here.</p>
               </div>
             )}
-          </div>
-        )}
-        {editMode === 'builder' && !inCopilotMode && (
-          /* Template Prompt Editor */
-          <div className="policy-behavior-builder-section">
-            <TemplatePromptEditor
-              onPromptChange={(prompt) => setPolicyBehavior(prompt)}
-            />
-          </div>
-        )}
-        {editMode === 'template' && !inCopilotMode && (
-          /* Template Based Editor */
-          <div className="policy-behavior-builder-section template-full-width">
-            <TemplateBasedEditor
-              initialRequirement={nlRequirement}
-              scenarioId={urlScenario || undefined}
-              onPromptGenerated={(prompt: string, config: PolicyConfig) => {
-                setPolicyBehavior(prompt);
-                setPolicyConfig(config);
-
-                // Save the policy and navigate to Playbook
-                const id = isEditMode ? currentId : `template-${Date.now()}`;
-                const promptData = {
-                  id,
-                  promptName: promptName || 'Template-based Policy',
-                  policyBehavior: prompt,
-                  selectedProfiles,
-                  selectionMode,
-                  selectedTrigger,
-                  status: 'Draft' as const,
-                  lastModified: 'Just now',
-                  type: policyType
-                };
-                savePrompt(id, promptData);
-                navigate('/agcd/playbook');
-              }}
-            />
           </div>
         )}
       </div>
@@ -982,6 +1021,26 @@ const AgCDPromptEdit: React.FC = () => {
               </svg>
               Exit Copilot
             </button>
+          )}
+          {/* Auto-save indicator */}
+          {(isAutoSaving || lastAutoSaved) && (
+            <span className="auto-save-indicator">
+              {isAutoSaving ? (
+                <>
+                  <svg className="auto-save-spinner" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0a8 8 0 0 1 8 8h-2a6 6 0 0 0-6-6V0z"/>
+                  </svg>
+                  Saving...
+                </>
+              ) : lastAutoSaved ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="#107c10">
+                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                  </svg>
+                  Auto-saved {lastAutoSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </>
+              ) : null}
+            </span>
           )}
         </div>
       </div>

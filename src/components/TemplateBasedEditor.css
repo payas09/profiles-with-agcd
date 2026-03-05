@@ -1009,7 +1009,91 @@
    Overflow Handling Editor Specific Styles
    ================================================ */
 
-/* Overflow Conditions Line */
+/* Overflow Single Line Layout - allows action to wrap to next line */
+.overflow-single-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f2f1;
+  line-height: 2;
+}
+
+.overflow-single-line:last-of-type {
+  border-bottom: none;
+}
+
+.overflow-condition-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overflow-condition-dropdown {
+  min-width: 200px;
+}
+
+/* Selected conditions display */
+.selected-conditions-display {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.condition-label {
+  color: #323130;
+  font-size: 13px;
+}
+
+.value-label {
+  font-size: 12px;
+  color: #605e5c;
+  margin-left: 2px;
+}
+
+/* Action styling within single line */
+.overflow-single-line .action-arrow {
+  font-weight: 600;
+  color: #107c10;
+  font-size: 16px;
+  margin: 0 8px;
+}
+
+.overflow-single-line .action-dropdown {
+  min-width: 180px;
+}
+
+/* Rule add/remove buttons */
+.rule-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+/* Add Rule Button */
+.add-rule-btn {
+  background: none;
+  border: 1px dashed #8a8886;
+  border-radius: 4px;
+  padding: 8px 16px;
+  color: #605e5c;
+  font-size: 13px;
+  cursor: pointer;
+  margin: 12px 0;
+  transition: all 0.15s;
+}
+
+.add-rule-btn:hover {
+  border-color: #0078d4;
+  color: #0078d4;
+  background-color: #f0f7ff;
+}
+
+/* Legacy styles for backwards compatibility */
 .overflow-conditions-line {
   padding-left: 20px;
   margin-bottom: 4px;
@@ -1021,28 +1105,188 @@
   font-size: 16px;
 }
 
-.condition-or {
+.condition-or,
+.condition-and {
   color: #605e5c;
   font-style: italic;
-  margin: 0 4px;
+  margin: 0 8px;
+  font-size: 13px;
 }
 
-.overflow-condition-item {
+/* Overflow Condition Dropdown with Include/Exclude */
+.overflow-condition-dropdown-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.overflow-condition-dropdown-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin: 2px 0;
+  gap: 8px;
+  padding: 4px 10px;
+  min-width: 200px;
+  max-width: 500px;
+  border: 1px solid #0078d4;
+  border-radius: 3px;
+  background-color: #e1f0ff;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #0078d4;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
 }
 
-.overflow-condition-dropdown {
-  min-width: 180px;
+.overflow-condition-dropdown-btn .placeholder {
+  color: #8eb8e5;
+  font-weight: 400;
 }
 
-.value-label {
+.overflow-condition-dropdown-btn.exclude-mode {
+  border-color: #a4262c;
+  background-color: #fdf3f4;
+  color: #a4262c;
+}
+
+.overflow-condition-dropdown-btn.has-error {
+  border-color: #a4262c;
+  box-shadow: 0 0 0 1px #a4262c;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.overflow-condition-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 350px;
+  max-width: 450px;
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.condition-mode-toggle-row {
+  display: flex;
+  padding: 8px;
+  border-bottom: 1px solid #e1dfdd;
+  background: #faf9f8;
+}
+
+.condition-mode-toggle-row .mode-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid #e1dfdd;
+  background: white;
+  color: #605e5c;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.condition-mode-toggle-row .mode-btn:first-child {
+  border-radius: 3px 0 0 3px;
+  border-right: none;
+}
+
+.condition-mode-toggle-row .mode-btn:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.condition-mode-toggle-row .mode-btn.active {
+  background: #0078d4;
+  border-color: #0078d4;
+  color: white;
+}
+
+.condition-mode-toggle-row .mode-btn:hover:not(.active) {
+  background: #f3f2f1;
+}
+
+.condition-mode-hint {
+  padding: 8px 12px;
   font-size: 12px;
   color: #605e5c;
-  margin-left: 2px;
+  border-bottom: 1px solid #f3f2f1;
+}
+
+.condition-option-row {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f2f1;
+}
+
+.condition-option-row:last-child {
+  border-bottom: none;
+}
+
+.condition-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #323130;
+}
+
+.condition-option input[type="checkbox"] {
+  margin: 0;
+}
+
+.condition-value-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  margin-left: 24px;
+}
+
+.template-dropdown.small.inline {
+  padding: 2px 6px;
+  font-size: 12px;
+  min-width: 60px;
+}
+
+.value-label-inline {
+  font-size: 12px;
+  color: #605e5c;
+}
+
+/* Add condition button */
+.add-condition-btn {
+  background: none;
+  border: 1px dashed #0078d4;
+  border-radius: 3px;
+  padding: 2px 8px;
+  color: #0078d4;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all 0.15s;
+}
+
+.add-condition-btn:hover {
+  background-color: #e1f0ff;
+  border-style: solid;
+}
+
+/* Small remove button for conditions */
+.inline-remove-btn.small {
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  margin-left: 4px;
 }
 
 /* Action Line */
@@ -1099,4 +1343,643 @@
   background-color: #fef0f1;
   border-color: #d13438;
   color: #d13438;
+}
+
+/* ================================================
+   Inline Overflow Condition Styles
+   ================================================ */
+
+/* Overflow conditions inline container */
+.overflow-conditions-inline {
+  display: inline;
+  line-height: 2;
+}
+
+/* Static text in condition (e.g., "all conditions except") */
+.condition-text-static {
+  color: #323130;
+  margin-right: 6px;
+}
+
+/* Connector text between conditions ("or" / "and") - BLACK, not blue */
+.condition-connector-text {
+  color: #323130;
+  font-weight: 400;
+  margin: 0 6px;
+}
+
+/* Individual condition item inline */
+.inline-condition-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #f3f2f1;
+  border-radius: 3px;
+  padding: 2px 4px;
+  margin: 2px 0;
+}
+
+/* Condition label dropdown */
+.template-dropdown.condition-label-dropdown {
+  min-width: 180px;
+  max-width: 280px;
+  background-color: #e1f0ff;
+  font-size: 12px;
+}
+
+/* Condition value dropdown (time/number) */
+.template-dropdown.condition-value-dropdown {
+  min-width: 60px;
+  width: 70px;
+  font-size: 12px;
+  background-color: #e1f0ff;
+}
+
+/* Condition value label (e.g., "minutes", "conversations") */
+.condition-value-label {
+  font-size: 12px;
+  color: #605e5c;
+  margin-left: 2px;
+  margin-right: 4px;
+}
+
+/* Remove button for individual condition */
+.inline-condition-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #a19f9d;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  margin-left: 2px;
+}
+
+.inline-condition-remove:hover {
+  background-color: #fde7e9;
+  color: #d13438;
+}
+
+/* ================================================
+   Overflow Condition Multi-Select Dropdown
+   ================================================ */
+
+.overflow-condition-multiselect {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+}
+
+/* The clickable box containing conditions with values */
+.overflow-condition-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #0078d4;
+  border-radius: 4px;
+  background-color: #e1f0ff;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #323130;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 28px;
+  white-space: nowrap;
+}
+
+.overflow-condition-box:hover {
+  background-color: #c7e0f4;
+  border-color: #106ebe;
+}
+
+.overflow-condition-box .placeholder {
+  color: #0078d4;
+  font-weight: 400;
+}
+
+.overflow-condition-box.has-selection {
+  background-color: #f0f7ff;
+}
+
+.overflow-condition-box .dropdown-arrow {
+  color: #0078d4;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.overflow-condition-box.has-error {
+  border-color: #d13438;
+  background-color: #fef0f1;
+}
+
+.overflow-condition-box.has-error .placeholder {
+  color: #d13438;
+}
+
+/* Display text inside the box */
+.conditions-display-text {
+  display: inline;
+  white-space: nowrap;
+}
+
+.condition-text-part {
+  display: inline;
+}
+
+/* Connector text (or/and) - prominent styling */
+.condition-connector-black {
+  color: #323130;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  background-color: #f3f2f1;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin: 0 4px;
+}
+
+/* Inline value select inside the box */
+.inline-value-select {
+  padding: 1px 4px;
+  border: 1px solid #0078d4;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 12px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #0078d4;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 0 2px;
+}
+
+.overflow-condition-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.overflow-condition-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 350px;
+  max-width: 420px;
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* Mode toggle row in selector */
+.condition-mode-toggle-row {
+  display: flex;
+  padding: 8px;
+  border-bottom: 1px solid #e1dfdd;
+  background: #faf9f8;
+}
+
+.condition-mode-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid #e1dfdd;
+  background: white;
+  color: #605e5c;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.condition-mode-btn:first-child {
+  border-radius: 3px 0 0 3px;
+  border-right: none;
+}
+
+.condition-mode-btn:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.condition-mode-btn.active {
+  background: #0078d4;
+  border-color: #0078d4;
+  color: white;
+}
+
+.condition-mode-btn:hover:not(.active) {
+  background: #f3f2f1;
+}
+
+/* Hint text in dropdown */
+.condition-list-hint {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #8a8886;
+  background-color: #faf9f8;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+/* Condition options list with checkboxes */
+.condition-options-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.condition-checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f2f1;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.condition-checkbox-option:last-child {
+  border-bottom: none;
+}
+
+.condition-checkbox-option:hover {
+  background-color: #f3f2f1;
+}
+
+.condition-checkbox-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0078d4;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.condition-option-label {
+  flex: 1;
+  font-size: 13px;
+  color: #323130;
+}
+
+.requires-value-hint {
+  font-size: 11px;
+  color: #8a8886;
+  font-style: italic;
+  margin-left: 4px;
+}
+
+/* Selected conditions display - inline after dropdown */
+.selected-conditions-display {
+  display: inline;
+  margin-left: 6px;
+}
+
+.condition-with-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #f9f9f9;
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin: 2px 0;
+}
+
+.condition-label-text {
+  color: #323130;
+  font-size: 13px;
+}
+
+/* ================================================
+   Tips Accordion
+   ================================================ */
+
+.tips-accordion {
+  margin: 16px 20px;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  background: #faf9f8;
+}
+
+.tips-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tips-accordion-header:hover {
+  background-color: #f3f2f1;
+  border-radius: 4px;
+}
+
+.tips-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  color: #605e5c;
+}
+
+.tips-chevron.open {
+  transform: rotate(90deg);
+}
+
+.tips-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #323130;
+}
+
+.tips-accordion-content {
+  padding: 0 16px 16px 36px;
+}
+
+.tips-list {
+  margin: 0 0 16px 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #323130;
+  line-height: 1.8;
+}
+
+.tips-list li {
+  margin-bottom: 4px;
+}
+
+.tips-example {
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.tips-example strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #605e5c;
+}
+
+.tips-example-text {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 12px;
+  color: #323130;
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Presets Section */
+.presets-section {
+  margin-bottom: 16px;
+}
+
+.presets-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #323130;
+  margin: 0 0 6px 0;
+}
+
+.presets-title svg {
+  color: #0078d4;
+}
+
+.presets-desc {
+  font-size: 12px;
+  color: #605e5c;
+  margin: 0 0 12px 0;
+}
+
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.preset-card:hover {
+  border-color: #0078d4;
+  background: #f0f7ff;
+  box-shadow: 0 2px 4px rgba(0, 120, 212, 0.1);
+}
+
+.preset-card:active {
+  transform: scale(0.98);
+}
+
+.preset-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #323130;
+}
+
+.preset-description {
+  font-size: 11px;
+  color: #605e5c;
+  line-height: 1.4;
+}
+
+.tips-divider {
+  height: 1px;
+  background: #e1dfdd;
+  margin: 16px 0;
+}
+
+.tips-subtitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #323130;
+  margin: 0 0 8px 0;
+}
+
+/* ================================================
+   Main Template Output Section (Always Visible)
+   ================================================ */
+
+.template-output-section-main {
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  padding: 20px;
+  margin: 0 20px 16px 20px;
+}
+
+.template-output-section-main .template-instruction {
+  font-size: 13px;
+  color: #605e5c;
+  margin-bottom: 16px;
+}
+
+/* ================================================
+   Variables Accordion
+   ================================================ */
+
+.variables-accordion {
+  margin: 0 20px 20px 20px;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  background: #faf9f8;
+}
+
+.variables-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.variables-accordion-header:hover {
+  background-color: #f3f2f1;
+  border-radius: 4px;
+}
+
+.variables-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  color: #605e5c;
+}
+
+.variables-chevron.open {
+  transform: rotate(90deg);
+}
+
+.variables-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #323130;
+  flex: 1;
+}
+
+.variables-count {
+  font-size: 12px;
+  color: #0078d4;
+  background-color: #e1f0ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.variables-accordion-content {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid #e1dfdd;
+}
+
+.variables-desc {
+  font-size: 13px;
+  color: #605e5c;
+  margin: 12px 0;
+}
+
+/* ================================================
+   Inline Variables Grid (inside accordion)
+   ================================================ */
+
+.variables-grid-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.variable-category-inline {
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.category-title-inline {
+  font-size: 13px;
+  font-weight: 600;
+  color: #323130;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edebe9;
+}
+
+.selected-variables-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  min-height: 28px;
+}
+
+.selected-variable-chip-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #e1f0ff;
+  color: #0078d4;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.remove-var-btn-inline {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0078d4;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.remove-var-btn-inline:hover {
+  opacity: 1;
+}
+
+.add-variable-dropdown-inline {
+  width: 100%;
+  max-width: 280px;
+}
+
+.add-variable-dropdown-inline .ms-Dropdown-title {
+  font-size: 13px;
+  border-color: #8a8886;
+}
+
+.add-variable-dropdown-inline .ms-Dropdown-title:hover {
+  border-color: #323130;
+}
+
+.no-variables-message {
+  font-size: 12px;
+  color: #8a8886;
+  font-style: italic;
+  padding: 4px 0;
 }

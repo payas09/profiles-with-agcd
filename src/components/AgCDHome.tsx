@@ -14,56 +14,45 @@ interface PromptCard {
 
 const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[] } = {
   orchestration: [
+    // Dynamic prioritization
     {
       id: 'wait-time-escalation',
       title: 'Escalate priority based on wait time',
       description: 'Automatically increase the priority of conversations that have been waiting in the queue for an extended period of time.',
-      category: 'Dynamic prioritization',
-      tags: ['Based on wait time']
+      category: 'Dynamic prioritization'
     },
     {
       id: 'queue-transfer-escalation',
-      title: 'Escalate priority based on transfer to a queue',
+      title: 'Escalate priority based on transfer to queue',
       description: 'Increase priority when a conversation is transferred to a specific queue, ensuring faster resolution.',
-      category: 'Dynamic prioritization',
-      tags: ['Based on queue transfers']
+      category: 'Dynamic prioritization'
     },
+    // Overflow handling
     {
-      id: 'scheduled-callback-overflow',
-      title: 'Configure scheduled callback as overflow action',
-      description: 'When queue capacity is reached, automatically offer customers the option to schedule a callback at their convenience.',
+      id: 'overflow-conditions-actions',
+      title: 'Configure combination of overflow conditions and actions',
+      description: 'Set up overflow rules combining multiple conditions (wait time, agent availability, queue status) with actions (transfer, callback, voicemail).',
       category: 'Overflow handling'
     },
     {
-      id: 'did-overflow',
-      title: 'Overflow for Direct Inward Dialing',
-      description: 'Route incoming DID calls to alternative queues or agents when primary resources are unavailable.',
+      id: 'overflow-conversation-accepted',
+      title: 'Configure overflow based on conversation accepted by CSR',
+      description: 'Trigger overflow actions when a conversation is accepted by a customer service representative.',
       category: 'Overflow handling'
     },
     {
-      id: 'agent-availability-overflow',
-      title: 'Immediate overflow based on agent availability',
-      description: 'Instantly redirect conversations to overflow queues when no agents are available in the primary queue.',
+      id: 'overflow-conversation-rejected',
+      title: 'Configure overflow based on conversation rejected by CSR',
+      description: 'Trigger overflow actions when a conversation is rejected by a customer service representative.',
       category: 'Overflow handling'
     },
     {
-      id: 'offline-overflow',
-      title: 'Immediate overflow when all agents are offline',
-      description: 'Automatically route conversations when all agents in a queue are offline or unavailable.',
+      id: 'overflow-missed-notification',
+      title: 'Configure overflow based on missed notification',
+      description: 'Trigger overflow actions when an agent misses a notification for an incoming conversation.',
       category: 'Overflow handling'
     },
-    {
-      id: 'recurring-overflow',
-      title: 'Recurring overflow actions',
-      description: 'Set up repeating overflow actions based on time patterns or recurring queue conditions.',
-      category: 'Overflow handling'
-    },
-    {
-      id: 'messages-with-overflow',
-      title: 'Combine frequent messages with overflow actions',
-      description: 'Send periodic status updates to customers while implementing overflow routing strategies.',
-      category: 'Overflow handling'
-    },
+    // Automated messages
     {
       id: 'interval-messages',
       title: 'Play message at specific time intervals',
@@ -75,6 +64,13 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
       title: 'Combine frequent messages with overflow actions',
       description: 'Coordinate automated messaging with overflow routing to keep customers informed.',
       category: 'Automated messages'
+    },
+    // Callback handling
+    {
+      id: 'transfer-callback-queue',
+      title: 'Transfer to dedicated callback queue',
+      description: 'Route callback requests to a dedicated queue optimized for handling scheduled and direct callbacks.',
+      category: 'Callback handling'
     }
   ],
   assignment: [

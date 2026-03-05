@@ -9,6 +9,34 @@ interface ProfileWithQueues {
 
 export type SelectionMode = 'all' | 'list' | 'except';
 
+// Template state for overflow handling editor
+export interface OverflowBranchState {
+  id: string;
+  variableValues: { [variableId: string]: string[] };
+  variableExcludeMode: { [variableId: string]: boolean };
+  disabledVariables: string[];
+  selectedConditionIds: string[];
+  conditionValues: { [conditionId: string]: string | number };
+  overflowConditionExcludeMode: boolean;
+  actionId: string;
+  actionValue?: string;
+}
+
+export interface SelectedVariableState {
+  id: string;
+  label: string;
+  description: string;
+  type: 'context' | 'lwi';
+  values: string[];
+}
+
+export interface TemplateState {
+  branches: OverflowBranchState[];
+  selectedContextVars: SelectedVariableState[];
+  selectedLWIVars: SelectedVariableState[];
+  scenarioId?: string;
+}
+
 export interface PromptData {
   id: string;
   promptName: string;
@@ -20,6 +48,8 @@ export interface PromptData {
   lastModified: string;
   type: string;
   createdAt?: number; // Timestamp for sorting and "New" tag
+  templateState?: TemplateState; // Stores the template editor state for restoration
+  scenarioId?: string; // The scenario/template type used (e.g., 'overflow-conditions-actions')
 }
 
 // Load from localStorage
