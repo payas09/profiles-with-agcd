@@ -675,7 +675,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
       {/* Main Template Section - Always visible */}
       <div className="template-output-section-main">
         <div className="template-instruction">
-          Click on the <span className="highlight-text">blue dropdowns</span> below to start editing. Then Save or Publish your policy.
+          Click on the <span className="highlight-text">blue dropdowns</span> below to start editing. Optionally, add variables from the section below to create advanced conditions based on customer or conversation attributes. Then Save or Publish your policy.
         </div>
 
         <div className="template-output">
