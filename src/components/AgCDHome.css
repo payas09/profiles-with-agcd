@@ -275,6 +275,57 @@
   transform: translateY(-1px);
 }
 
+.prompt-card-item {
+  position: relative;
+}
+
+.card-feedback-buttons {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.prompt-card-item:hover .card-feedback-buttons,
+.gallery-card:hover .card-feedback-buttons {
+  opacity: 1;
+}
+
+.feedback-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #605e5c;
+  transition: all 0.15s ease;
+}
+
+.feedback-btn:hover {
+  border-color: #0078d4;
+  color: #0078d4;
+  background-color: #f0f6ff;
+}
+
+.feedback-btn.thumbs-up:hover {
+  border-color: #107c10;
+  color: #107c10;
+  background-color: #f0fff0;
+}
+
+.feedback-btn.thumbs-down:hover {
+  border-color: #d13438;
+  color: #d13438;
+  background-color: #fff0f0;
+}
+
 .card-icon-title {
   display: block;
 }
@@ -508,6 +559,7 @@
   flex-direction: column;
   transition: all 0.2s;
   min-height: 160px;
+  position: relative;
 }
 
 .gallery-card:hover {
