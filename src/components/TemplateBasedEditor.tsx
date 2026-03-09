@@ -735,7 +735,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
             <ul className="tips-list">
-              <li>Add variables from the section below to create advanced conditions based on customer or conversation attributes.</li>
               <li>This policy will only apply to queues associated with the profiles you select.</li>
               <li>Preferred Expert routes to an agent marked as preferred for the customer.</li>
               <li>Previous Expert routes to an agent who has previously interacted with the customer within the lookback period.</li>

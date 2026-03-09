@@ -186,8 +186,7 @@ const scenarioConfig: { [key: string]: {
       'Set a priority score increase for each time interval to ensure longer-waiting customers get higher priority.',
       'Consider starting with smaller score increments (e.g., 10-20) and shorter intervals (e.g., 30-60 seconds).',
       'The default score applies to all customers not matching specific conditions.',
-      'Higher priority scores will cause conversations to be routed before lower-scored ones.',
-      'Add variables from the section below to create advanced conditions based on customer or conversation attributes.'
+      'Higher priority scores will cause conversations to be routed before lower-scored ones.'
     ],
     example: `For all customers, increase the priority score of the conversation by 10 for every 30 seconds increase in wait time.
 
@@ -202,8 +201,7 @@ For all other customers, increase priority score by 5.`
       'Transferred conversations often indicate escalated issues - consider higher priority scores.',
       'The priority score is applied immediately when the conversation is transferred.',
       'The default score applies to all customers not matching specific conditions.',
-      'Use this to ensure transferred customers don\'t wait as long as new conversations.',
-      'Add variables from the section below to create advanced conditions based on customer or conversation attributes.'
+      'Use this to ensure transferred customers don\'t wait as long as new conversations.'
     ],
     example: `For all customers, increase priority score of conversations by 20.
 

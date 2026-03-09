@@ -658,7 +658,6 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
             <ul className="tips-list">
-              <li>Add variables from the section below to create advanced conditions based on customer or conversation attributes.</li>
               <li>This policy will only apply to queues associated with the profiles you select.</li>
               <li>Ring expansion rules are evaluated in order - define more specific rules first.</li>
               <li>You can add multiple expansion tiers with different wait times using the + button.</li>

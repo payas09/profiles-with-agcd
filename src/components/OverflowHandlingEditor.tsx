@@ -1375,7 +1375,6 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               <li>Please ensure that the queues referenced in the prompt contain at least one member.</li>
               <li>Minimum wait time threshold is 30 seconds.</li>
               <li>{isPublicPreview ? 'The overflow condition triggers when no agents are available immediately.' : 'You can combine multiple overflow conditions using OR logic within a single rule.'}</li>
-              <li>Add variables from the section below to create advanced conditions based on customer or conversation attributes.</li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>
