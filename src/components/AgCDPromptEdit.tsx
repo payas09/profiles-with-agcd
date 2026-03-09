@@ -544,6 +544,8 @@ const AgCDPromptEdit: React.FC = () => {
   const isInitialLoadRef = useRef(true);
   // Ref to track if we just saved (skip setting isDirty on immediate post-save onStateChange)
   const justSavedRef = useRef(false);
+  // Ref to store saved state for synchronous comparison (mirrors savedTemplateState)
+  const savedTemplateStateRef = useRef<TemplateState | undefined>(undefined);
   // Track the actual policy ID - set when editing existing or after first save of new policy
   const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
   // Confirmation modal state
@@ -580,7 +582,9 @@ const AgCDPromptEdit: React.FC = () => {
         if (savedPrompt.templateState) {
           setTemplateState(savedPrompt.templateState);
           // Save the original state for reverting (deep copy)
-          setSavedTemplateState(JSON.parse(JSON.stringify(savedPrompt.templateState)));
+          const stateCopy = JSON.parse(JSON.stringify(savedPrompt.templateState));
+          setSavedTemplateState(stateCopy);
+          savedTemplateStateRef.current = stateCopy; // Update ref immediately
         }
         // Load scenarioId for correct editor selection
         // Default to 'overflow-conditions-actions' for existing playbooks without scenarioId
@@ -765,7 +769,9 @@ const AgCDPromptEdit: React.FC = () => {
     setIsDirty(false);
     justSavedRef.current = true; // Skip next onStateChange from setting isDirty
     if (templateState) {
-      setSavedTemplateState(JSON.parse(JSON.stringify(templateState)));
+      const stateCopy = JSON.parse(JSON.stringify(templateState));
+      setSavedTemplateState(stateCopy);
+      savedTemplateStateRef.current = stateCopy; // Update ref immediately
     }
 
     // Show success banner
@@ -811,7 +817,9 @@ const AgCDPromptEdit: React.FC = () => {
     setIsDirty(false);
     justSavedRef.current = true; // Skip next onStateChange from setting isDirty
     if (templateState) {
-      setSavedTemplateState(JSON.parse(JSON.stringify(templateState)));
+      const stateCopy = JSON.parse(JSON.stringify(templateState));
+      setSavedTemplateState(stateCopy);
+      savedTemplateStateRef.current = stateCopy; // Update ref immediately
     }
 
     setStatus('Active');
@@ -1074,18 +1082,27 @@ const AgCDPromptEdit: React.FC = () => {
                 // Update local state for persistence
                 setTemplateState(state);
                 setPolicyBehavior(prompt);
-                // Skip setting isDirty on initial load (first callback from editor)
+
+                // For new playbooks on initial load, save the state as baseline
                 if (isInitialLoadRef.current) {
                   isInitialLoadRef.current = false;
-                  // For new playbooks, save the initial state as the "saved" state
-                  if (!savedTemplateState) {
-                    setSavedTemplateState(JSON.parse(JSON.stringify(state)));
-                  }
-                } else if (justSavedRef.current) {
-                  // Skip setting isDirty immediately after save (editor may trigger onStateChange)
+                  const stateCopy = JSON.parse(JSON.stringify(state));
+                  setSavedTemplateState(stateCopy);
+                  savedTemplateStateRef.current = stateCopy; // Update ref immediately
+                  return; // Don't set isDirty on initial load
+                }
+
+                // Skip setting isDirty immediately after save
+                if (justSavedRef.current) {
                   justSavedRef.current = false;
-                } else {
-                  // Mark as dirty when user makes changes (not initial load or post-save)
+                  return;
+                }
+
+                // Compare with saved state (using ref for synchronous access)
+                const currentStateJson = JSON.stringify(state);
+                const savedStateJson = savedTemplateStateRef.current ? JSON.stringify(savedTemplateStateRef.current) : null;
+
+                if (currentStateJson !== savedStateJson) {
                   setIsDirty(true);
                   // Clear validation errors when user makes changes
                   if (hasValidationErrors) {
