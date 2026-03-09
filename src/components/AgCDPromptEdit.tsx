@@ -861,19 +861,17 @@ const AgCDPromptEdit: React.FC = () => {
     }
   };
 
-  // Handle unsaved changes warning - Save (or Save & publish for Active) and leave
-  const handleSaveAndLeave = () => {
+  // Handle unsaved changes warning - Save (or Save & publish for Active) and stay
+  const handleSaveAndStay = () => {
     if (status === 'Active') {
       // For published playbooks, do Save & publish
       handlePublishConfirm();
     } else {
-      // For draft/new playbooks, just save
+      // For draft/new playbooks, just save (shows success banner)
       performSave();
     }
+    // Close warning dialog and stay on page
     setShowUnsavedWarning(false);
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-    }
     setPendingNavigation(null);
   };
 
@@ -1557,7 +1555,7 @@ const AgCDPromptEdit: React.FC = () => {
               <button className="btn-secondary-action" onClick={handleDiscardChanges}>
                 Discard changes
               </button>
-              <button className="btn-primary-action" onClick={handleSaveAndLeave}>
+              <button className="btn-primary-action" onClick={handleSaveAndStay}>
                 {status === 'Active' ? 'Save & publish' : 'Save'}
               </button>
             </div>
