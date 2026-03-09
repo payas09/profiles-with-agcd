@@ -318,6 +318,7 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
                   <th>Trigger</th>
                   <th>Status</th>
                   <th>Queue</th>
+                  <th>Channel</th>
                   <th>Last Modified</th>
                   <th>Action</th>
                 </tr>
@@ -357,6 +358,11 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
                       </td>
                       <td className="profiles-display-cell">
                         {renderQueues(policy)}
+                      </td>
+                      <td className="channel-column">
+                        <span className={`channel-badge ${(policy.selectedChannel || 'Voice').toLowerCase()}`}>
+                          {policy.selectedChannel || 'Voice'}
+                        </span>
                       </td>
                       <td>{policy.lastModified}</td>
                       <td>
@@ -410,7 +416,7 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="no-results-text">
+                    <td colSpan={7} className="no-results-text">
                       No playbooks found. Create a new playbook from the Home tab.
                     </td>
                   </tr>
@@ -500,6 +506,12 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
                     <span className="grid-field-label">Status</span>
                     <span className={`status-pill ${policy.status.toLowerCase()}`}>
                       {policy.status}
+                    </span>
+                  </div>
+                  <div className="grid-card-field">
+                    <span className="grid-field-label">Channel</span>
+                    <span className={`channel-badge ${(policy.selectedChannel || 'Voice').toLowerCase()}`}>
+                      {policy.selectedChannel || 'Voice'}
                     </span>
                   </div>
                   <div className="grid-card-field">

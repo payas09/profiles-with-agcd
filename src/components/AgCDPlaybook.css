@@ -696,6 +696,34 @@
   border-radius: 6px;
 }
 
+/* Channel Badge Styles */
+.channel-column {
+  white-space: nowrap;
+}
+
+.channel-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.channel-badge.voice {
+  background-color: #e8f4f8;
+  color: #0078d4;
+}
+
+.channel-badge.messaging {
+  background-color: #f3e8ff;
+  color: #6441a5;
+}
+
+/* Grid Card Channel Badge */
+.grid-card-field .channel-badge {
+  align-self: flex-start;
+}
+
 /* Responsive grid */
 @media (max-width: 1200px) {
   .playbooks-grid-container {

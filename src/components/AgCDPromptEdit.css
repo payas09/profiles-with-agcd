@@ -246,10 +246,16 @@
 
 .profile-section-header {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.profile-section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .profile-section-title {
@@ -1237,6 +1243,27 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
+/* Warning message in publish confirm dialog */
+.publish-confirm-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #fff4ce;
+  border: 1px solid #ffc83d;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #323130;
+  line-height: 1.5;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.publish-confirm-warning .warning-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 .publish-confirm-footer {
   display: flex;
   justify-content: flex-end;
@@ -1245,11 +1272,99 @@
   border-top: 1px solid #edebe9;
 }
 
+/* Unsaved warning footer with 3 buttons */
+.publish-confirm-footer.unsaved-warning-footer {
+  justify-content: flex-end;
+}
+
+/* Tertiary button for "Don't save" */
+.btn-tertiary-action {
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  color: #d83b01;
+  transition: all 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.btn-tertiary-action:hover {
+  background-color: #fde7e9;
+  color: #a80000;
+}
+
 /* Disabled button state for menu buttons */
-.menu-btn-secondary.disabled {
+.menu-btn-secondary.disabled,
+.menu-btn-primary.disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none;
+}
+
+/* Channel Selection Styles */
+.channel-selection-group {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #faf9f8;
+  border-radius: 4px;
+  border: 1px solid #e1dfdd;
+}
+
+.channel-select-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  font-family: 'Segoe UI', sans-serif;
+  margin-bottom: 8px;
+}
+
+.channel-select-dropdown {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: white;
+  cursor: pointer;
+}
+
+.channel-select-dropdown:focus {
+  outline: none;
+  border-color: #0078d4;
+}
+
+/* Channel Display Row in Queue Header */
+.channel-display-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.channel-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.channel-value {
+  font-size: 14px;
+  color: #0078d4;
+  font-weight: 500;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #e1f0ff;
+  padding: 2px 10px;
+  border-radius: 4px;
+}
+
+/* Channel Column in Table */
+.channel-cell {
+  color: #605e5c;
+  font-size: 13px;
 }
 
 /* Success Banner Styles */

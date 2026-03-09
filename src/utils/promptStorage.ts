@@ -37,6 +37,8 @@ export interface TemplateState {
   scenarioId?: string;
 }
 
+export type ChannelType = 'Voice' | 'Messaging';
+
 export interface PromptData {
   id: string;
   promptName: string;
@@ -53,6 +55,7 @@ export interface PromptData {
   scenarioId?: string; // The scenario/template type used (e.g., 'overflow-conditions-actions')
   selectedQueue?: string; // Selected queue for public preview flow
   isPublicPreview?: boolean; // True if created in "Agentic routing public preview" flow
+  selectedChannel?: ChannelType; // Selected channel for public preview flow (Voice or Messaging)
 }
 
 // Load from localStorage
@@ -135,14 +138,15 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
         lastModified: 'Feb 15, 2025',
         type: 'Orchestrator',
         scenarioId: 'overflow-conditions-actions',
-        isPublicPreview: true
+        isPublicPreview: true,
+        selectedChannel: 'Voice'
       },
       {
         id: 'sample-4',
         promptName: 'Escalate priority on transfer',
         policyBehavior: 'For all customers, increase priority score of conversations by 20. For customers where Is VIP Customer is True, increase priority score of conversations by 50. For all other customers, increase priority score by 10.',
         selectedProfiles: [
-          { profileId: 'q3', profileName: 'Technical Support Queue', queues: ['Technical Support Queue'] }
+          { profileId: 'q6', profileName: 'Chat Support Queue', queues: ['Chat Support Queue'] }
         ],
         selectionMode: 'list',
         selectedTrigger: 'conversation-transferred',
@@ -150,7 +154,8 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
         lastModified: 'Feb 10, 2025',
         type: 'Orchestrator',
         scenarioId: 'queue-transfer-escalation',
-        isPublicPreview: true
+        isPublicPreview: true,
+        selectedChannel: 'Messaging'
       }
     ];
 

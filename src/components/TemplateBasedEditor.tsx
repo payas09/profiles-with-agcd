@@ -259,6 +259,8 @@ interface TemplateBasedEditorProps {
   onPolicyConfigChange?: (config: PolicyConfig) => void;
   onStateChange?: (state: TemplateEditorState | ExpertRoutingEditorState, prompt: string) => void;
   isPublicPreview?: boolean;
+  triggerValidation?: boolean;
+  onValidationResult?: (hasErrors: boolean, errors: { message: string }[]) => void;
 }
 
 // ============================================
@@ -272,7 +274,9 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   onPromptGenerated,
   onPolicyConfigChange,
   onStateChange,
-  isPublicPreview = false
+  isPublicPreview = false,
+  triggerValidation = false,
+  onValidationResult
 }) => {
   // Check if this is a ring expansion scenario
   const isRingExpansionScenario = scenarioId === 'ring-expansion-restricted' || scenarioId === 'ring-expansion-open';
@@ -310,6 +314,8 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         onPromptGenerated={onPromptGenerated}
         onStateChange={onStateChange as any}
         isPublicPreview={isPublicPreview}
+        triggerValidation={triggerValidation}
+        onValidationResult={onValidationResult}
       />
     );
   }
@@ -323,6 +329,9 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         initialState={initialState as any}
         onPromptGenerated={onPromptGenerated}
         onStateChange={onStateChange as any}
+        isPublicPreview={isPublicPreview}
+        triggerValidation={triggerValidation}
+        onValidationResult={onValidationResult}
       />
     );
   }

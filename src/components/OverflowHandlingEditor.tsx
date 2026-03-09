@@ -7,7 +7,7 @@
  * This editor follows the standard template structure documented in the guide.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TemplateBasedEditor.css';
 
 // Queue data for transfer action
@@ -22,13 +22,13 @@ const queues = [
   { id: 'q8', name: 'Overflow Queue' },
 ];
 
-// Context variables for additional filtering
+// Context variables for additional filtering with workstream names
 const contextVariables = [
-  { id: 'IsVIP', label: 'Is VIP Customer', values: ['True', 'False'] },
-  { id: 'CustomerTier', label: 'Customer Tier', values: ['Gold', 'Silver', 'Bronze', 'Standard', 'Platinum', 'Diamond', 'Enterprise', 'SMB', 'Startup'] },
-  { id: 'Language', label: 'Preferred Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese'] },
-  { id: 'Region', label: 'Customer Region', values: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa'] },
-  { id: 'AccountType', label: 'Account Type', values: ['Premium', 'Standard', 'Trial', 'Free', 'Enterprise', 'Government', 'Education'] },
+  { id: 'IsVIP', label: 'Is VIP Customer', workstream: 'Premium Support - Voice', values: ['True', 'False'] },
+  { id: 'CustomerTier', label: 'Customer Tier', workstream: 'General Support - Voice', values: ['Gold', 'Silver', 'Bronze', 'Standard', 'Platinum', 'Diamond', 'Enterprise', 'SMB', 'Startup'] },
+  { id: 'Language', label: 'Preferred Language', workstream: 'Chat Support - Messaging', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese'] },
+  { id: 'Region', label: 'Customer Region', workstream: 'Regional Support - Voice', values: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa'] },
+  { id: 'AccountType', label: 'Account Type', workstream: 'Account Services - Messaging', values: ['Premium', 'Standard', 'Trial', 'Free', 'Enterprise', 'Government', 'Education'] },
 ];
 
 const liveWorkItemVariables = [
@@ -268,6 +268,8 @@ interface OverflowHandlingEditorProps {
   onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
   onStateChange?: (state: TemplateEditorState, prompt: string) => void; // Called on every state change
   isPublicPreview?: boolean; // When true, shows static condition instead of dropdown
+  triggerValidation?: boolean; // When true, run validation
+  onValidationResult?: (hasErrors: boolean, errors: { message: string }[]) => void; // Callback with validation result
 }
 
 // Multi-Select Dropdown Component for variable values
@@ -571,7 +573,9 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   initialState,
   onPromptGenerated,
   onStateChange,
-  isPublicPreview = false
+  isPublicPreview = false,
+  triggerValidation = false,
+  onValidationResult
 }) => {
   // Create default branch helper function with sensible defaults
   // For public preview, always use 'no-agents-available' as the only condition
@@ -644,6 +648,10 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<{ branchId: string; fieldId: string; message: string }[]>([]);
 
+  // Public preview limitation popups
+  const [showVariableLimitPopup, setShowVariableLimitPopup] = useState(false);
+  const [showBranchLimitPopup, setShowBranchLimitPopup] = useState(false);
+
   // Apply a preset configuration
   const applyPreset = (presetId: string) => {
     const preset = overflowPresets.find(p => p.id === presetId);
@@ -690,6 +698,13 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   // Add context variable
   const addContextVariable = (varId: string) => {
     if (!varId || selectedContextVars.find(v => v.id === varId)) return;
+
+    // Public preview: limit to 2 customer variables
+    if (isPublicPreview && selectedContextVars.length >= 2) {
+      setShowVariableLimitPopup(true);
+      return;
+    }
+
     const variable = contextVariables.find(v => v.id === varId);
     if (variable) {
       setSelectedContextVars(prev => [...prev, {
@@ -815,6 +830,11 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   };
 
   const addBranch = () => {
+    // Public preview: limit to 12 branches
+    if (isPublicPreview && branches.length >= 12) {
+      setShowBranchLimitPopup(true);
+      return;
+    }
     setBranches(prev => [...prev, createDefaultBranch(Date.now())]);
   };
 
@@ -978,10 +998,119 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     }
   }, [branches, selectedContextVars, selectedLWIVars, scenarioId]);
 
+  // Helper to get a normalized condition signature for comparison
+  const getConditionSignature = (branch: OverflowBranch): string => {
+    const activeVars = allSelectedVariables.filter(v => !(branch.disabledVariables || []).includes(v.id));
+    if (activeVars.length === 0) {
+      return 'ALL_CUSTOMERS';
+    }
+
+    const varParts = activeVars.map(v => {
+      const values = branch.variableValues[v.id] || [];
+      const sortedValues = [...values].sort().join(',');
+      return `${v.id}:${sortedValues}`;
+    }).sort();
+
+    return varParts.join('|');
+  };
+
+  // Helper to get action signature
+  const getActionSignature = (branch: OverflowBranch): string => {
+    return `${branch.actionId}:${branch.actionValue || ''}`;
+  };
+
+  // Helper to check if one condition is a subset of another
+  const isConditionSubset = (branch1: OverflowBranch, branch2: OverflowBranch): boolean => {
+    const activeVars1 = allSelectedVariables.filter(v => !(branch1.disabledVariables || []).includes(v.id));
+    const activeVars2 = allSelectedVariables.filter(v => !(branch2.disabledVariables || []).includes(v.id));
+
+    // If branch1 has no conditions (all customers), it's a superset of everything
+    if (activeVars1.length === 0) return false;
+    // If branch2 has no conditions but branch1 does, branch1 is a subset
+    if (activeVars2.length === 0 && activeVars1.length > 0) return true;
+
+    // Check if all variables in branch1 are also in branch2 with same or subset values
+    for (const v of activeVars1) {
+      const values1 = branch1.variableValues[v.id] || [];
+      const values2 = branch2.variableValues[v.id] || [];
+
+      // If branch2 doesn't have this variable active, branch1 is more specific
+      if (!activeVars2.find(av => av.id === v.id)) {
+        continue; // branch1 is more specific on this variable
+      }
+
+      // Check if values1 is a subset of values2
+      if (values1.length > 0 && values2.length > 0) {
+        const isSubset = values1.every(val => values2.includes(val));
+        if (!isSubset && values1.join(',') !== values2.join(',')) {
+          return false; // Values don't overlap properly
+        }
+      }
+    }
+
+    // branch1 has more or equal variables than branch2, so it's more specific (subset)
+    return activeVars1.length > activeVars2.length;
+  };
+
+  // Helper to check if conditions overlap
+  const doConditionsOverlap = (branch1: OverflowBranch, branch2: OverflowBranch): boolean => {
+    const activeVars1 = allSelectedVariables.filter(v => !(branch1.disabledVariables || []).includes(v.id));
+    const activeVars2 = allSelectedVariables.filter(v => !(branch2.disabledVariables || []).includes(v.id));
+
+    // If either has no conditions (all customers), they overlap
+    if (activeVars1.length === 0 || activeVars2.length === 0) return true;
+
+    // Check if there's any overlap in the variable values
+    for (const v of activeVars1) {
+      const var2 = activeVars2.find(av => av.id === v.id);
+      if (var2) {
+        const values1 = branch1.variableValues[v.id] || [];
+        const values2 = branch2.variableValues[v.id] || [];
+
+        if (values1.length > 0 && values2.length > 0) {
+          // Check if there's any common value
+          const hasCommon = values1.some(val => values2.includes(val));
+          if (!hasCommon) {
+            return false; // No overlap on this variable
+          }
+        }
+      }
+    }
+
+    return true;
+  };
+
+  // Helper to describe a branch's conditions
+  const describeBranchConditions = (branch: OverflowBranch, branchIndex: number): string => {
+    const activeVars = allSelectedVariables.filter(v => !(branch.disabledVariables || []).includes(v.id));
+    if (activeVars.length === 0) {
+      return `Condition ${branchIndex + 1}: "For all customers"`;
+    }
+
+    const parts = activeVars.map(v => {
+      const values = branch.variableValues[v.id] || [];
+      return `${v.label} = ${values.join(', ') || 'any'}`;
+    });
+
+    return `Condition ${branchIndex + 1}: "${parts.join(' AND ')}"`;
+  };
+
+  // Helper to validate phone number format
+  const isValidPhoneNumber = (phone: string): boolean => {
+    if (!phone || phone.trim() === '') return false;
+    // Allow common phone formats: +1-800-XXX-XXXX, (123) 456-7890, 123-456-7890, +44 20 1234 5678, etc.
+    const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/;
+    const cleanPhone = phone.replace(/[\s\-\.\(\)]/g, '');
+    // Must have at least 7 digits
+    return phoneRegex.test(phone) || (cleanPhone.length >= 7 && /^[\+]?[0-9]+$/.test(cleanPhone));
+  };
+
   const validateBranches = (): { branchId: string; fieldId: string; message: string }[] => {
     const errors: { branchId: string; fieldId: string; message: string }[] = [];
 
     branches.forEach((branch, branchIndex) => {
+      const conditionLabel = `Condition ${branchIndex + 1}`;
+
       // For public preview, condition is static - no validation needed
       // For regular flow, validate condition selection
       if (!isPublicPreview) {
@@ -990,8 +1119,8 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
             branchId: branch.id,
             fieldId: 'conditions',
             message: branch.overflowConditionExcludeMode
-              ? `Rule ${branchIndex + 1}: Please select at least one condition to exclude`
-              : `Rule ${branchIndex + 1}: Please select at least one overflow condition`
+              ? `${conditionLabel}: Please select at least one condition to exclude.`
+              : `${conditionLabel}: Please select at least one overflow condition.`
           });
         } else if (!branch.overflowConditionExcludeMode) {
           // Only validate values for include mode (exclude mode doesn't need values)
@@ -1001,7 +1130,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               errors.push({
                 branchId: branch.id,
                 fieldId: condId,
-                message: `Rule ${branchIndex + 1}: Please enter a value for "${option.label}"`
+                message: `${conditionLabel}: Please enter a value for "${option.label}".`
               });
             }
           });
@@ -1013,23 +1142,132 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
         errors.push({
           branchId: branch.id,
           fieldId: 'action',
-          message: `Rule ${branchIndex + 1}: Please select an overflow action`
+          message: `${conditionLabel}: Please select an overflow action.`
         });
       } else {
         // Validate action has value where required
         const action = overflowActionOptions.find(a => a.id === branch.actionId);
-        if (action?.requiresValue && !branch.actionValue) {
-          errors.push({
-            branchId: branch.id,
-            fieldId: 'action',
-            message: `Rule ${branchIndex + 1}: Please ${action.valueType === 'queue' ? 'select a queue' : 'enter a value'} for the action`
-          });
+        if (action?.requiresValue) {
+          if (!branch.actionValue || branch.actionValue.trim() === '') {
+            errors.push({
+              branchId: branch.id,
+              fieldId: 'action-value',
+              message: `${conditionLabel}: Please ${action.valueType === 'queue' ? 'select a queue' : 'enter a value'} for the action.`
+            });
+          } else if (branch.actionId === 'transfer-external') {
+            // Validate phone number for transfer to external number
+            if (!isValidPhoneNumber(branch.actionValue)) {
+              errors.push({
+                branchId: branch.id,
+                fieldId: 'invalid-phone',
+                message: `${conditionLabel}: Please enter a valid phone number for "Transfer to external number". Current value: ${branch.actionValue}`
+              });
+            }
+          }
         }
       }
+
+      // Check that selected variables have values
+      const activeVars = allSelectedVariables.filter(v => !(branch.disabledVariables || []).includes(v.id));
+      activeVars.forEach(v => {
+        const values = branch.variableValues[v.id] || [];
+        const hasValues = values.length > 0 && values.some(val => val.trim() !== '');
+        if (!hasValues) {
+          errors.push({
+            branchId: branch.id,
+            fieldId: `blank-var-${v.id}`,
+            message: `${conditionLabel}: Value for "${v.label}" is required.`
+          });
+        }
+      });
     });
+
+    // Check for duplicate and conflicting rules
+    const checkedPairs = new Set<string>();
+
+    for (let i = 0; i < branches.length; i++) {
+      for (let j = i + 1; j < branches.length; j++) {
+        const pairKey = `${i}-${j}`;
+        if (checkedPairs.has(pairKey)) continue;
+        checkedPairs.add(pairKey);
+
+        const branch1 = branches[i];
+        const branch2 = branches[j];
+
+        const condSig1 = getConditionSignature(branch1);
+        const condSig2 = getConditionSignature(branch2);
+        const actionSig1 = getActionSignature(branch1);
+        const actionSig2 = getActionSignature(branch2);
+
+        const conditionsMatch = condSig1 === condSig2;
+        const actionsMatch = actionSig1 === actionSig2;
+
+        // Check for exact duplicates
+        if (conditionsMatch && actionsMatch) {
+          errors.push({
+            branchId: branch2.id,
+            fieldId: 'duplicate',
+            message: `Duplicate condition detected: ${describeBranchConditions(branch1, i)} and ${describeBranchConditions(branch2, j)} have identical conditions and actions. Please remove one of them.`
+          });
+          continue;
+        }
+
+        // Check for conflicting conditions (same conditions, different actions)
+        if (conditionsMatch && !actionsMatch) {
+          const action1 = overflowActionOptions.find(a => a.id === branch1.actionId);
+          const action2 = overflowActionOptions.find(a => a.id === branch2.actionId);
+          errors.push({
+            branchId: branch2.id,
+            fieldId: 'conflict',
+            message: `Conflicting conditions detected: ${describeBranchConditions(branch1, i)} and ${describeBranchConditions(branch2, j)} have the same conditions but different actions (${action1?.label || 'unknown'} vs ${action2?.label || 'unknown'}). This creates ambiguity about which action to take.`
+          });
+          continue;
+        }
+
+        // Check for subset/superset conflicts (one condition is more specific than another with different action)
+        if (doConditionsOverlap(branch1, branch2) && !actionsMatch) {
+          const isSubset1of2 = isConditionSubset(branch1, branch2);
+          const isSubset2of1 = isConditionSubset(branch2, branch1);
+
+          if (isSubset1of2 || isSubset2of1) {
+            const moreSpecific = isSubset1of2 ? branch1 : branch2;
+            const moreGeneral = isSubset1of2 ? branch2 : branch1;
+            const moreSpecificIdx = isSubset1of2 ? i : j;
+            const moreGeneralIdx = isSubset1of2 ? j : i;
+
+            const action1 = overflowActionOptions.find(a => a.id === moreSpecific.actionId);
+            const action2 = overflowActionOptions.find(a => a.id === moreGeneral.actionId);
+
+            errors.push({
+              branchId: branch2.id,
+              fieldId: 'overlap',
+              message: `Overlapping conditions detected: ${describeBranchConditions(moreSpecific, moreSpecificIdx)} is a subset of ${describeBranchConditions(moreGeneral, moreGeneralIdx)}, but they have different actions (${action1?.label || 'unknown'} vs ${action2?.label || 'unknown'}). Consider consolidating these conditions or ensuring they are mutually exclusive.`
+            });
+          }
+        }
+      }
+    }
 
     return errors;
   };
+
+  // Trigger validation when parent requests it (on Save/Publish)
+  useEffect(() => {
+    if (triggerValidation) {
+      const errors = validateBranches();
+      setValidationErrors(errors);
+      if (onValidationResult) {
+        onValidationResult(errors.length > 0, errors);
+      }
+    }
+  }, [triggerValidation]);
+
+  // Clear validation errors when user makes changes (so they can try again)
+  useEffect(() => {
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+  }, [branches]);
 
   const hasError = (branchId: string, fieldId: string): boolean => {
     return validationErrors.some(e => e.branchId === branchId && e.fieldId === fieldId);
@@ -1202,13 +1440,16 @@ For all other customers where no agents are available immediately, offer direct 
                           >×</button>
                           {v.description || v.label}{' '}
                           is{' '}
-                          <MultiSelectDropdown
-                            options={v.values}
-                            selected={branch.variableValues[v.id] || []}
-                            onChange={(values) => handleBranchValueChange(branch.id, v.id, values)}
-                            placeholder="choose"
-                            excludeMode={branch.variableExcludeMode?.[v.id] || false}
-                            onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
+                          <input
+                            type="text"
+                            className="variable-value-input"
+                            placeholder="enter value"
+                            value={(branch.variableValues[v.id] || []).join(', ')}
+                            onChange={(e) => {
+                              const textValue = e.target.value;
+                              // Store as array with single value for compatibility
+                              handleBranchValueChange(branch.id, v.id, textValue ? [textValue] : []);
+                            }}
                           />
                         </span>
                       </React.Fragment>
@@ -1319,9 +1560,10 @@ For all other customers where no agents are available immediately, offer direct 
                 {/* Add/Remove buttons */}
                 <span className="rule-actions">
                   <button
-                    className="inline-add-btn"
+                    className={`inline-add-btn ${isPublicPreview && branches.length >= 12 ? 'disabled' : ''}`}
                     onClick={addBranch}
-                    title="Add rule after this"
+                    title={isPublicPreview && branches.length >= 12 ? 'Maximum 12 branches allowed in public preview' : 'Add rule after this'}
+                    disabled={isPublicPreview && branches.length >= 12}
                   >+</button>
                   {!isFirstBranch && (
                     <button
@@ -1338,14 +1580,16 @@ For all other customers where no agents are available immediately, offer direct 
 
         {/* Validation Errors */}
         {validationErrors.length > 0 && (
-          <div className="validation-errors">
-            <div className="validation-error-header">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          <div className="validation-errors-section">
+            <div className="validation-errors-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              <span>Please fix the following errors:</span>
+              <span>Please fix the following issues before saving:</span>
             </div>
-            <ul className="validation-error-list">
+            <ul className="validation-errors-list-simple">
               {validationErrors.map((error, idx) => (
                 <li key={idx}>{error.message}</li>
               ))}
@@ -1411,7 +1655,7 @@ For all other customers where no agents are available immediately, offer direct 
                         <input
                           type="text"
                           className="var-description-input"
-                          placeholder={`Describe how this appears (e.g., "${v.label.toLowerCase()}")`}
+                          placeholder={`Describe how this appears in playbook (e.g., "${v.label.toLowerCase()}")`}
                           value={v.description}
                           onChange={(e) => updateContextVarDescription(v.id, e.target.value)}
                         />
@@ -1422,73 +1666,147 @@ For all other customers where no agents are available immediately, offer direct 
 
                 {availableContextVars.length > 0 && (
                   <select
-                    className="add-variable-dropdown"
+                    className={`add-variable-dropdown ${isPublicPreview && selectedContextVars.length >= 2 ? 'disabled' : ''}`}
                     value=""
                     onChange={(e) => addContextVariable(e.target.value)}
+                    disabled={isPublicPreview && selectedContextVars.length >= 2}
+                    title={isPublicPreview && selectedContextVars.length >= 2 ? 'Maximum 2 customer variables allowed in public preview' : ''}
                   >
-                    <option value="">+ Add customer attribute...</option>
+                    <option value="">{isPublicPreview && selectedContextVars.length >= 2 ? 'Maximum 2 variables reached' : '+ Add customer attribute...'}</option>
                     {availableContextVars.map(v => (
-                      <option key={v.id} value={v.id}>{v.label}</option>
+                      <option key={v.id} value={v.id}>{v.label} (Workstream: {v.workstream})</option>
                     ))}
                   </select>
                 )}
               </div>
 
-              {/* Live Work Item Variables */}
-              <div className="variable-category">
-                <h4 className="category-title">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                  </svg>
-                  Conversation Attributes
-                </h4>
+              {/* Live Work Item Variables - Hidden for public preview */}
+              {!isPublicPreview && (
+                <div className="variable-category">
+                  <h4 className="category-title">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Conversation Attributes
+                  </h4>
 
-                {selectedLWIVars.length > 0 && (
-                  <div className="selected-variables-list">
-                    {selectedLWIVars.map(v => (
-                      <div key={v.id} className="selected-variable-item">
-                        <div className="selected-var-header">
-                          <span className="selected-var-label">{v.label}</span>
-                          <button
-                            className="remove-var-btn"
-                            onClick={() => removeLWIVariable(v.id)}
-                            title="Remove variable"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                            </svg>
-                          </button>
+                  {selectedLWIVars.length > 0 && (
+                    <div className="selected-variables-list">
+                      {selectedLWIVars.map(v => (
+                        <div key={v.id} className="selected-variable-item">
+                          <div className="selected-var-header">
+                            <span className="selected-var-label">{v.label}</span>
+                            <button
+                              className="remove-var-btn"
+                              onClick={() => removeLWIVariable(v.id)}
+                              title="Remove variable"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                              </svg>
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            className="var-description-input"
+                            placeholder={`Describe how this appears in playbook (e.g., "${v.label.toLowerCase()}")`}
+                            value={v.description}
+                            onChange={(e) => updateLWIVarDescription(v.id, e.target.value)}
+                          />
                         </div>
-                        <input
-                          type="text"
-                          className="var-description-input"
-                          placeholder={`Describe how this appears (e.g., "${v.label.toLowerCase()}")`}
-                          value={v.description}
-                          onChange={(e) => updateLWIVarDescription(v.id, e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
 
-                {availableLWIVars.length > 0 && (
-                  <select
-                    className="add-variable-dropdown"
-                    value=""
-                    onChange={(e) => addLWIVariable(e.target.value)}
-                  >
-                    <option value="">+ Add conversation attribute...</option>
-                    {availableLWIVars.map(v => (
-                      <option key={v.id} value={v.id}>{v.label}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
+                  {availableLWIVars.length > 0 && (
+                    <select
+                      className="add-variable-dropdown"
+                      value=""
+                      onChange={(e) => addLWIVariable(e.target.value)}
+                    >
+                      <option value="">+ Add conversation attribute...</option>
+                      {availableLWIVars.map(v => (
+                        <option key={v.id} value={v.id}>{v.label}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Variable Limit Popup for Public Preview */}
+      {showVariableLimitPopup && (
+        <div className="limitation-popup-overlay" onClick={() => setShowVariableLimitPopup(false)}>
+          <div className="limitation-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="limitation-popup-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <h3>Variable Limit Reached</h3>
+            </div>
+            <div className="limitation-popup-content">
+              <p>In the public preview, you can add a maximum of <strong>2 customer variables</strong>.</p>
+              <p className="limitation-details">
+                This allows you to create up to 12 condition branches using combinations like:
+              </p>
+              <ul className="limitation-examples">
+                <li>4 values × 3 values = 12 branches</li>
+                <li>3 values × 4 values = 12 branches</li>
+                <li>Or up to 12 values from a single variable</li>
+              </ul>
+              <p className="limitation-note">
+                For more advanced configurations with additional variables, please contact your administrator.
+              </p>
+            </div>
+            <div className="limitation-popup-actions">
+              <button className="limitation-popup-btn" onClick={() => setShowVariableLimitPopup(false)}>
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Branch Limit Popup for Public Preview */}
+      {showBranchLimitPopup && (
+        <div className="limitation-popup-overlay" onClick={() => setShowBranchLimitPopup(false)}>
+          <div className="limitation-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="limitation-popup-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <h3>Branch Limit Reached</h3>
+            </div>
+            <div className="limitation-popup-content">
+              <p>In the public preview, you can create a maximum of <strong>12 condition branches</strong>.</p>
+              <p className="limitation-details">
+                This limit supports common use cases such as:
+              </p>
+              <ul className="limitation-examples">
+                <li>2 variables with 4×3 value combinations</li>
+                <li>2 variables with 3×4 value combinations</li>
+                <li>1 variable with up to 12 different values</li>
+              </ul>
+              <p className="limitation-note">
+                For more complex routing rules with additional branches, please contact your administrator.
+              </p>
+            </div>
+            <div className="limitation-popup-actions">
+              <button className="limitation-popup-btn" onClick={() => setShowBranchLimitPopup(false)}>
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
