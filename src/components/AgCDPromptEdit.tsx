@@ -558,7 +558,7 @@ const AgCDPromptEdit: React.FC = () => {
   // Validation state
   const [triggerValidation, setTriggerValidation] = useState(false);
   const [pendingAction, setPendingAction] = useState<'save' | 'publish' | null>(null);
-  const [hasValidationErrors, setHasValidationErrors] = useState(false);
+  const [hasValidationWarnings, setHasValidationWarnings] = useState(false);
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -724,21 +724,21 @@ const AgCDPromptEdit: React.FC = () => {
   };
 
   // Handle validation result from template editor
-  const handleValidationResult = (hasErrors: boolean, errors: { message: string }[]) => {
+  const handleValidationResult = (hasWarnings: boolean, warnings: { message: string }[]) => {
     setTriggerValidation(false);
-    setHasValidationErrors(hasErrors);
+    setHasValidationWarnings(hasWarnings);
 
-    if (hasErrors) {
-      // Validation failed - don't proceed, errors will be shown in the editor
-      setPendingAction(null);
-      return;
-    }
-
-    // Validation passed - proceed with the action
+    // For Save: proceed even with warnings (warnings are shown but don't block)
+    // For Publish: block if there are warnings
     if (pendingAction === 'save') {
       performSave();
     } else if (pendingAction === 'publish') {
-      // Show confirmation modal
+      if (hasWarnings) {
+        // Validation warnings - don't proceed with publish
+        setPendingAction(null);
+        return;
+      }
+      // No warnings - show confirmation modal
       setShowPublishConfirm(true);
     }
     setPendingAction(null);
@@ -1112,9 +1112,9 @@ const AgCDPromptEdit: React.FC = () => {
 
                 if (currentStateJson !== savedStateJson) {
                   setIsDirty(true);
-                  // Clear validation errors when user makes changes
-                  if (hasValidationErrors) {
-                    setHasValidationErrors(false);
+                  // Clear validation warnings when user makes changes
+                  if (hasValidationWarnings) {
+                    setHasValidationWarnings(false);
                   }
                 }
               }}
@@ -1239,15 +1239,13 @@ const AgCDPromptEdit: React.FC = () => {
             Back
           </button>
           <button
-            className={`menu-btn-secondary ${status === 'Active' || hasValidationErrors ? 'disabled' : ''}`}
+            className={`menu-btn-secondary ${status === 'Active' ? 'disabled' : ''}`}
             onClick={handleSave}
-            disabled={status === 'Active' || hasValidationErrors}
+            disabled={status === 'Active'}
             title={
-              hasValidationErrors
-                ? 'Resolve the errors before you can save the playbook'
-                : status === 'Active'
-                  ? 'Save is disabled for a published policy as it will change the playbook state from Active to Draft. Do Save & publish once the playbook is updated'
-                  : ''
+              status === 'Active'
+                ? 'Save is disabled for a published policy as it will change the playbook state from Active to Draft. Do Save & publish once the playbook is updated'
+                : ''
             }
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -1257,10 +1255,10 @@ const AgCDPromptEdit: React.FC = () => {
             Save
           </button>
           <button
-            className={`menu-btn-primary ${hasValidationErrors ? 'disabled' : ''}`}
+            className={`menu-btn-primary ${hasValidationWarnings ? 'disabled' : ''}`}
             onClick={handlePublishClick}
-            disabled={hasValidationErrors}
-            title={hasValidationErrors ? 'Resolve the errors before you can publish the playbook' : ''}
+            disabled={hasValidationWarnings}
+            title={hasValidationWarnings ? 'Resolve the warnings before you can publish the playbook' : ''}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.695 8.695 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.75.75 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75zM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5zM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75z"/>

@@ -112,22 +112,28 @@ When deleting a playbook, a confirmation modal appears:
 
 ### 4.1 Validation Trigger
 - Validations are triggered **only on Save or Publish** (not during real-time editing)
-- Errors are displayed in the editor area as a bulleted list
+- **Warnings** (not errors) are displayed in the editor area as a bulleted list with amber/yellow styling
 
-### 4.2 Button States on Validation Errors
-| Button | State | Tooltip |
-|--------|-------|---------|
-| Save | Disabled | "Resolve the errors before you can save the playbook" |
-| Publish / Save & publish | Disabled | "Resolve the errors before you can publish the playbook" |
+### 4.2 Warnings Behavior (Save Allowed)
+Validations are shown as **warnings** and do **NOT block the Save action**:
 
-### 4.3 Error Message Format
+| Button | State | Behavior |
+|--------|-------|----------|
+| Save | **Always Enabled** | Saves playbook even when warnings exist |
+| Publish / Save & publish | Disabled when warnings exist | "Resolve the warnings before you can publish the playbook" |
+
+**Rationale**: Users can save drafts with incomplete configurations, but must resolve all warnings before publishing an active playbook that affects live routing.
+
+### 4.3 Warning Message Format
 - Use "Condition X" terminology (not "Rule X")
 - Display as simple bulleted list without badges/tabs
-- Clear errors when user makes changes
+- **Amber/yellow warning styling** (not red error styling)
+- Clear warnings when user makes changes
+- Header text: "Please review the following warnings:"
 
 ### 4.4 Blank Field Validation
-| Field | Error Message |
-|-------|---------------|
+| Field | Warning Message |
+|-------|-----------------|
 | Priority Score | "Condition X: Priority score is required" |
 | Time Interval | "Condition X: Time interval is required" |
 | Variable Value | "Condition X: Value for [Variable Name] is required" |
@@ -137,8 +143,8 @@ When deleting a playbook, a confirmation modal appears:
 | External Phone Number | "Condition X: A phone number is required for external transfer" |
 
 ### 4.5 Range Validation
-| Field | Valid Range | Error Message |
-|-------|-------------|---------------|
+| Field | Valid Range | Warning Message |
+|-------|-------------|-----------------|
 | Priority Score | 0 - 10,000 | "Condition X: Priority score must be between 0 and 10,000" |
 | Default Priority Score | 0 - 10,000 | "Default priority score must be between 0 and 10,000" |
 | Time Interval | > 0 | "Condition X: Time interval must be a positive number" |
@@ -146,15 +152,15 @@ When deleting a playbook, a confirmation modal appears:
 ### 4.6 Phone Number Validation
 - Required for "Transfer to external number" action
 - Must be a valid phone number format
-- Error: "Condition X: Please enter a valid phone number"
+- Warning: "Condition X: Please enter a valid phone number"
 
 ### 4.7 Duplicate Condition Detection
 - Detects when two conditions have identical variable-value combinations
-- Error: "Condition X and Condition Y have identical conditions"
+- Warning: "Condition X and Condition Y have identical conditions"
 
 ### 4.8 Conflicting Condition Detection
 - Detects when conditions overlap (one is subset of another)
-- Error: "Condition X conflicts with Condition Y - [Variable] values overlap"
+- Warning: "Condition X conflicts with Condition Y - [Variable] values overlap"
 
 ---
 
@@ -208,5 +214,5 @@ When deleting a playbook, a confirmation modal appears:
 
 ---
 
-*Document Version: 1.1*
+*Document Version: 1.2*
 *Last Updated: March 2026*
