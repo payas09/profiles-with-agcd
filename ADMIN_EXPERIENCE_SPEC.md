@@ -47,16 +47,19 @@ This document outlines the admin experience requirements for the Orchestration A
 3. **On Confirm**: Saves changes and keeps Active status
 4. **On Cancel**: Reverts all changes to last published state, user stays on edit page
 
-### 2.4 Unsaved Changes Warning - Draft/New Playbooks
-When navigating away (Back button, Home/Playbook tabs) with unsaved changes:
-- Dialog appears: "You have unsaved changes. Do you want to save them before leaving?"
-- **Don't save**: Discards changes and navigates away
-- **Cancel**: Stays on edit page
-- **Save**: Saves changes then navigates
+### 2.4 Unsaved Changes Warning
+When navigating away (Back button, Home/Playbook tabs) with unsaved changes, a warning dialog appears for **all playbooks** (both Draft and Active):
 
-### 2.5 Navigation from Published Playbooks
-- Changes are auto-discarded without warning
-- User navigates away immediately
+**Dialog Message**: "You have unsaved changes. Do you want to save them before leaving?"
+
+**Buttons (2-button design)**:
+| Button | Action |
+|--------|--------|
+| Discard changes | Discards all unsaved changes and navigates away |
+| Save | (For Draft playbooks) Saves changes then navigates |
+| Save & publish | (For Active playbooks) Publishes changes to keep Active status, then navigates |
+
+**Note**: For Active playbooks, "Save & publish" is shown instead of "Save" because a regular Save would change the playbook from Active to Draft state.
 
 ---
 

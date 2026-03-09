@@ -230,24 +230,34 @@ The following are hidden in public preview:
 
 ## 8. Save & Publish Flow
 
-### Auto-Save
-- Playbooks are automatically saved after 5 seconds of inactivity
-- Auto-save indicator shows "Saving..." during save and timestamp after completion
-- Auto-saved playbooks have "Draft" status
-
-### Manual Save
+### Save Behavior
+- **No auto-save**: Changes are only saved on explicit user action
 - Click "Save" button to manually save
 - Success banner appears: "Playbook saved successfully!"
-- Disabled when editing an already published (Active) playbook
+- **Save button disabled** for published (Active) playbooks to prevent changing status to Draft
 
-### Publish Flow
+### Publish Flow - New/Draft Playbooks
 1. Click "Publish" button
 2. Confirmation modal appears:
-   - Title: "Publish Playbook" (or "Update Playbook" if already active)
-   - Message: "This playbook will be published and become active immediately. Active playbooks will affect conversation routing in your contact center."
+   - Title: "Publish Playbook"
+   - Message: "This will make the playbook active and the conversations will be routed as per this playbook for the selected queues."
 3. Click "Publish" to confirm or "Cancel" to abort
 4. Success banner appears: "Playbook published successfully!"
 5. Status changes from "Draft" to "Active"
+
+### Publish Flow - Already Published Playbooks
+1. Click "Save & publish" button
+2. Confirmation modal appears with warning:
+   - Message: "If you do Save & publish, the playbook will get updated and published with the latest changes."
+   - Warning: "If you Cancel, then the latest changes will be lost and the playbook will be reverted to the last published version."
+3. **On Confirm**: Saves changes and keeps Active status
+4. **On Cancel**: Reverts all changes to last published state
+
+### Unsaved Changes Warning
+When navigating away (Back button, Home/Playbook tabs) with unsaved changes:
+- Warning dialog appears: "You have unsaved changes. Do you want to save them before leaving?"
+- **Discard changes**: Discards changes and navigates away
+- **Save** (or **Save & publish** for Active playbooks): Saves/publishes then navigates
 
 ### Status Types
 | Status | Description |
