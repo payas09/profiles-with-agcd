@@ -790,25 +790,6 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
             </div>
           )}
 
-          {/* Validation Errors Display */}
-          {validationErrors.length > 0 && (
-            <div className="validation-errors-section">
-              <div className="validation-errors-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <span>Please fix the following issues before saving:</span>
-              </div>
-              <ul className="validation-errors-list-simple">
-                {validationErrors.map((error, idx) => (
-                  <li key={idx}>{error.message}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           {/* Priority Branches */}
           {branches.map((branch, branchIndex) => {
             const activeVariables = allSelectedVariables.filter(
@@ -940,6 +921,25 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Validation Errors Display */}
+        {validationErrors.length > 0 && (
+          <div className="validation-errors-section">
+            <div className="validation-errors-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>Please fix the following issues before saving:</span>
+            </div>
+            <ul className="validation-errors-list-simple">
+              {validationErrors.map((error, idx) => (
+                <li key={idx}>{error.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Generated Playbook Preview */}
         <div className="generated-policy-section">
