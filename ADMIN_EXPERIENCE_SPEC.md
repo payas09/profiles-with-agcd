@@ -55,32 +55,77 @@ When navigating away (Back button, Home/Playbook tabs) with unsaved changes, a w
 **Buttons (2-button design)**:
 | Button | Action |
 |--------|--------|
-| Discard changes | Discards all unsaved changes and navigates away |
-| Save | (For Draft playbooks) Saves changes then navigates |
-| Save & publish | (For Active playbooks) Publishes changes to keep Active status, then navigates |
+| Discard changes | Discards all unsaved changes and navigates away to the intended destination |
+| Save | (For Draft playbooks) Saves changes, shows success banner, user **stays on edit page** |
+| Save & publish | (For Active playbooks) Publishes changes, shows success banner, user **stays on edit page** |
 
-**Note**: For Active playbooks, "Save & publish" is shown instead of "Save" because a regular Save would change the playbook from Active to Draft state.
+**Behavior Notes**:
+- The "Save" / "Save & publish" button keeps the user on the current edit page after saving
+- A success banner is displayed: "Playbook saved successfully!" or "Playbook published successfully!"
+- The "Discard changes" button navigates to the originally intended destination
+- For Active playbooks, "Save & publish" is shown instead of "Save" because a regular Save would change the playbook from Active to Draft state
 
 ---
 
-## 3. Validations
+## 3. Playbook Management
 
-### 3.1 Validation Trigger
+### 3.1 Playbook Page Layout
+The Playbook page displays all playbooks in a table with the following columns:
+| Column | Width | Description |
+|--------|-------|-------------|
+| Playbook Name | 30% | Name with content preview, "New" tag for recently saved |
+| Trigger | 20% | Event that activates the playbook |
+| Status | 8% | Draft or Active badge |
+| Queue | 15% | Selected queues with expand/collapse |
+| Channel | 8% | Voice or Messaging badge |
+| Last Modified | 12% | Timestamp of last change |
+| Action | 7% | Menu with Edit, Duplicate, Delete |
+
+**Layout Features**:
+- Fixed column widths for consistent layout
+- Text overflow with ellipsis for long names/triggers
+- Expandable queue list for multiple queues
+
+### 3.2 Playbook Actions
+| Action | Description |
+|--------|-------------|
+| Edit | Opens playbook in edit mode |
+| Duplicate | Creates a copy with "(Copy)" suffix |
+| Delete | Opens delete confirmation dialog |
+
+### 3.3 Delete Confirmation
+When deleting a playbook, a confirmation modal appears:
+
+**Dialog Title**: "Delete Playbook"
+
+**Dialog Message**: "Are you sure you want to delete the playbook "[Playbook Name]"? This action cannot be undone."
+
+**Buttons**:
+| Button | Style | Action |
+|--------|-------|--------|
+| Cancel | Secondary (outlined) | Closes dialog, no action taken |
+| Delete | Danger (red) | Deletes the playbook permanently |
+
+---
+
+## 4. Validations
+
+### 4.1 Validation Trigger
 - Validations are triggered **only on Save or Publish** (not during real-time editing)
 - Errors are displayed in the editor area as a bulleted list
 
-### 3.2 Button States on Validation Errors
+### 4.2 Button States on Validation Errors
 | Button | State | Tooltip |
 |--------|-------|---------|
 | Save | Disabled | "Resolve the errors before you can save the playbook" |
 | Publish / Save & publish | Disabled | "Resolve the errors before you can publish the playbook" |
 
-### 3.3 Error Message Format
+### 4.3 Error Message Format
 - Use "Condition X" terminology (not "Rule X")
 - Display as simple bulleted list without badges/tabs
 - Clear errors when user makes changes
 
-### 3.4 Blank Field Validation
+### 4.4 Blank Field Validation
 | Field | Error Message |
 |-------|---------------|
 | Priority Score | "Condition X: Priority score is required" |
@@ -91,71 +136,71 @@ When navigating away (Back button, Home/Playbook tabs) with unsaved changes, a w
 | Transfer Queue | "Condition X: A queue must be selected for transfer" |
 | External Phone Number | "Condition X: A phone number is required for external transfer" |
 
-### 3.5 Range Validation
+### 4.5 Range Validation
 | Field | Valid Range | Error Message |
 |-------|-------------|---------------|
 | Priority Score | 0 - 10,000 | "Condition X: Priority score must be between 0 and 10,000" |
 | Default Priority Score | 0 - 10,000 | "Default priority score must be between 0 and 10,000" |
 | Time Interval | > 0 | "Condition X: Time interval must be a positive number" |
 
-### 3.6 Phone Number Validation
+### 4.6 Phone Number Validation
 - Required for "Transfer to external number" action
 - Must be a valid phone number format
 - Error: "Condition X: Please enter a valid phone number"
 
-### 3.7 Duplicate Condition Detection
+### 4.7 Duplicate Condition Detection
 - Detects when two conditions have identical variable-value combinations
 - Error: "Condition X and Condition Y have identical conditions"
 
-### 3.8 Conflicting Condition Detection
+### 4.8 Conflicting Condition Detection
 - Detects when conditions overlap (one is subset of another)
 - Error: "Condition X conflicts with Condition Y - [Variable] values overlap"
 
 ---
 
-## 4. Public Preview Limitations
+## 5. Public Preview Limitations
 
-### 4.1 Variable Restrictions
+### 5.1 Variable Restrictions
 - **Maximum 2 Customer Variables** per playbook
 - **Conversation Attributes hidden** (not available in preview)
 - Popup message when limit reached:
   > "In the public preview, you can add a maximum of 2 customer variables."
 
-### 4.2 Branch Restrictions
+### 5.2 Branch Restrictions
 - **Maximum 12 Condition Branches** per playbook
 - "+" button disabled when limit reached
 - Popup message when limit reached:
   > "In the public preview, you can create a maximum of 12 condition branches."
 
-### 4.3 Overflow Condition
+### 5.3 Overflow Condition
 - Fixed to "no agents are available"
 - Not configurable in public preview
 
 ---
 
-## 5. UI Components
+## 6. UI Components
 
-### 5.1 Number Input Fields
+### 6.1 Number Input Fields
 - Priority score and timer inputs: **No spinner arrows** (increment/decrement buttons hidden)
 - Manual number entry only
 
-### 5.2 Variable Description Placeholder
+### 6.2 Variable Description Placeholder
 - Placeholder text: "Describe how this appears in playbook (e.g., Customer is a Gold member)"
 
-### 5.3 Status Badge
+### 6.3 Status Badge
 | Status | Appearance |
 |--------|------------|
 | Draft | Yellow badge |
 | Active | Green badge |
 
-### 5.4 Success Banners
+### 6.4 Success Banners
 - "Playbook saved successfully!" with link to Playbook page
 - "Playbook published successfully!" with link to Playbook page
 - Dismissible via close button
 
 ---
 
-## 6. Data Isolation
+## 7. Data Isolation
 
 - Playbooks created in Public Preview flow are **isolated** from regular Agentic routing
 - `isPublicPreview` flag stored with each playbook
@@ -163,5 +208,5 @@ When navigating away (Back button, Home/Playbook tabs) with unsaved changes, a w
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 1.1*
 *Last Updated: March 2026*
