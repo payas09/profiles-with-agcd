@@ -546,6 +546,8 @@ const AgCDPromptEdit: React.FC = () => {
   const justSavedRef = useRef(false);
   // Ref to store saved state for synchronous comparison (mirrors savedTemplateState)
   const savedTemplateStateRef = useRef<TemplateState | undefined>(undefined);
+  // Ref to store current template state for synchronous access (avoids stale state in callbacks)
+  const currentTemplateStateRef = useRef<TemplateState | undefined>(undefined);
   // Track the actual policy ID - set when editing existing or after first save of new policy
   const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
   // Confirmation modal state
@@ -581,6 +583,7 @@ const AgCDPromptEdit: React.FC = () => {
         // Load template state for restoration
         if (savedPrompt.templateState) {
           setTemplateState(savedPrompt.templateState);
+          currentTemplateStateRef.current = savedPrompt.templateState; // Keep current state ref in sync
           // Save the original state for reverting (deep copy)
           const stateCopy = JSON.parse(JSON.stringify(savedPrompt.templateState));
           setSavedTemplateState(stateCopy);
@@ -748,6 +751,9 @@ const AgCDPromptEdit: React.FC = () => {
     // Use promptType for new, savedScenarioId for existing
     const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
 
+    // Use ref for current template state to avoid stale state issues
+    const currentState = currentTemplateStateRef.current;
+
     const promptData = {
       id,
       promptName,
@@ -758,7 +764,7 @@ const AgCDPromptEdit: React.FC = () => {
       status,
       lastModified: 'Just now',
       type: policyType,
-      templateState, // Include template state for restoration on edit
+      templateState: currentState, // Use ref for most up-to-date state
       scenarioId: effectiveScenarioId, // Store which scenario/template was used
       isPublicPreview,
       selectedChannel: isPublicPreview ? selectedChannel : undefined
@@ -768,8 +774,8 @@ const AgCDPromptEdit: React.FC = () => {
     // Reset dirty state and update saved state for future reverts
     setIsDirty(false);
     justSavedRef.current = true; // Skip next onStateChange from setting isDirty
-    if (templateState) {
-      const stateCopy = JSON.parse(JSON.stringify(templateState));
+    if (currentState) {
+      const stateCopy = JSON.parse(JSON.stringify(currentState));
       setSavedTemplateState(stateCopy);
       savedTemplateStateRef.current = stateCopy; // Update ref immediately
     }
@@ -791,6 +797,9 @@ const AgCDPromptEdit: React.FC = () => {
     // Use promptType for new, savedScenarioId for existing
     const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
 
+    // Use ref for current template state to avoid stale state issues
+    const currentState = currentTemplateStateRef.current;
+
     const promptData = {
       id,
       promptName,
@@ -801,7 +810,7 @@ const AgCDPromptEdit: React.FC = () => {
       status: 'Active' as const,
       lastModified: 'Just now',
       type: policyType,
-      templateState, // Include template state for restoration on edit
+      templateState: currentState, // Use ref for most up-to-date state
       scenarioId: effectiveScenarioId, // Store which scenario/template was used
       isPublicPreview,
       selectedChannel: isPublicPreview ? selectedChannel : undefined
@@ -816,8 +825,8 @@ const AgCDPromptEdit: React.FC = () => {
     // Reset dirty state and update saved state
     setIsDirty(false);
     justSavedRef.current = true; // Skip next onStateChange from setting isDirty
-    if (templateState) {
-      const stateCopy = JSON.parse(JSON.stringify(templateState));
+    if (currentState) {
+      const stateCopy = JSON.parse(JSON.stringify(currentState));
       setSavedTemplateState(stateCopy);
       savedTemplateStateRef.current = stateCopy; // Update ref immediately
     }
@@ -1077,8 +1086,9 @@ const AgCDPromptEdit: React.FC = () => {
               triggerValidation={triggerValidation}
               onValidationResult={handleValidationResult}
               onStateChange={(state: TemplateEditorState, prompt: string) => {
-                // Update local state for persistence
+                // Update local state and ref for persistence
                 setTemplateState(state);
+                currentTemplateStateRef.current = state; // Always keep ref in sync
                 setPolicyBehavior(prompt);
 
                 // For new playbooks on initial load, save the state as baseline
