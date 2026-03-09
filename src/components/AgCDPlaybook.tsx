@@ -386,7 +386,9 @@ const AgCDPlaybook: React.FC = () => {
                         </span>
                       </td>
                       <td className="profiles-display-cell">
-                        {renderProfiles(policy)}
+                        <div className="profiles-display-wrapper">
+                          {renderProfiles(policy)}
+                        </div>
                       </td>
                       <td>{policy.lastModified}</td>
                       <td>

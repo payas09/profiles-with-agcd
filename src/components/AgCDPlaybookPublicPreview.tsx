@@ -371,7 +371,9 @@ const AgCDPlaybookPublicPreview: React.FC = () => {
                         </span>
                       </td>
                       <td className="profiles-display-cell">
-                        {renderQueues(policy)}
+                        <div className="profiles-display-wrapper">
+                          {renderQueues(policy)}
+                        </div>
                       </td>
                       <td className="channel-column">
                         <span className={`channel-badge ${(policy.selectedChannel || 'Voice').toLowerCase()}`}>
