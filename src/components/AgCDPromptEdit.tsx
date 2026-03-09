@@ -542,6 +542,8 @@ const AgCDPromptEdit: React.FC = () => {
   const [editorKey, setEditorKey] = useState(0);
   // Ref to track if this is the initial load (skip setting isDirty on first onStateChange)
   const isInitialLoadRef = useRef(true);
+  // Ref to track if we just saved (skip setting isDirty on immediate post-save onStateChange)
+  const justSavedRef = useRef(false);
   // Track the actual policy ID - set when editing existing or after first save of new policy
   const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
   // Confirmation modal state
@@ -761,6 +763,7 @@ const AgCDPromptEdit: React.FC = () => {
 
     // Reset dirty state and update saved state for future reverts
     setIsDirty(false);
+    justSavedRef.current = true; // Skip next onStateChange from setting isDirty
     if (templateState) {
       setSavedTemplateState(JSON.parse(JSON.stringify(templateState)));
     }
@@ -806,6 +809,7 @@ const AgCDPromptEdit: React.FC = () => {
 
     // Reset dirty state and update saved state
     setIsDirty(false);
+    justSavedRef.current = true; // Skip next onStateChange from setting isDirty
     if (templateState) {
       setSavedTemplateState(JSON.parse(JSON.stringify(templateState)));
     }
@@ -1077,8 +1081,11 @@ const AgCDPromptEdit: React.FC = () => {
                   if (!savedTemplateState) {
                     setSavedTemplateState(JSON.parse(JSON.stringify(state)));
                   }
+                } else if (justSavedRef.current) {
+                  // Skip setting isDirty immediately after save (editor may trigger onStateChange)
+                  justSavedRef.current = false;
                 } else {
-                  // Mark as dirty when user makes changes (not initial load)
+                  // Mark as dirty when user makes changes (not initial load or post-save)
                   setIsDirty(true);
                   // Clear validation errors when user makes changes
                   if (hasValidationErrors) {
