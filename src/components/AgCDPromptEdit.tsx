@@ -822,12 +822,7 @@ const AgCDPromptEdit: React.FC = () => {
   };
 
   const handleBack = () => {
-    // For published playbooks, auto-discard changes without warning
-    if (status === 'Active') {
-      navigate(basePath);
-      return;
-    }
-    // For draft/new playbooks, warn about unsaved changes
+    // Warn about unsaved changes for both draft and published playbooks
     if (isDirty) {
       setPendingNavigation(basePath);
       setShowUnsavedWarning(true);
@@ -838,13 +833,7 @@ const AgCDPromptEdit: React.FC = () => {
 
   const handlePageTabChange = (tab: 'home' | 'playbook') => {
     const targetPath = tab === 'home' ? basePath : `${basePath}/playbook`;
-    // For published playbooks, auto-discard changes without warning
-    if (status === 'Active') {
-      setActivePageTab(tab);
-      navigate(targetPath);
-      return;
-    }
-    // For draft/new playbooks, warn about unsaved changes
+    // Warn about unsaved changes for both draft and published playbooks
     if (isDirty) {
       setPendingNavigation(targetPath);
       setShowUnsavedWarning(true);
@@ -854,9 +843,15 @@ const AgCDPromptEdit: React.FC = () => {
     }
   };
 
-  // Handle unsaved changes warning - Save and leave
+  // Handle unsaved changes warning - Save (or Save & publish for Active) and leave
   const handleSaveAndLeave = () => {
-    performSave();
+    if (status === 'Active') {
+      // For published playbooks, do Save & publish
+      handlePublishConfirm();
+    } else {
+      // For draft/new playbooks, just save
+      performSave();
+    }
     setShowUnsavedWarning(false);
     if (pendingNavigation) {
       navigate(pendingNavigation);
@@ -864,19 +859,13 @@ const AgCDPromptEdit: React.FC = () => {
     setPendingNavigation(null);
   };
 
-  // Handle unsaved changes warning - Don't save (discard)
+  // Handle unsaved changes warning - Discard changes
   const handleDiscardChanges = () => {
     setShowUnsavedWarning(false);
     setIsDirty(false);
     if (pendingNavigation) {
       navigate(pendingNavigation);
     }
-    setPendingNavigation(null);
-  };
-
-  // Handle unsaved changes warning - Cancel (stay on page)
-  const handleStayOnPage = () => {
-    setShowUnsavedWarning(false);
     setPendingNavigation(null);
   };
 
@@ -1509,33 +1498,28 @@ const AgCDPromptEdit: React.FC = () => {
         </>
       )}
 
-      {/* Unsaved Changes Warning Modal (for draft/new playbooks) */}
+      {/* Unsaved Changes Warning Modal */}
       {showUnsavedWarning && (
         <>
-          <div className="publish-confirm-overlay" onClick={handleStayOnPage}></div>
+          <div className="publish-confirm-overlay"></div>
           <div className="publish-confirm-modal">
             <div className="publish-confirm-header">
               <h2 className="publish-confirm-title">Unsaved Changes</h2>
-              <button className="publish-confirm-close" onClick={handleStayOnPage}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-              </button>
             </div>
             <div className="publish-confirm-content">
               <p className="publish-confirm-message">
-                You have unsaved changes. Do you want to save them before leaving?
+                {status === 'Active'
+                  ? 'You have unsaved changes. Do you want to save and publish them before leaving?'
+                  : 'You have unsaved changes. Do you want to save them before leaving?'
+                }
               </p>
             </div>
-            <div className="publish-confirm-footer unsaved-warning-footer">
-              <button className="btn-tertiary-action" onClick={handleDiscardChanges}>
-                Don't save
-              </button>
-              <button className="btn-secondary-action" onClick={handleStayOnPage}>
-                Cancel
+            <div className="publish-confirm-footer">
+              <button className="btn-secondary-action" onClick={handleDiscardChanges}>
+                Discard changes
               </button>
               <button className="btn-primary-action" onClick={handleSaveAndLeave}>
-                Save
+                {status === 'Active' ? 'Save & publish' : 'Save'}
               </button>
             </div>
           </div>

@@ -1272,30 +1272,6 @@
   border-top: 1px solid #edebe9;
 }
 
-/* Unsaved warning footer with 3 buttons */
-.publish-confirm-footer.unsaved-warning-footer {
-  justify-content: flex-end;
-}
-
-/* Tertiary button for "Don't save" */
-.btn-tertiary-action {
-  padding: 8px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  background-color: transparent;
-  border: none;
-  color: #d83b01;
-  transition: all 0.2s;
-  font-family: 'Segoe UI', sans-serif;
-}
-
-.btn-tertiary-action:hover {
-  background-color: #fde7e9;
-  color: #a80000;
-}
-
 /* Disabled button state for menu buttons */
 .menu-btn-secondary.disabled,
 .menu-btn-primary.disabled {
