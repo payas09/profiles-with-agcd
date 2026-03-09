@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import './AgCDPromptEdit.css';
 import { savePrompt, getPrompt, SelectionMode, TemplateState, ChannelType } from '../utils/promptStorage';
@@ -540,6 +540,8 @@ const AgCDPromptEdit: React.FC = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   // Key to force remount of TemplateBasedEditor when reverting
   const [editorKey, setEditorKey] = useState(0);
+  // Ref to track if this is the initial load (skip setting isDirty on first onStateChange)
+  const isInitialLoadRef = useRef(true);
   // Track the actual policy ID - set when editing existing or after first save of new policy
   const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
   // Confirmation modal state
@@ -622,6 +624,10 @@ const AgCDPromptEdit: React.FC = () => {
     }
   }, [urlMode, urlRequirement]);
 
+  // Reset initial load ref when editor is remounted or playbook changes
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+  }, [editorKey, currentId]);
 
   // Group queues by profile for the side panel
   const profilesWithQueues = engagementProfiles.map(profile => {
@@ -1064,11 +1070,20 @@ const AgCDPromptEdit: React.FC = () => {
                 // Update local state for persistence
                 setTemplateState(state);
                 setPolicyBehavior(prompt);
-                // Mark as dirty when user makes changes
-                setIsDirty(true);
-                // Clear validation errors when user makes changes
-                if (hasValidationErrors) {
-                  setHasValidationErrors(false);
+                // Skip setting isDirty on initial load (first callback from editor)
+                if (isInitialLoadRef.current) {
+                  isInitialLoadRef.current = false;
+                  // For new playbooks, save the initial state as the "saved" state
+                  if (!savedTemplateState) {
+                    setSavedTemplateState(JSON.parse(JSON.stringify(state)));
+                  }
+                } else {
+                  // Mark as dirty when user makes changes (not initial load)
+                  setIsDirty(true);
+                  // Clear validation errors when user makes changes
+                  if (hasValidationErrors) {
+                    setHasValidationErrors(false);
+                  }
                 }
               }}
               onPromptGenerated={(prompt: string, config: PolicyConfig) => {
