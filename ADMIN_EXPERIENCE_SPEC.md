@@ -125,7 +125,7 @@ When navigating away (Back button, Home/Playbook tabs) with unsaved changes:
   > "In the public preview, you can create a maximum of 12 condition branches."
 
 ### 4.3 Overflow Condition
-- Fixed to "no agents are available immediately"
+- Fixed to "no agents are available"
 - Not configurable in public preview
 
 ---

@@ -53,7 +53,7 @@ const overflowConditionOptions: OverflowConditionOption[] = [
   { id: 'conversations-waiting', label: 'the conversations waiting in the queue >', requiresValue: true, valueType: 'number', valueLabel: 'conversations', valuePlaceholder: '10' },
   { id: 'actual-wait-time', label: 'the actual in queue wait time >', requiresValue: true, valueType: 'time', valueLabel: 'minutes', valuePlaceholder: '5' },
   { id: 'all-agents-offline', label: 'all agents are offline or away', requiresValue: false },
-  { id: 'no-agents-available', label: 'no agents are available immediately', requiresValue: false },
+  { id: 'no-agents-available', label: 'no agents are available', requiresValue: false },
   { id: 'out-of-hours', label: 'the queue is out of operating hours', requiresValue: false },
   { id: 'closing-soon', label: 'the queue will be out of operation in next', requiresValue: true, valueType: 'time', valueLabel: 'minutes', valuePlaceholder: '30' },
 ];
@@ -919,7 +919,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       let overflowConditionText = '';
       if (isPublicPreview) {
         // Public preview: always use static condition
-        overflowConditionText = 'no agents are available immediately';
+        overflowConditionText = 'no agents are available';
       } else if (branch.overflowConditionExcludeMode) {
         // Exclude mode: "all conditions except X"
         const excludedConditions = branch.selectedConditionIds.map(condId => {
@@ -1374,14 +1374,14 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               <li>Custom overflow rules will not apply to queues with predefined overflow logic.</li>
               <li>Please ensure that the queues referenced in the prompt contain at least one member.</li>
               <li>Minimum wait time threshold is 30 seconds.</li>
-              <li>{isPublicPreview ? 'The overflow condition triggers when no agents are available immediately.' : 'You can combine multiple overflow conditions using OR logic within a single rule.'}</li>
+              <li>{isPublicPreview ? 'The overflow condition triggers when no agents are available.' : 'You can combine multiple overflow conditions using OR logic within a single rule.'}</li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>
               <pre className="tips-example-text">{isPublicPreview
-                ? `For VIP customers where no agents are available immediately, transfer to VIP Support Queue.
+                ? `For VIP customers where no agents are available, transfer to VIP Support Queue.
 
-For all other customers where no agents are available immediately, offer direct callback.`
+For all other customers where no agents are available, offer direct callback.`
                 : examplePlaybook}</pre>
             </div>
           </div>
@@ -1475,7 +1475,7 @@ For all other customers where no agents are available immediately, offer direct 
 
                 {/* Overflow Condition - Static field for public preview, dropdown for regular */}
                 {isPublicPreview ? (
-                  <span className="overflow-condition-static">no agents are available immediately</span>
+                  <span className="overflow-condition-static">no agents are available</span>
                 ) : (
                   <>
                     {branch.overflowConditionExcludeMode && (

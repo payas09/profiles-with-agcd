@@ -114,7 +114,7 @@ Each card has:
 - **Description**: Set up overflow rules based on agent availability conditions with different overflow actions (transfer, callback, voicemail etc).
 - **Trigger**: "Conversation is waiting in queue"
 - **Editor**: Overflow Handling Editor
-- **Note**: Overflow condition is fixed to "no agents are available immediately" in public preview
+- **Note**: Overflow condition is fixed to "no agents are available" in public preview
 
 ### Assignment Templates
 - **Status**: Disabled ("Coming soon")
@@ -153,7 +153,7 @@ Users edit playbooks by:
 - Choosing overflow actions and their parameters
 
 ### Overflow Handling Editor (Public Preview)
-- **Fixed Condition**: "no agents are available immediately" (not editable)
+- **Fixed Condition**: "no agents are available" (not editable)
 - **Available Actions**:
   - Transfer to another queue
   - Transfer to external number
@@ -219,7 +219,7 @@ The following are hidden in public preview:
   > - 1 variable with up to 12 different values
 
 ### Overflow Condition
-- Fixed to "no agents are available immediately"
+- Fixed to "no agents are available"
 - Not configurable in public preview (full version allows selecting from multiple overflow conditions)
 
 ### Feature Restrictions
