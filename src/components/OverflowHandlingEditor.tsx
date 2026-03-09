@@ -1334,7 +1334,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               <path d="M6 4l4 4-4 4" />
             </svg>
           </span>
-          <span className="tips-title">Tips & Presets</span>
+          <span className="tips-title">Tips</span>
         </div>
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
