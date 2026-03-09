@@ -7,7 +7,7 @@ import { getAllPrompts, deletePrompt, duplicatePrompt, PromptData } from '../uti
 const triggerDisplayMap: { [key: string]: string } = {
   'conversation-waiting': 'Conversation is waiting in queue',
   'conversation-transferred': 'Conversation is transferred to the queue',
-  'work-item-unassigned': 'Work item is unassigned',
+  'work-item-unassigned': 'Conversation is waiting in queue',
   'conversation-started': 'Conversation Started',
   'wait-time-exceeds': 'Wait time exceeds',
   'work-item-transferred': 'Work item is transferred'
@@ -21,7 +21,7 @@ const getTriggerDisplayName = (trigger: string | undefined, scenarioId?: string)
   if (scenarioId === 'wait-time-escalation') {
     return triggerDisplayMap['conversation-waiting'];
   }
-  if (!trigger) return 'Work item is unassigned';
+  if (!trigger) return 'Conversation is waiting in queue';
   return triggerDisplayMap[trigger] || trigger.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 

@@ -19,7 +19,7 @@ This document outlines the admin experience requirements for the Orchestration A
 |----------|--------|---------------|
 | Wait Time Escalation | Priority Escalation Editor | Conversation is waiting in queue |
 | Queue Transfer Escalation | Priority Escalation Editor | Conversation is transferred to queue |
-| Overflow Handling | Overflow Handling Editor | Work item is unassigned |
+| Overflow Handling | Overflow Handling Editor | Conversation is waiting in queue |
 
 ---
 

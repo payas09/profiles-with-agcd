@@ -1036,7 +1036,7 @@ const AgCDPromptEdit: React.FC = () => {
               ) : (promptType === 'queue-transfer-escalation' || savedScenarioId === 'queue-transfer-escalation') ? (
                 <div className="trigger-text-display">Conversation is transferred to the queue</div>
               ) : (promptType === 'overflow-conditions-actions' || savedScenarioId === 'overflow-conditions-actions' || isPublicPreview) ? (
-                <div className="trigger-text-display">Work item is unassigned</div>
+                <div className="trigger-text-display">Conversation is waiting in queue</div>
               ) : (
                 <select
                   className="field-select"
