@@ -34,6 +34,8 @@ const AgCDPlaybook: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [playBookToDelete, setPlayBookToDelete] = useState<PromptData | null>(null);
 
   // Find the most recently saved playbook (for "New" tag)
   const mostRecentPlaybookId = useMemo(() => {
@@ -112,13 +114,25 @@ const AgCDPlaybook: React.FC = () => {
     }
   };
 
-  const handleDelete = (policyId: string, e?: React.MouseEvent) => {
+  const handleDelete = (policy: PromptData, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setOpenMenuId(null);
-    if (confirm('Are you sure you want to delete this playbook?')) {
-      deletePrompt(policyId);
+    setPlayBookToDelete(policy);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (playBookToDelete) {
+      deletePrompt(playBookToDelete.id);
       loadPrompts();
     }
+    setShowDeleteConfirm(false);
+    setPlayBookToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setPlayBookToDelete(null);
   };
 
   const toggleMenu = (policyId: string, e: React.MouseEvent) => {
@@ -410,7 +424,7 @@ const AgCDPlaybook: React.FC = () => {
                               </button>
                               <button
                                 className="dropdown-menu-item dropdown-menu-item-danger"
-                                onClick={() => handleDelete(policy.id)}
+                                onClick={() => handleDelete(policy)}
                               >
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                   <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"/>
@@ -489,7 +503,7 @@ const AgCDPlaybook: React.FC = () => {
                           </button>
                           <button
                             className="dropdown-menu-item dropdown-menu-item-danger"
-                            onClick={() => handleDelete(policy.id)}
+                            onClick={() => handleDelete(policy)}
                           >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                               <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"/>
@@ -540,6 +554,36 @@ const AgCDPlaybook: React.FC = () => {
         )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && playBookToDelete && (
+        <>
+          <div className="publish-confirm-overlay" onClick={handleDeleteCancel}></div>
+          <div className="publish-confirm-modal">
+            <div className="publish-confirm-header">
+              <h2 className="publish-confirm-title">Delete Playbook</h2>
+              <button className="publish-confirm-close" onClick={handleDeleteCancel}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div className="publish-confirm-content">
+              <p className="publish-confirm-message">
+                Are you sure you want to delete the playbook "{playBookToDelete.promptName}"? This action cannot be undone.
+              </p>
+            </div>
+            <div className="publish-confirm-footer">
+              <button className="btn-secondary-action" onClick={handleDeleteCancel}>
+                Cancel
+              </button>
+              <button className="btn-danger-action" onClick={handleDeleteConfirm}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 };
