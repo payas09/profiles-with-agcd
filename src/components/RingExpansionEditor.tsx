@@ -232,7 +232,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
   scenarioId,
   initialRequirement,
   initialState,
-  onPromptGenerated,
+  onPromptGenerated: _onPromptGenerated,
   onStateChange
 }) => {
   const isRestrictedFallback = scenarioId === 'ring-expansion-restricted';
@@ -322,7 +322,8 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
     setSelectedContextVars(prev => prev.filter(v => v.id !== varId));
   };
 
-  const updateContextVarDescription = (varId: string, description: string) => {
+  // @ts-ignore - Keeping for potential future use
+  const _updateContextVarDescription = (varId: string, description: string) => {
     setSelectedContextVars(prev => prev.map(v =>
       v.id === varId ? { ...v, description } : v
     ));
@@ -344,7 +345,8 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
     setSelectedLWIVars(prev => prev.filter(v => v.id !== varId));
   };
 
-  const updateLWIVarDescription = (varId: string, description: string) => {
+  // @ts-ignore - Keeping for potential future use
+  const _updateLWIVarDescription = (varId: string, description: string) => {
     setSelectedLWIVars(prev => prev.map(v =>
       v.id === varId ? { ...v, description } : v
     ));
@@ -597,7 +599,8 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
     }
   }, [branches, selectedContextVars, selectedLWIVars, scenarioId]);
 
-  const validateBranches = (): { branchId: string; fieldId: string; message: string }[] => {
+  // @ts-ignore - Keeping for potential future use
+  const _validateBranches = (): { branchId: string; fieldId: string; message: string }[] => {
     const errors: { branchId: string; fieldId: string; message: string }[] = [];
 
     branches.forEach((branch, branchIndex) => {

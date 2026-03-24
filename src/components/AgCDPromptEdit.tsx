@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import './AgCDPromptEdit.css';
 import { savePrompt, getPrompt, SelectionMode, TemplateState, ChannelType } from '../utils/promptStorage';
-import TemplatePromptEditor from './TemplatePromptEditor';
+// import TemplatePromptEditor from './TemplatePromptEditor';
 import CopilotPromptEditor from './CopilotPromptEditor';
 import TemplateBasedEditor from './TemplateBasedEditor';
 import type { TemplateEditorState } from './OverflowHandlingEditor';
+import type { ExpertRoutingEditorState } from './TemplateBasedEditor';
 
 // Policy config interface for editable display
 interface ConditionDef {
@@ -724,7 +725,7 @@ const AgCDPromptEdit: React.FC = () => {
   };
 
   // Handle validation result from template editor
-  const handleValidationResult = (hasWarnings: boolean, warnings: { message: string }[]) => {
+  const handleValidationResult = (hasWarnings: boolean, _warnings: { message: string }[]) => {
     setTriggerValidation(false);
     setHasValidationWarnings(hasWarnings);
 
@@ -749,7 +750,7 @@ const AgCDPromptEdit: React.FC = () => {
     // Only generate new ID if this is the first save of a new policy
     const id = savedPolicyId || `${promptType}-${Date.now()}`;
     // Use promptType for new, savedScenarioId for existing
-    const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
+    const effectiveScenarioId = promptType || savedScenarioId || urlScenario || undefined;
 
     // Use ref for current template state to avoid stale state issues
     const currentState = currentTemplateStateRef.current;
@@ -795,7 +796,7 @@ const AgCDPromptEdit: React.FC = () => {
     // Only generate new ID if this is the first save of a new policy
     const id = savedPolicyId || `${promptType}-${Date.now()}`;
     // Use promptType for new, savedScenarioId for existing
-    const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
+    const effectiveScenarioId = promptType || savedScenarioId || urlScenario || undefined;
 
     // Use ref for current template state to avoid stale state issues
     const currentState = currentTemplateStateRef.current;
@@ -1085,10 +1086,10 @@ const AgCDPromptEdit: React.FC = () => {
               isPublicPreview={isPublicPreview}
               triggerValidation={triggerValidation}
               onValidationResult={handleValidationResult}
-              onStateChange={(state: TemplateEditorState, prompt: string) => {
+              onStateChange={(state: TemplateEditorState | ExpertRoutingEditorState, prompt: string) => {
                 // Update local state and ref for persistence
-                setTemplateState(state);
-                currentTemplateStateRef.current = state; // Always keep ref in sync
+                setTemplateState(state as TemplateEditorState);
+                currentTemplateStateRef.current = state as TemplateEditorState; // Always keep ref in sync
                 setPolicyBehavior(prompt);
 
                 // For new playbooks on initial load, save the state as baseline
@@ -1125,7 +1126,7 @@ const AgCDPromptEdit: React.FC = () => {
                 // Save the policy and navigate to Playbook
                 // Use savedPolicyId if available (existing policy or already saved)
                 const id = savedPolicyId || `template-${Date.now()}`;
-                const effectiveScenarioId = promptType || savedScenarioId || urlScenario;
+                const effectiveScenarioId = promptType || savedScenarioId || urlScenario || undefined;
                 const promptData = {
                   id,
                   promptName: promptName || 'Template-based Policy',

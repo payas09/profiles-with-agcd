@@ -21,12 +21,12 @@ const contextVariables = [
 ];
 
 const liveWorkItemVariables = [
-  { id: 'Intent', label: 'Conversation Intent', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns'] },
-  { id: 'Channel', label: 'Channel', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
-  { id: 'Priority', label: 'Priority', values: ['Urgent', 'High', 'Medium', 'Low'] },
-  { id: 'Sentiment', label: 'Customer Sentiment', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
-  { id: 'ProductCategory', label: 'Product Category', values: ['Software', 'Hardware', 'Services', 'Subscription', 'Support', 'Training'] },
-  { id: 'IssueComplexity', label: 'Issue Complexity', values: ['Simple', 'Moderate', 'Complex', 'Escalation Required'] },
+  { id: 'Intent', label: 'Conversation Intent', workstream: 'Live Work Item', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns'] },
+  { id: 'Channel', label: 'Channel', workstream: 'Live Work Item', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
+  { id: 'Priority', label: 'Priority', workstream: 'Live Work Item', values: ['Urgent', 'High', 'Medium', 'Low'] },
+  { id: 'Sentiment', label: 'Customer Sentiment', workstream: 'Live Work Item', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
+  { id: 'ProductCategory', label: 'Product Category', workstream: 'Live Work Item', values: ['Software', 'Hardware', 'Services', 'Subscription', 'Support', 'Training'] },
+  { id: 'IssueComplexity', label: 'Issue Complexity', workstream: 'Live Work Item', values: ['Simple', 'Moderate', 'Complex', 'Escalation Required'] },
 ];
 
 // ============================================
@@ -89,7 +89,8 @@ interface MultiSelectDropdownProps {
   hasError?: boolean;
 }
 
-const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
+// @ts-ignore - Keeping for potential future use
+const _MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   options,
   selected,
   onChange,
@@ -361,7 +362,8 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
     ));
   };
 
-  const handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
+  // @ts-ignore - Keeping for potential future use
+  const _handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
     setBranches(prev => prev.map(b =>
       b.id === branchId ? { ...b, variableExcludeMode: { ...b.variableExcludeMode, [variableId]: exclude } } : b
     ));
@@ -791,7 +793,7 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
           )}
 
           {/* Priority Branches */}
-          {branches.map((branch, branchIndex) => {
+          {branches.map((branch, _branchIndex) => {
             const activeVariables = allSelectedVariables.filter(
               v => !(branch.disabledVariables || []).includes(v.id)
             );

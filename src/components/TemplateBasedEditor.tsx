@@ -272,7 +272,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   scenarioId,
   initialState,
   onPromptGenerated,
-  onPolicyConfigChange,
+  onPolicyConfigChange: _onPolicyConfigChange,
   onStateChange,
   isPublicPreview = false,
   triggerValidation = false,

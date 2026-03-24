@@ -32,10 +32,10 @@ const contextVariables = [
 ];
 
 const liveWorkItemVariables = [
-  { id: 'Intent', label: 'Conversation Intent', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns'] },
-  { id: 'Channel', label: 'Channel', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
-  { id: 'Priority', label: 'Priority', values: ['Urgent', 'High', 'Medium', 'Low'] },
-  { id: 'Sentiment', label: 'Customer Sentiment', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
+  { id: 'Intent', label: 'Conversation Intent', workstream: 'Live Work Item', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns'] },
+  { id: 'Channel', label: 'Channel', workstream: 'Live Work Item', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
+  { id: 'Priority', label: 'Priority', workstream: 'Live Work Item', values: ['Urgent', 'High', 'Medium', 'Low'] },
+  { id: 'Sentiment', label: 'Customer Sentiment', workstream: 'Live Work Item', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
 ];
 
 // Overflow condition options
@@ -283,7 +283,8 @@ interface MultiSelectDropdownProps {
   hasError?: boolean;
 }
 
-const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
+// @ts-ignore - Keeping for potential future use
+const _MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   options,
   selected,
   onChange,
@@ -766,7 +767,8 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     }));
   };
 
-  const handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
+  // @ts-ignore - Keeping for potential future use
+  const _handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
     setBranches(prev => prev.map(branch => {
       if (branch.id === branchId) {
         return {
@@ -1273,7 +1275,8 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     return validationErrors.some(e => e.branchId === branchId && e.fieldId === fieldId);
   };
 
-  const handleApplyTemplate = () => {
+  // @ts-ignore - Keeping for potential future use
+  const _handleApplyTemplate = () => {
     const errors = validateBranches();
     setValidationErrors(errors);
 

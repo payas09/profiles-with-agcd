@@ -65,13 +65,13 @@ const loadFromStorage = (): Map<string, PromptData> => {
     if (stored) {
       const data = JSON.parse(stored);
       // Migrate "Published" status to "Active" for backwards compatibility
-      const entries = Object.entries(data).map(([key, value]: [string, any]) => {
+      const entries: [string, PromptData][] = Object.entries(data).map(([key, value]: [string, any]) => {
         if (value.status === 'Published') {
           value.status = 'Active';
         }
-        return [key, value];
+        return [key, value as PromptData];
       });
-      return new Map(entries);
+      return new Map<string, PromptData>(entries);
     }
   } catch (error) {
     console.error('Error loading prompts from localStorage:', error);
