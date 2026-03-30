@@ -1,0 +1,403 @@
+/* User Group Sidecar Overlay */
+.usergroup-sidecar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+}
+
+/* User Group Sidecar Panel */
+.usergroup-sidecar-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 720px;
+  max-width: 100%;
+  height: 100vh;
+  background-color: white;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  animation: usergroupSlideIn 0.2s ease-out;
+}
+
+@keyframes usergroupSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Header */
+.usergroup-sidecar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #edebe9;
+  flex-shrink: 0;
+}
+
+.usergroup-sidecar-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.usergroup-sidecar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #605e5c;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.usergroup-sidecar-close:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+/* Body */
+.usergroup-sidecar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.usergroup-sidecar-intro {
+  margin-bottom: 16px;
+}
+
+.usergroup-sidecar-intro p {
+  font-size: 14px;
+  color: #605e5c;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+.usergroup-sidecar-intro strong {
+  color: #242424;
+}
+
+/* Search Box */
+.usergroup-search-box {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.usergroup-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #605e5c;
+  pointer-events: none;
+}
+
+.usergroup-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 36px 0 38px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: white;
+}
+
+.usergroup-search-input:focus {
+  outline: 2px solid #0078d4;
+  outline-offset: -2px;
+  border-color: #0078d4;
+}
+
+.usergroup-search-input::placeholder {
+  color: #a19f9d;
+}
+
+.usergroup-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: #605e5c;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.usergroup-search-clear:hover {
+  background-color: #f3f2f1;
+  color: #323130;
+}
+
+/* Selection Header */
+.usergroup-selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #edebe9;
+}
+
+.usergroup-count {
+  font-size: 14px;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Table Container */
+.usergroup-table-container {
+  flex: 1;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+.usergroup-empty-state {
+  padding: 32px 24px;
+  text-align: center;
+  color: #605e5c;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Table Styles */
+.usergroup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.usergroup-table thead {
+  background-color: #faf9f8;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.usergroup-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #323130;
+  border-bottom: 1px solid #edebe9;
+  white-space: nowrap;
+}
+
+.usergroup-th-checkbox {
+  width: 40px;
+}
+
+.usergroup-th-name {
+  min-width: 140px;
+}
+
+.usergroup-th-type {
+  width: 80px;
+}
+
+.usergroup-th-description {
+  min-width: 160px;
+}
+
+.usergroup-th-users {
+  min-width: 180px;
+}
+
+.usergroup-th-actions {
+  width: 100px;
+}
+
+.usergroup-table tbody tr {
+  border-bottom: 1px solid #edebe9;
+}
+
+.usergroup-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.usergroup-row {
+  transition: background-color 0.15s;
+}
+
+.usergroup-row:hover {
+  background-color: #faf9f8;
+}
+
+.usergroup-row-selected {
+  background-color: #e6f2fb;
+}
+
+.usergroup-row-selected:hover {
+  background-color: #d0e7f8;
+}
+
+.usergroup-table td {
+  padding: 12px 12px;
+  color: #323130;
+  vertical-align: top;
+}
+
+.usergroup-td-checkbox {
+  vertical-align: middle;
+}
+
+.usergroup-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.usergroup-name {
+  font-weight: 500;
+  color: #242424;
+}
+
+.usergroup-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.usergroup-type-static {
+  background-color: #e6f2fb;
+  color: #0078d4;
+  border: 1px solid #b3d7f2;
+}
+
+.usergroup-type-dynamic {
+  background-color: #f3f2f1;
+  color: #605e5c;
+  border: 1px solid #e1dfdd;
+}
+
+.usergroup-description {
+  color: #605e5c;
+  font-size: 13px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.usergroup-users-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.usergroup-users-count {
+  font-weight: 500;
+  color: #323130;
+}
+
+.usergroup-users-preview {
+  font-size: 12px;
+  color: #605e5c;
+  line-height: 1.3;
+}
+
+.usergroup-td-actions {
+  vertical-align: middle;
+}
+
+.usergroup-remove-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: none;
+  border: 1px solid #d13438;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #d13438;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.2s;
+}
+
+.usergroup-remove-button:hover {
+  background-color: #fef0f1;
+}
+
+.usergroup-remove-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Footer */
+.usergroup-sidecar-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid #edebe9;
+  background-color: #faf9f8;
+  flex-shrink: 0;
+}
+
+.usergroup-btn {
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.2s;
+}
+
+.usergroup-btn-cancel {
+  background-color: white;
+  border: 1px solid #8a8886;
+  color: #323130;
+}
+
+.usergroup-btn-cancel:hover {
+  background-color: #f3f2f1;
+}
+
+.usergroup-btn-save {
+  background-color: #0078d4;
+  border: none;
+  color: white;
+}
+
+.usergroup-btn-save:hover:not(:disabled) {
+  background-color: #106ebe;
+}
+
+.usergroup-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

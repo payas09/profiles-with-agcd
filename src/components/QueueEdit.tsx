@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import './QueueEdit.css';
-import { getUserGroups } from '../lib/userGroupStorage';
+import { getUserGroups, saveUserGroup } from '../lib/userGroupStorage';
+import { MOCK_USERS } from '../lib/userGroupMockData';
 import type { UserGroup } from '../lib/userGroupTypes';
+import UserGroupSelectionSidecar from './UserGroupSelectionSidecar';
 
 // Map queue IDs to names and types
 const queueData: { [key: string]: { name: string; type: string; owner: string } } = {
@@ -144,6 +146,9 @@ const QueueEdit: React.FC = () => {
   const [selectedEngagementProfile, setSelectedEngagementProfile] = useState('');
   const [activeTab, setActiveTab] = useState<'users' | 'userGroups'>('users');
   const [associatedUserGroups, setAssociatedUserGroups] = useState<UserGroup[]>([]);
+  const [allUserGroups, setAllUserGroups] = useState<UserGroup[]>([]);
+  const [sidecarOpen, setSidecarOpen] = useState(false);
+  const [sidecarMode, setSidecarMode] = useState<'add' | 'view'>('add');
 
   const queue = id ? queueData[id] : null;
   const queueName = queue?.name || 'Unknown Queue';
@@ -153,13 +158,64 @@ const QueueEdit: React.FC = () => {
   // Fetch user groups associated with this queue
   useEffect(() => {
     if (id) {
-      const allUserGroups = getUserGroups();
-      const filtered = allUserGroups.filter(group =>
+      const groups = getUserGroups();
+      setAllUserGroups(groups);
+      const filtered = groups.filter(group =>
         group.associatedQueueIds.includes(id)
       );
       setAssociatedUserGroups(filtered);
     }
   }, [id]);
+
+  const handleOpenSidecar = (mode: 'add' | 'view') => {
+    setSidecarMode(mode);
+    setSidecarOpen(true);
+  };
+
+  const handleSaveUserGroups = (selectedGroupIds: string[]) => {
+    if (!id) return;
+
+    const currentGroupIds = associatedUserGroups.map(g => g.id);
+
+    // Groups to add the queue to
+    const groupsToAdd = selectedGroupIds.filter(gid => !currentGroupIds.includes(gid));
+    // Groups to remove the queue from
+    const groupsToRemove = currentGroupIds.filter(gid => !selectedGroupIds.includes(gid));
+
+    // Update groups that need the queue added
+    groupsToAdd.forEach(groupId => {
+      const group = allUserGroups.find(g => g.id === groupId);
+      if (group) {
+        const updatedGroup = {
+          ...group,
+          associatedQueueIds: [...group.associatedQueueIds, id],
+          lastUpdated: new Date().toISOString()
+        };
+        saveUserGroup(updatedGroup);
+      }
+    });
+
+    // Update groups that need the queue removed
+    groupsToRemove.forEach(groupId => {
+      const group = allUserGroups.find(g => g.id === groupId);
+      if (group) {
+        const updatedGroup = {
+          ...group,
+          associatedQueueIds: group.associatedQueueIds.filter(qid => qid !== id),
+          lastUpdated: new Date().toISOString()
+        };
+        saveUserGroup(updatedGroup);
+      }
+    });
+
+    // Refresh user groups from storage
+    const groups = getUserGroups();
+    setAllUserGroups(groups);
+    const filtered = groups.filter(group =>
+      group.associatedQueueIds.includes(id)
+    );
+    setAssociatedUserGroups(filtered);
+  };
 
   const filteredUsers = queueUsers.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -270,7 +326,11 @@ const QueueEdit: React.FC = () => {
                       onChange={(e) => setUserGroupSearchQuery(e.target.value)}
                     />
                   </div>
-                  <button className="see-more-button">
+                  <button
+                    type="button"
+                    className="see-more-button"
+                    onClick={() => handleOpenSidecar('view')}
+                  >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <circle cx="8" cy="8" r="1.5" />
                       <circle cx="8" cy="3" r="1.5" />
@@ -278,7 +338,11 @@ const QueueEdit: React.FC = () => {
                     </svg>
                     See more
                   </button>
-                  <button className="add-users-button">
+                  <button
+                    type="button"
+                    className="add-users-button"
+                    onClick={() => handleOpenSidecar('add')}
+                  >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
@@ -521,6 +585,18 @@ const QueueEdit: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* User Group Selection Sidecar */}
+        <UserGroupSelectionSidecar
+          isOpen={sidecarOpen}
+          onClose={() => setSidecarOpen(false)}
+          onSave={handleSaveUserGroups}
+          allUserGroups={allUserGroups}
+          initialSelectedIds={associatedUserGroups.map(g => g.id)}
+          queueName={queueName}
+          mode={sidecarMode}
+          mockUsers={MOCK_USERS}
+        />
       </main>
     </div>
   );

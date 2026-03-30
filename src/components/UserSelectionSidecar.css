@@ -1,0 +1,488 @@
+/* Sidecar Overlay */
+.sidecar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+}
+
+/* Sidecar Panel */
+.sidecar-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  max-width: 100%;
+  height: 100vh;
+  background-color: white;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Sidecar Header */
+.sidecar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #edebe9;
+  flex-shrink: 0;
+}
+
+.sidecar-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidecar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #605e5c;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidecar-close:hover {
+  background-color: #f3f2f1;
+  color: #242424;
+}
+
+/* Sidecar Body */
+.sidecar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* Filters Section */
+.sidecar-filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sidecar-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidecar-clear-btn {
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #0078d4;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidecar-clear-btn:hover {
+  text-decoration: underline;
+}
+
+/* Filter Section */
+.sidecar-filter-section {
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.sidecar-filter-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  background-color: #faf9f8;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sidecar-filter-header:hover {
+  background-color: #f3f2f1;
+}
+
+.sidecar-filter-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidecar-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-right: 8px;
+  background-color: #0078d4;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
+
+.sidecar-filter-chevron {
+  color: #605e5c;
+  transition: transform 0.2s;
+}
+
+.sidecar-filter-options {
+  padding: 8px 0;
+  border-top: 1px solid #edebe9;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sidecar-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidecar-filter-option:hover {
+  background-color: #f3f2f1;
+}
+
+.sidecar-filter-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Tree Container */
+.sidecar-tree-container {
+  padding: 8px 0;
+  border-top: 1px solid #edebe9;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.tree-node {
+  user-select: none;
+}
+
+.tree-node-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 14px;
+  transition: background-color 0.2s;
+}
+
+.tree-node-row:hover {
+  background-color: #f3f2f1;
+}
+
+.tree-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #605e5c;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.tree-toggle svg {
+  transition: transform 0.2s;
+}
+
+.tree-toggle-spacer {
+  width: 20px;
+}
+
+.tree-node-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  font-size: 14px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+}
+
+.tree-node-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.tree-children {
+  margin-left: 0;
+}
+
+/* Active Filter Chips */
+.sidecar-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #edebe9;
+}
+
+.sidecar-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 10px;
+  background-color: #e6f2fb;
+  border: 1px solid #b3d7f2;
+  border-radius: 14px;
+  font-size: 12px;
+  color: #0078d4;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidecar-filter-chip button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: #0078d4;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidecar-filter-chip button:hover {
+  background-color: #0078d4;
+  color: white;
+}
+
+/* Divider */
+.sidecar-divider {
+  height: 1px;
+  background-color: #edebe9;
+  margin: 20px 0;
+}
+
+/* Users Section */
+.sidecar-users-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sidecar-users-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: #605e5c;
+  margin-left: 8px;
+}
+
+.sidecar-select-all {
+  padding: 4px 10px;
+  background-color: white;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.2s;
+}
+
+.sidecar-select-all:hover {
+  background-color: #f3f2f1;
+  border-color: #323130;
+}
+
+/* Empty State */
+.sidecar-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.sidecar-empty-state svg {
+  margin-bottom: 16px;
+}
+
+.sidecar-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 8px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidecar-empty-text {
+  font-size: 14px;
+  color: #605e5c;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Users List */
+.sidecar-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+}
+
+.sidecar-user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #edebe9;
+}
+
+.sidecar-user-item:last-child {
+  border-bottom: none;
+}
+
+.sidecar-user-item:hover {
+  background-color: #f3f2f1;
+}
+
+.sidecar-user-item.selected {
+  background-color: #e6f2fb;
+}
+
+.sidecar-user-item.selected:hover {
+  background-color: #d0e7f8;
+}
+
+.sidecar-user-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidecar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidecar-user-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #242424;
+  font-family: 'Segoe UI', sans-serif;
+  margin-bottom: 4px;
+}
+
+.sidecar-user-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sidecar-attr-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: #f3f2f1;
+  border: 1px solid #e1dfdd;
+  border-radius: 3px;
+  font-size: 10px;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Sidecar Footer */
+.sidecar-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid #edebe9;
+  background-color: #faf9f8;
+  flex-shrink: 0;
+}
+
+.sidecar-btn {
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.2s;
+}
+
+.sidecar-btn-cancel {
+  background-color: white;
+  border: 1px solid #8a8886;
+  color: #323130;
+}
+
+.sidecar-btn-cancel:hover {
+  background-color: #f3f2f1;
+}
+
+.sidecar-btn-primary {
+  background-color: #0078d4;
+  border: none;
+  color: white;
+}
+
+.sidecar-btn-primary:hover:not(:disabled) {
+  background-color: #106ebe;
+}
+
+.sidecar-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

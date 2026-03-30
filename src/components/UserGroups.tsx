@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getUserGroups, deleteUserGroup } from '../lib/userGroupStorage';
-import { MOCK_USERS } from '../lib/userGroupMockData';
+import { MOCK_USERS, MOCK_QUEUES } from '../lib/userGroupMockData';
 import { getEligibleUsers } from '../lib/userGroupEligibility';
 import type { UserGroup } from '../lib/userGroupTypes';
 import './UserGroups.css';
@@ -10,6 +10,7 @@ const UserGroups: React.FC = () => {
   const navigate = useNavigate();
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'static' | 'dynamic'>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<UserGroup | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -19,22 +20,47 @@ const UserGroups: React.FC = () => {
   }, []);
 
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return groups;
+    let result = groups;
 
-    const query = searchQuery.toLowerCase();
-    return groups.filter(group =>
-      group.name.toLowerCase().includes(query) ||
-      group.description.toLowerCase().includes(query)
-    );
-  }, [groups, searchQuery]);
+    // Apply type filter
+    if (typeFilter !== 'all') {
+      result = result.filter(group => group.type === typeFilter);
+    }
 
-  const getEligibleCount = (criteria: string) => {
-    if (!criteria) return MOCK_USERS.length;
-    return getEligibleUsers(MOCK_USERS, criteria).length;
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(group =>
+        group.name.toLowerCase().includes(query) ||
+        group.description.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [groups, searchQuery, typeFilter]);
+
+  const getUserCount = (group: UserGroup) => {
+    if (group.type === 'static') {
+      return group.memberUserIds?.length || 0;
+    }
+    // Dynamic group
+    if (!group.eligibilityCriteria) return MOCK_USERS.length;
+    return getEligibleUsers(MOCK_USERS, group.eligibilityCriteria).length;
   };
 
-  const getQueueCount = (group: UserGroup) => {
-    return group.associatedQueueIds.length;
+  const getUserCountDisplay = (group: UserGroup) => {
+    const count = getUserCount(group);
+    if (group.type === 'static') {
+      return `${count} member${count !== 1 ? 's' : ''}`;
+    }
+    return `Auto (${count})`;
+  };
+
+  const getQueueNames = (group: UserGroup): string[] => {
+    return group.associatedQueueIds.map(queueId => {
+      const queue = MOCK_QUEUES.find(q => q.id === queueId);
+      return queue?.name || queueId;
+    });
   };
 
   const truncate = (text: string, maxLength: number) => {
@@ -106,6 +132,17 @@ const UserGroups: React.FC = () => {
           </Link>
         </div>
         <div className="toolbar-right">
+          <div className="type-filter">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as 'all' | 'static' | 'dynamic')}
+              className="type-filter-select"
+            >
+              <option value="all">All types</option>
+              <option value="static">Static</option>
+              <option value="dynamic">Dynamic</option>
+            </select>
+          </div>
           <div className="search-box-toolbar">
             <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M11.5 6.5a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.27 4.27a6 6 0 1 1 1.06-1.06l3.5 3.5-1.06 1.06-3.5-3.5z" />
@@ -124,7 +161,7 @@ const UserGroups: React.FC = () => {
       <div className="content-header">
         <h1 className="page-title">User groups</h1>
         <p className="page-description">
-          Define conditional eligibility boundaries for routing conversations to users. User groups enable dynamic membership based on user attributes like skills, language, region, and capacity profile.
+          Create user groups to route conversations to the right users. Static groups contain manually selected users, while dynamic groups automatically include users based on eligibility criteria.
         </p>
       </div>
 
@@ -162,9 +199,9 @@ const UserGroups: React.FC = () => {
                     </svg>
                   </div>
                 </th>
+                <th>Type</th>
                 <th>Description</th>
-                <th>Eligibility Criteria</th>
-                <th>Eligible Users</th>
+                <th>Users</th>
                 <th>Associated Queues</th>
                 <th>Last Updated</th>
                 <th className="actions-column"></th>
@@ -176,13 +213,25 @@ const UserGroups: React.FC = () => {
                   <td>
                     <span className="table-link">{group.name}</span>
                   </td>
-                  <td>{group.description ? truncate(group.description, 50) : '—'}</td>
-                  <td>{truncate(group.eligibilityCriteria || 'No criteria defined', 60)}</td>
                   <td>
-                    <span className="count-badge">{getEligibleCount(group.eligibilityCriteria)}</span>
+                    <span className={`type-badge ${group.type === 'static' ? 'type-badge-static' : 'type-badge-dynamic'}`}>
+                      {group.type === 'static' ? 'Static' : 'Dynamic'}
+                    </span>
+                  </td>
+                  <td>{group.description ? truncate(group.description, 50) : '—'}</td>
+                  <td>
+                    <span className="user-count-display">{getUserCountDisplay(group)}</span>
                   </td>
                   <td>
-                    <span className="count-badge">{getQueueCount(group)}</span>
+                    {getQueueNames(group).length > 0 ? (
+                      <span className="queue-names-list">
+                        {getQueueNames(group).map((name, index) => (
+                          <span key={index} className="queue-name-tag">{name}</span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="no-queues">—</span>
+                    )}
                   </td>
                   <td>{formatDate(group.lastUpdated)}</td>
                   <td className="actions-column" onClick={(e) => e.stopPropagation()}>

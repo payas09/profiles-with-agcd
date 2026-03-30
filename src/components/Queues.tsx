@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import './VoiceChannels.css';
+import { getUserGroups } from '../lib/userGroupStorage';
+import type { UserGroup } from '../lib/userGroupTypes';
+import './Queues.css';
 
 interface QueueData {
   id: string;
@@ -111,8 +113,56 @@ const queuesData: QueueData[] = [
 ];
 
 const Queues: React.FC = () => {
+  const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setUserGroups(getUserGroups());
+  }, []);
+
+  const filteredQueues = useMemo(() => {
+    if (!searchQuery.trim()) return queuesData;
+    const query = searchQuery.toLowerCase();
+    return queuesData.filter(queue =>
+      queue.name.toLowerCase().includes(query) ||
+      queue.type.toLowerCase().includes(query) ||
+      queue.owner.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  const getAssociatedGroups = (queueId: string): UserGroup[] => {
+    return userGroups.filter(group => group.associatedQueueIds.includes(queueId));
+  };
+
+  const renderUserGroupsCell = (queue: QueueData) => {
+    const associatedGroups = getAssociatedGroups(queue.id);
+    const count = associatedGroups.length;
+
+    if (count === 0) {
+      return <span className="no-usergroups">—</span>;
+    }
+
+    const maxVisible = 3;
+    const visibleGroups = associatedGroups.slice(0, maxVisible);
+    const remainingCount = count - maxVisible;
+
+    return (
+      <div className="usergroups-names-list">
+        {visibleGroups.map((group, index) => (
+          <span key={group.id} className="usergroup-name-tag">
+            {group.name}
+            {index < visibleGroups.length - 1 || remainingCount > 0 ? ', ' : ''}
+          </span>
+        ))}
+        {remainingCount > 0 && (
+          <span className="usergroups-more">+{remainingCount} more</span>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <main className="main-content">
+    <main className="main-content queues-page">
       <div className="toolbar">
         <div className="toolbar-left">
           <button className="add-button-toolbar">
@@ -133,7 +183,13 @@ const Queues: React.FC = () => {
             <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M11.5 6.5a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.27 4.27a6 6 0 1 1 1.06-1.06l3.5 3.5-1.06 1.06-3.5-3.5z" />
             </svg>
-            <input type="text" placeholder="Search queues" className="search-input-toolbar" />
+            <input
+              type="text"
+              placeholder="Search queues"
+              className="search-input-toolbar"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -166,12 +222,13 @@ const Queues: React.FC = () => {
                 </div>
               </th>
               <th>Type</th>
+              <th>User Groups</th>
               <th>Owner</th>
               <th>CreatedOn</th>
             </tr>
           </thead>
           <tbody>
-            {queuesData.map((queue) => (
+            {filteredQueues.map((queue) => (
               <tr key={queue.id}>
                 <td>
                   <Link to={`/queue/${queue.id}`} className="table-link">
@@ -180,6 +237,9 @@ const Queues: React.FC = () => {
                 </td>
                 <td>{queue.queuePriority}</td>
                 <td>{queue.type}</td>
+                <td className="usergroups-cell">
+                  {renderUserGroupsCell(queue)}
+                </td>
                 <td>{queue.owner}</td>
                 <td>{queue.createdOn}</td>
               </tr>
@@ -187,6 +247,7 @@ const Queues: React.FC = () => {
           </tbody>
         </table>
       </div>
+
     </main>
   );
 };

@@ -1,0 +1,205 @@
+/* Queues Page Styles */
+.queues-page {
+  padding: 0 24px;
+}
+
+.queues-page .toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  gap: 16px;
+}
+
+.queues-page .toolbar-left {
+  display: flex;
+  gap: 8px;
+}
+
+.queues-page .add-button-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid #8a8886;
+  border-radius: 2px;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-page .add-button-toolbar:hover {
+  background-color: #f3f2f1;
+  border-color: #323130;
+}
+
+.queues-page .refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid #8a8886;
+  border-radius: 2px;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-page .refresh-button:hover {
+  background-color: #f3f2f1;
+  border-color: #323130;
+}
+
+.queues-page .toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.queues-page .search-box-toolbar {
+  position: relative;
+  min-width: 250px;
+}
+
+.queues-page .search-box-toolbar .search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.queues-page .search-input-toolbar {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px 0 28px;
+  border: 1px solid #8a8886;
+  border-radius: 2px;
+  font-size: 14px;
+  background-color: white;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-page .search-input-toolbar:focus {
+  outline: 2px solid #0078d4;
+  outline-offset: -2px;
+  border-color: #0078d4;
+}
+
+.queues-page .content-header {
+  margin-bottom: 24px;
+}
+
+.queues-page .page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 8px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-page .page-description {
+  font-size: 14px;
+  color: #605e5c;
+  line-height: 20px;
+  margin: 0;
+  max-width: 800px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Table Styles */
+.queues-page .table-container {
+  background-color: white;
+  border: 1px solid #edebe9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.queues-page .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.queues-page .data-table thead {
+  background-color: #faf9f8;
+  border-bottom: 1px solid #edebe9;
+}
+
+.queues-page .data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: #323130;
+  border-bottom: 1px solid #edebe9;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-page .th-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.queues-page .sort-icon {
+  color: #605e5c;
+}
+
+.queues-page .data-table tbody tr {
+  border-bottom: 1px solid #edebe9;
+}
+
+.queues-page .data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.queues-page .data-table tbody tr:hover {
+  background-color: #f3f2f1;
+}
+
+.queues-page .data-table td {
+  padding: 12px 16px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-page .table-link {
+  color: #0078d4;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.queues-page .table-link:hover {
+  text-decoration: underline;
+}
+
+/* User Groups Cell Styles */
+.queues-page .usergroups-cell {
+  padding: 12px 16px !important;
+  min-width: 200px;
+}
+
+.queues-page .usergroups-names-list {
+  display: inline;
+  font-size: 14px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.4;
+}
+
+.queues-page .usergroup-name-tag {
+  color: #323130;
+}
+
+.queues-page .usergroups-more {
+  color: #605e5c;
+  font-style: italic;
+}
+
+.queues-page .no-usergroups {
+  color: #a19f9d;
+  font-size: 14px;
+}
