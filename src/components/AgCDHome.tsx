@@ -118,11 +118,13 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
 const AgCDHome: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'home' | 'playbook'>('home');
-  const [activePromptFilter, setActivePromptFilter] = useState<'orchestration' | 'assignment'>('orchestration');
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [galleryFilterTab, setGalleryFilterTab] = useState<'orchestration' | 'assignment'>('orchestration');
   const [selectedScenario, setSelectedScenario] = useState<string>('');
   const [gallerySearchQuery, setGallerySearchQuery] = useState<string>('');
+  const [isOrchestrationEnabled, setIsOrchestrationEnabled] = useState(false);
+  const [showToggleConfirmModal, setShowToggleConfirmModal] = useState(false);
+  const [pendingToggleState, setPendingToggleState] = useState<boolean | null>(null);
 
   // Handle URL parameters to open gallery with specific filters
   React.useEffect(() => {
@@ -143,10 +145,6 @@ const AgCDHome: React.FC = () => {
       window.history.replaceState({}, '', `${APP_CONFIG.basePath}/agcd`);
     }
   }, []);
-
-  const handlePromptFilterClick = (filter: 'orchestration' | 'assignment') => {
-    setActivePromptFilter(filter);
-  };
 
   const handleTabChange = (tab: 'home' | 'playbook') => {
     setActiveTab(tab);
@@ -206,43 +204,94 @@ const AgCDHome: React.FC = () => {
   };
 
   const handleViewSamplePrompt = (cardId: string) => {
+    if (!isOrchestrationEnabled) return;
     navigate(`/agcd/prompt/${cardId}`);
     setShowGalleryModal(false);
+  };
+
+  const handleToggleChange = () => {
+    setPendingToggleState(!isOrchestrationEnabled);
+    setShowToggleConfirmModal(true);
+  };
+
+  const handleConfirmToggle = () => {
+    if (pendingToggleState !== null) {
+      setIsOrchestrationEnabled(pendingToggleState);
+    }
+    setShowToggleConfirmModal(false);
+    setPendingToggleState(null);
+  };
+
+  const handleCancelToggle = () => {
+    setShowToggleConfirmModal(false);
+    setPendingToggleState(null);
   };
 
   return (
     <main className="main-content agcd-home">
       <div className="agcd-home-wrapper">
-        {/* Tab Switcher */}
-        <div className="agcd-tab-switcher-container">
-          <div className="agcd-tab-switcher">
+        {/* Breadcrumb and Tab Switcher Row */}
+        <div className="agcd-top-row">
+          <nav className="agcd-breadcrumb">
+            <span className="breadcrumb-item">Conversation orchestration (Preview)</span>
+            <span className="breadcrumb-separator">&gt;</span>
+            <span className="breadcrumb-item current">New</span>
+          </nav>
+          {/* Tab Switcher */}
+          <div className={`agcd-tab-switcher ${!isOrchestrationEnabled ? 'disabled' : ''}`}>
             <button
               className={`agcd-tab-button ${activeTab === 'home' ? 'active' : ''}`}
-              onClick={() => handleTabChange('home')}
+              onClick={() => isOrchestrationEnabled && handleTabChange('home')}
+              disabled={!isOrchestrationEnabled}
             >
-              Home
+              New
             </button>
             <button
               className={`agcd-tab-button ${activeTab === 'playbook' ? 'active' : ''}`}
-              onClick={() => handleTabChange('playbook')}
+              onClick={() => isOrchestrationEnabled && handleTabChange('playbook')}
+              disabled={!isOrchestrationEnabled}
             >
-              Playbook
+              All playbooks
             </button>
           </div>
         </div>
 
         <div className="agcd-home-header">
         <div className="agcd-title-row">
-          <h1 className="agcd-main-title">Orchestration Agent (Preview)</h1>
+          <h1 className="agcd-main-title">Conversation orchestration</h1>
           <span className="preview-badge-inline">Preview</span>
+          <span className="badge-gen-ai">Gen AI</span>
         </div>
         <p className="agcd-subtitle">
-          Use our intuitive natural language prompting to create routing scenarios. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions. Deliver exactly what your customers need, when they need it.
+          Conversation orchestration is an AI-powered capability that manages the entire conversation lifecycle by continuously evaluating triggers and applying business logic in real time. AI generated content may be inaccurate.
         </p>
       </div>
 
+      {/* Enable Conversation Orchestration Toggle */}
+      <div className="orchestration-toggle-section">
+        <div className="orchestration-toggle-content">
+          <div className="orchestration-toggle-text">
+            <span className="orchestration-toggle-label">Enable Conversation orchestration</span>
+          </div>
+          <div className="orchestration-toggle-control">
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={isOrchestrationEnabled}
+                onChange={handleToggleChange}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+            <span className="toggle-state-label">{isOrchestrationEnabled ? 'On' : 'Off'}</span>
+          </div>
+        </div>
+      </div>
+
       <div className="agcd-get-started-section">
-        <h2 className="section-title-large">Get started</h2>
+        <h2 className="section-title-large">How it works</h2>
+        <p className="how-it-works-intro">
+          To set up conversation orchestration, define the playbook specific to your scenario, which includes event, specifying the business logic, and actions. This is how you can get started:
+        </p>
 
         <div className="steps-container">
           <div className="step-item-horizontal">
@@ -250,7 +299,7 @@ const AgCDHome: React.FC = () => {
             <div className="step-text-content">
               <h3 className="step-heading">Start with a prompt template</h3>
               <p className="step-text">
-                Select one of the pre-configured templates below. These templates provide starting points for common routing scenarios, which you can customize using natural language. Edit the prompt and fine-tune it to match your exact needs and business requirements.
+                Select a prompt template for your scenario from the prompt templates shown below or from the <button className="inline-link-btn" onClick={handleOpenGallery}>Prompt gallery</button>
               </p>
             </div>
           </div>
@@ -258,9 +307,9 @@ const AgCDHome: React.FC = () => {
           <div className="step-item-horizontal">
             <div className="step-number-circle">2</div>
             <div className="step-text-content">
-              <h3 className="step-heading">Create and Edit playbooks</h3>
+              <h3 className="step-heading">Edit and publish playbook</h3>
               <p className="step-text">
-                Create or add to existing playbooks using natural language. A playbook cannot work out of the box without any user instruction (customization).
+                In the edit page, update the prompt as per your business requirement by selecting relevant queues, variables, and other details to save and publish the prompt as a playbook. <button className="inline-link-btn" onClick={() => navigate('/agcd/playbook')}>See all the playbooks here</button>
               </p>
             </div>
           </div>
@@ -269,38 +318,35 @@ const AgCDHome: React.FC = () => {
 
       <div className="agcd-prompts-section">
         <div className="prompts-section-header">
-          <h2 className="section-title-medium">Get Started with Prompt Templates</h2>
-          <button className="prompt-gallery-button" onClick={handleOpenGallery}>
+          <h2 className="section-title-medium">Get started with prompt templates</h2>
+          <p className="prompts-section-desc">Here are a few prompt templates to get started. You can also open the Prompt Gallery for more options.</p>
+        </div>
+        <div className="prompts-section-actions">
+          <button
+            className={`prompt-gallery-button ${!isOrchestrationEnabled ? 'disabled' : ''}`}
+            onClick={isOrchestrationEnabled ? handleOpenGallery : undefined}
+            disabled={!isOrchestrationEnabled}
+          >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path d="M4 3a2 2 0 0 0-2 2v3.5a.5.5 0 0 0 1 0V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 1 0V5a2 2 0 0 0-2-2H4zm0 8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4zm-1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"/>
             </svg>
-            Template Gallery
+            Prompt gallery
           </button>
         </div>
 
-        <div className="prompt-template-buttons">
-          <button
-            className={`prompt-template-btn ${activePromptFilter === 'orchestration' ? 'active' : ''}`}
-            onClick={() => handlePromptFilterClick('orchestration')}
-          >
-            Orchestrator
-          </button>
-          <button
-            className={`prompt-template-btn ${activePromptFilter === 'assignment' ? 'active' : ''}`}
-            onClick={() => handlePromptFilterClick('assignment')}
-          >
-            Assignment
-          </button>
-        </div>
-
-        <div className="prompts-card-grid">
-          {promptGalleryCards[activePromptFilter].map((card) => (
-            <div key={card.id} className="prompt-card-item" onClick={() => handleViewSamplePrompt(card.id)}>
+        <div className={`prompts-card-grid ${!isOrchestrationEnabled ? 'disabled' : ''}`}>
+          {promptGalleryCards.orchestration.slice(0, 3).map((card) => (
+            <div
+              key={card.id}
+              className={`prompt-card-item ${!isOrchestrationEnabled ? 'disabled' : ''}`}
+              onClick={() => handleViewSamplePrompt(card.id)}
+            >
               <div className="card-feedback-buttons">
                 <button
                   className="feedback-btn thumbs-up"
                   onClick={(e) => { e.stopPropagation(); }}
                   title="This template is helpful"
+                  disabled={!isOrchestrationEnabled}
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M8.864.046C7.908-.193 7.02.53 6.956 1.466c-.072 1.051-.23 2.016-.428 2.59-.125.36-.479 1.013-1.04 1.639-.557.623-1.282 1.178-2.131 1.41C2.685 7.288 2 7.87 2 8.72v4.001c0 .845.682 1.464 1.448 1.545 1.07.114 1.564.415 2.068.723l.048.03c.272.165.578.348.97.484.397.136.861.217 1.466.217h3.5c.937 0 1.599-.477 1.934-1.064a1.86 1.86 0 0 0 .254-.912c0-.152-.023-.312-.077-.464.201-.263.38-.578.488-.901.11-.33.172-.762.004-1.149.069-.13.12-.269.159-.403.077-.27.113-.568.113-.857 0-.288-.036-.585-.113-.856a2.144 2.144 0 0 0-.138-.362 1.9 1.9 0 0 0 .234-1.734c-.206-.592-.682-1.1-1.2-1.272-.847-.282-1.803-.276-2.516-.211a9.84 9.84 0 0 0-.443.05 9.365 9.365 0 0 0-.062-4.509A1.38 1.38 0 0 0 8.864.046z"/>
@@ -310,6 +356,7 @@ const AgCDHome: React.FC = () => {
                   className="feedback-btn thumbs-down"
                   onClick={(e) => { e.stopPropagation(); }}
                   title="This template needs improvement"
+                  disabled={!isOrchestrationEnabled}
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M8.864 15.674c-.956.24-1.843-.484-1.908-1.42-.072-1.05-.23-2.015-.428-2.59-.125-.36-.479-1.012-1.04-1.638-.557-.624-1.282-1.179-2.131-1.41C2.685 8.432 2 7.85 2 7V3c0-.845.682-1.464 1.448-1.546 1.07-.113 1.564-.415 2.068-.723l.048-.029c.272-.166.578-.349.97-.484C6.931.082 7.395 0 8 0h3.5c.937 0 1.599.478 1.934 1.064.164.287.254.607.254.913 0 .152-.023.312-.077.464.201.262.38.577.488.9.11.33.172.762.004 1.15.069.13.12.268.159.403.077.27.113.567.113.856 0 .289-.036.586-.113.856-.035.12-.076.237-.138.362.133.358.197.714.197 1.03 0 .292-.086.643-.302.96-.206.304-.49.544-.83.705-.178.083-.377.14-.565.172-.205.036-.394.065-.604.065h-.5c-.267 0-.5.224-.5.5 0 .145.056.276.146.37.098.1.2.19.287.268.283.256.61.582.82.965.206.376.318.846.318 1.445 0 .358-.024.715-.144 1.06-.116.337-.318.634-.579.851a1.38 1.38 0 0 1-.896.428z"/>
@@ -326,31 +373,33 @@ const AgCDHome: React.FC = () => {
           ))}
         </div>
 
-        <div className="view-all-prompts">
-          <button className="view-all-button" onClick={() => navigate('/agcd/playbook')}>
-            View all →
-          </button>
-        </div>
+      </div>
       </div>
 
-      {/* Subtle link to conversational experience */}
-      <div className="conversational-link-section">
-        <span className="conversational-link-text">Looking for natural language playbook creation?</span>
-        <button className="conversational-link-btn" onClick={() => navigate('/agcd/conversational')}>
-          Try conversational experience →
-        </button>
-      </div>
-
-      {/* Discreet Copilot link at the very bottom */}
-      <div className="footer-links-discreet">
-        <span
-          className="copilot-link-discreet"
-          onClick={() => navigate('/agcd/prompt/overflow-conditions-actions?mode=copilot')}
-        >
-          Copilot
-        </span>
-      </div>
-      </div>
+      {/* Toggle Confirmation Modal */}
+      {showToggleConfirmModal && (
+        <>
+          <div className="toggle-confirm-modal-overlay" onClick={handleCancelToggle}></div>
+          <div className="toggle-confirm-modal">
+            <h3 className="toggle-confirm-title">
+              {pendingToggleState ? 'Turn on Conversation orchestration' : 'Turn off Conversation orchestration'}
+            </h3>
+            <p className="toggle-confirm-description">
+              {pendingToggleState
+                ? 'This will enable Conversation orchestration and all the previously active playbooks will start processing when the trigger event occurs. You can selectively enable/disable playbooks from the All playbooks page.'
+                : 'This will disable Conversation orchestration and all the active playbooks will stop processing.'}
+            </p>
+            <div className="toggle-confirm-actions">
+              <button className="toggle-confirm-cancel" onClick={handleCancelToggle}>
+                Cancel
+              </button>
+              <button className="toggle-confirm-proceed" onClick={handleConfirmToggle}>
+                {pendingToggleState ? 'Turn on' : 'Turn off'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Template Gallery Modal */}
       {showGalleryModal && (
@@ -375,13 +424,13 @@ const AgCDHome: React.FC = () => {
                     className={`gallery-filter-btn ${galleryFilterTab === 'orchestration' ? 'active' : ''}`}
                     onClick={() => handleGalleryFilterChange('orchestration')}
                   >
-                    Orchestration
+                    Conversation flow
                   </button>
                   <button
                     className={`gallery-filter-btn ${galleryFilterTab === 'assignment' ? 'active' : ''}`}
                     onClick={() => handleGalleryFilterChange('assignment')}
                   >
-                    Assignment
+                    User assignment
                   </button>
                 </div>
 

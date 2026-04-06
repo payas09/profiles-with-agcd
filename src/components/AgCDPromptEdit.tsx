@@ -5,8 +5,122 @@ import { savePrompt, getPrompt, SelectionMode, TemplateState, ChannelType } from
 // import TemplatePromptEditor from './TemplatePromptEditor';
 import CopilotPromptEditor from './CopilotPromptEditor';
 import TemplateBasedEditor from './TemplateBasedEditor';
+import JsonRuleReviewer from './JsonRuleReviewer';
 import type { TemplateEditorState } from './OverflowHandlingEditor';
 import type { ExpertRoutingEditorState } from './TemplateBasedEditor';
+
+// Sample workflow JSON for demo (simulates LLM-generated JSON)
+// This matches the prompt: Customer Tier + Region conditions with overflow actions
+const sampleWorkflowJson = {
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "triggers": {
+    "WaitingInQueue_Conversation": {
+      "type": "WaitingInQueue",
+      "kind": "Http"
+    }
+  },
+  "actions": {
+    "TransferToOverflowQueue_Gold_USA": {
+      "type": "TransferToQueue",
+      "inputs": {
+        "data": {
+          "targetQueue": "overflow queue"
+        }
+      },
+      "runAfter": {},
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "ContextVariable.CustomerTier",
+              "Gold"
+            ]
+          },
+          {
+            "equals": [
+              "ContextVariable.Region",
+              "USA"
+            ]
+          }
+        ]
+      }
+    },
+    "OfferScheduledCallback_Silver_France": {
+      "type": "OfferScheduledCallback",
+      "inputs": {
+        "data": {}
+      },
+      "runAfter": {
+        "TransferToOverflowQueue_Gold_USA": ["Skipped"]
+      },
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "ContextVariable.CustomerTier",
+              "Silver"
+            ]
+          },
+          {
+            "equals": [
+              "ContextVariable.Region",
+              "France"
+            ]
+          }
+        ]
+      }
+    },
+    "TransferToExternalNumber_Platinum_UAE": {
+      "type": "ExternalTransfer",
+      "inputs": {
+        "data": {
+          "phoneNumber": "1800548756"
+        }
+      },
+      "runAfter": {
+        "OfferScheduledCallback_Silver_France": ["Skipped"]
+      },
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "ContextVariable.CustomerTier",
+              "Platinum"
+            ]
+          },
+          {
+            "equals": [
+              "ContextVariable.Region",
+              "UAE"
+            ]
+          }
+        ]
+      }
+    },
+    "SendToVoicemail_Standard": {
+      "type": "OfferVoicemail",
+      "inputs": {
+        "data": {}
+      },
+      "runAfter": {
+        "TransferToExternalNumber_Platinum_UAE": ["Skipped"]
+      },
+      "expression": {
+        "equals": [
+          "ContextVariable.CustomerTier",
+          "Standard"
+        ]
+      }
+    }
+  },
+  "outputs": {
+    "ruleExecuted": {
+      "type": "string",
+      "value": "Queue transfer, callback, external transfer, and voicemail based on Customer Tier and Region when agent not available"
+    }
+  }
+};
 
 // Policy config interface for editable display
 interface ConditionDef {
@@ -560,6 +674,9 @@ const AgCDPromptEdit: React.FC = () => {
   const [triggerValidation, setTriggerValidation] = useState(false);
   const [pendingAction, setPendingAction] = useState<'save' | 'publish' | null>(null);
   const [hasValidationWarnings, setHasValidationWarnings] = useState(false);
+  // JSON Rule Reviewer state - for reviewing LLM-generated JSON
+  const [showJsonReviewer, setShowJsonReviewer] = useState(false);
+  const [workflowJson, setWorkflowJson] = useState<any>(null);
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -792,6 +909,24 @@ const AgCDPromptEdit: React.FC = () => {
   };
 
   const handlePublishConfirm = () => {
+    // Close the publish confirmation modal
+    setShowPublishConfirm(false);
+
+    // For public preview overflow scenario, show the JSON reviewer
+    // This simulates LLM generating JSON from the prompt
+    if (isPublicPreview && (promptType === 'overflow-conditions-actions' || savedScenarioId === 'overflow-conditions-actions')) {
+      // Set the sample workflow JSON (in production, this would come from LLM)
+      setWorkflowJson(sampleWorkflowJson);
+      setShowJsonReviewer(true);
+      return;
+    }
+
+    // For other scenarios, proceed with direct publish
+    completePublish();
+  };
+
+  // Complete the publish after JSON review (or directly for non-overflow scenarios)
+  const completePublish = (updatedJson?: any) => {
     // Use savedPolicyId if available (existing policy or already saved)
     // Only generate new ID if this is the first save of a new policy
     const id = savedPolicyId || `${promptType}-${Date.now()}`;
@@ -814,7 +949,8 @@ const AgCDPromptEdit: React.FC = () => {
       templateState: currentState, // Use ref for most up-to-date state
       scenarioId: effectiveScenarioId, // Store which scenario/template was used
       isPublicPreview,
-      selectedChannel: isPublicPreview ? selectedChannel : undefined
+      selectedChannel: isPublicPreview ? selectedChannel : undefined,
+      workflowJson: updatedJson || workflowJson // Store the reviewed/edited JSON
     };
     savePrompt(id, promptData);
 
@@ -833,9 +969,25 @@ const AgCDPromptEdit: React.FC = () => {
     }
 
     setStatus('Active');
-    setShowPublishConfirm(false);
+    setShowJsonReviewer(false);
     // Show success banner instead of navigating away
     setShowPublishBanner(true);
+  };
+
+  // Handle JSON reviewer confirm
+  const handleJsonReviewerConfirm = () => {
+    completePublish(workflowJson);
+  };
+
+  // Handle JSON reviewer cancel
+  const handleJsonReviewerCancel = () => {
+    setShowJsonReviewer(false);
+    setWorkflowJson(null);
+  };
+
+  // Handle JSON changes from reviewer
+  const handleJsonChange = (updatedJson: any) => {
+    setWorkflowJson(updatedJson);
   };
 
   const handlePublishCancel = () => {
@@ -977,13 +1129,17 @@ const AgCDPromptEdit: React.FC = () => {
       {/* Header */}
       <div className="prompt-header-section">
         <div className="header-title-group">
-          <h1 className="prompt-page-title">{inCopilotMode ? promptName || 'Assignment Policy' : 'Orchestration Agent (Preview)'}</h1>
-          {!inCopilotMode && <span className="preview-badge-header">Preview</span>}
+          <h1 className="prompt-page-title">{inCopilotMode ? promptName || 'Assignment Policy' : 'Playbook'}</h1>
         </div>
         {!inCopilotMode && (
-          <p className="prompt-page-subtitle">
-            Create and manage routing scenario prompts. Define intelligent routing logic, assignment rules, and automated actions.
-          </p>
+          <>
+            <p className="prompt-page-scenario-subtitle">
+              {promptName || template?.title || 'Configure your playbook scenario'}
+            </p>
+            <p className="prompt-page-ai-disclaimer">
+              AI generated content may be inaccurate. <a href="#" className="learn-more-link">Learn more</a>
+            </p>
+          </>
         )}
       </div>
 
@@ -1036,7 +1192,7 @@ const AgCDPromptEdit: React.FC = () => {
             <p className="policy-behavior-desc">
               {inCopilotMode
                 ? 'This playbook was generated by Copilot based on your conversation.'
-                : 'Use natural language to describe what this playbook should do. Be specific about conditions and actions.'
+                : 'Update below prompt with correct variables & values. This playbook will be executed on the shown trigger event.'
               }
             </p>
           </div>
@@ -1570,6 +1726,21 @@ const AgCDPromptEdit: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* JSON Rule Reviewer Modal */}
+      {showJsonReviewer && workflowJson && (
+        <div className="json-reviewer-modal-overlay">
+          <div className="json-reviewer-modal">
+            <JsonRuleReviewer
+              originalPrompt={policyBehavior}
+              workflowJson={workflowJson}
+              onJsonChange={handleJsonChange}
+              onConfirm={handleJsonReviewerConfirm}
+              onCancel={handleJsonReviewerCancel}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
