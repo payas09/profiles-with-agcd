@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { FLAT_FILTER_OPTIONS, HIERARCHICAL_FILTERS, TreeNode } from '../lib/userGroupTypes';
 import './UserFilterSidecar.css';
 

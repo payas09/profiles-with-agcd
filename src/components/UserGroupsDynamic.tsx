@@ -6,7 +6,7 @@ import { getEligibleUsers } from '../lib/userGroupEligibility';
 import type { UserGroup } from '../lib/userGroupTypes';
 import './UserGroups.css';
 
-const UserGroups: React.FC = () => {
+const UserGroupsDynamic: React.FC = () => {
   const navigate = useNavigate();
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,9 +15,9 @@ const UserGroups: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only show static user groups in V1
+    // Only show dynamic user groups
     const allGroups = getUserGroups();
-    setGroups(allGroups.filter(group => group.type === 'static' || !group.type));
+    setGroups(allGroups.filter(group => group.type === 'dynamic'));
   }, []);
 
   const filteredGroups = useMemo(() => {
@@ -36,19 +36,12 @@ const UserGroups: React.FC = () => {
   }, [groups, searchQuery]);
 
   const getUserCount = (group: UserGroup) => {
-    if (group.type === 'static') {
-      return group.memberUserIds?.length || 0;
-    }
-    // Dynamic group
     if (!group.eligibilityCriteria) return MOCK_USERS.length;
     return getEligibleUsers(MOCK_USERS, group.eligibilityCriteria).length;
   };
 
   const getUserCountDisplay = (group: UserGroup) => {
     const count = getUserCount(group);
-    if (group.type === 'static') {
-      return `${count} member${count !== 1 ? 's' : ''}`;
-    }
     return `Auto (${count})`;
   };
 
@@ -86,20 +79,21 @@ const UserGroups: React.FC = () => {
 
   const handleEditClick = (group: UserGroup, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/user-group/${group.id}`);
+    navigate(`/user-group-dynamic/${group.id}`);
   };
 
   const confirmDelete = () => {
     if (groupToDelete) {
       deleteUserGroup(groupToDelete.id);
-      setGroups(getUserGroups());
+      const allGroups = getUserGroups();
+      setGroups(allGroups.filter(group => group.type === 'dynamic'));
       setDeleteDialogOpen(false);
       setGroupToDelete(null);
     }
   };
 
   const handleRowClick = (group: UserGroup) => {
-    navigate(`/user-group/${group.id}`);
+    navigate(`/user-group-dynamic/${group.id}`);
   };
 
   const toggleMenu = (groupId: string, e: React.MouseEvent) => {
@@ -120,7 +114,7 @@ const UserGroups: React.FC = () => {
     <main className="main-content user-groups-page">
       <div className="toolbar">
         <div className="toolbar-left">
-          <Link to="/user-group/new" className="add-button-toolbar">
+          <Link to="/user-group-dynamic/new" className="add-button-toolbar">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -144,9 +138,9 @@ const UserGroups: React.FC = () => {
       </div>
 
       <div className="content-header">
-        <h1 className="page-title">User groups</h1>
+        <h1 className="page-title">Dynamic user groups</h1>
         <p className="page-description">
-          Create user groups to route conversations to the right users. Select specific users to add to each group.
+          Create dynamic user groups that automatically include users based on eligibility criteria. Users are dynamically added or removed as their attributes change.
         </p>
       </div>
 
@@ -158,15 +152,15 @@ const UserGroups: React.FC = () => {
 
       {filteredGroups.length === 0 && !searchQuery && groups.length === 0 && (
         <div className="empty-state">
-          <p className="empty-state-title">No user groups yet</p>
+          <p className="empty-state-title">No dynamic user groups yet</p>
           <p className="empty-state-text">
-            Create your first user group to define eligibility criteria for routing
+            Create your first dynamic user group to define eligibility criteria for routing
           </p>
-          <Link to="/user-group/new" className="empty-state-button">
+          <Link to="/user-group-dynamic/new" className="empty-state-button">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Create user group
+            Create dynamic user group
           </Link>
         </div>
       )}
@@ -286,4 +280,4 @@ const UserGroups: React.FC = () => {
   );
 };
 
-export default UserGroups;
+export default UserGroupsDynamic;

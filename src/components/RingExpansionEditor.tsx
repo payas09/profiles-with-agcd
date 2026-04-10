@@ -656,7 +656,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
               <path d="M6 4l4 4-4 4" />
             </svg>
           </span>
-          <span className="tips-title">Tips for this policy</span>
+          <span className="tips-title">Tips for this scenario</span>
         </div>
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
@@ -860,9 +860,9 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
           </div>
         )}
 
-        {/* Generated Playbook Preview */}
+        {/* Playbook Preview */}
         <div className="generated-policy-section">
-          <h4 className="generated-policy-title">Generated Playbook</h4>
+          <h4 className="generated-policy-title">Playbook preview</h4>
           <pre className="generated-policy-text">{generateFinalPrompt()}</pre>
         </div>
       </div>
@@ -886,7 +886,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
         {isVariablesSectionOpen && (
           <div className="variables-accordion-content">
             <p className="variables-desc">
-              Add variables to create conditional ring expansion rules for specific customers or conversations.
+              Add context variables to create conditional logic in your playbook by specifying different actions for different variable values. Ensure that the context variables you use are populated for the workstream associated with your selected queues. Currently 2 context variables are supported.
             </p>
 
             <div className="variables-grid-inline">

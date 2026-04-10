@@ -37,13 +37,17 @@ const UserGroupSelectionSidecar: React.FC<UserGroupSelectionSidecarProps> = ({
 
   // In "view" mode, show only currently associated groups
   // In "add" mode, show groups not yet associated (available to add)
+  // Only show static user groups
   const displayGroups = useMemo(() => {
+    // Filter to only static user groups
+    const staticGroups = allUserGroups.filter(g => g.type === 'static' || !g.type);
+
     let groups: UserGroup[];
     if (mode === 'view') {
-      groups = allUserGroups.filter(g => selectedIds.includes(g.id));
+      groups = staticGroups.filter(g => selectedIds.includes(g.id));
     } else {
-      // Add mode: show all groups, but highlight which are already selected
-      groups = allUserGroups;
+      // Add mode: show all static groups, but highlight which are already selected
+      groups = staticGroups;
     }
 
     if (!searchQuery.trim()) return groups;
@@ -65,10 +69,7 @@ const UserGroupSelectionSidecar: React.FC<UserGroupSelectionSidecarProps> = ({
 
   const getUserCountDisplay = (group: UserGroup): string => {
     const users = getUsersForGroup(group);
-    if (group.type === 'static') {
-      return `${users.length} member${users.length !== 1 ? 's' : ''}`;
-    }
-    return `${users.length} eligible`;
+    return `${users.length} member${users.length !== 1 ? 's' : ''}`;
   };
 
   const getUserNamesPreview = (group: UserGroup): string => {
@@ -170,7 +171,6 @@ const UserGroupSelectionSidecar: React.FC<UserGroupSelectionSidecarProps> = ({
                   <tr>
                     {mode === 'add' && <th className="usergroup-th-checkbox"></th>}
                     <th className="usergroup-th-name">Name</th>
-                    <th className="usergroup-th-type">Type</th>
                     <th className="usergroup-th-description">Description</th>
                     <th className="usergroup-th-users">Users</th>
                     {mode === 'view' && <th className="usergroup-th-actions"></th>}
@@ -198,11 +198,6 @@ const UserGroupSelectionSidecar: React.FC<UserGroupSelectionSidecarProps> = ({
                         )}
                         <td className="usergroup-td-name">
                           <span className="usergroup-name">{group.name}</span>
-                        </td>
-                        <td className="usergroup-td-type">
-                          <span className={`usergroup-type-badge ${group.type === 'static' ? 'usergroup-type-static' : 'usergroup-type-dynamic'}`}>
-                            {group.type === 'static' ? 'Static' : 'Dynamic'}
-                          </span>
                         </td>
                         <td className="usergroup-td-description">
                           <span className="usergroup-description">

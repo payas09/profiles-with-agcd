@@ -160,39 +160,36 @@ const AgCDPlaybook: React.FC = () => {
     });
   };
 
-  const handleProfileClick = (profileId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/engagement-profile/${profileId}`);
-  };
+  const renderQueues = (policy: PromptData) => {
+    // Use selectedProfiles which contains queue/profile data
+    const queues = policy.selectedProfiles || [];
 
-  const renderProfiles = (policy: PromptData) => {
     if (policy.selectionMode === 'all') {
       return (
-        <span className="profile-tag-item">
-          All Engagement profiles
+        <span className="queue-tag-item">
+          All Queues
         </span>
       );
-    } else if (policy.selectedProfiles.length > 0) {
-      if (expandedRows.has(policy.id)) {
+    } else if (queues.length > 0) {
+      if (expandedRows.has(policy.id + '-queues')) {
         return (
-          <div className="profiles-expanded-list">
+          <div className="queues-expanded-list">
             {policy.selectionMode === 'except' && (
-              <span className="profile-display-text-small">
+              <span className="queue-display-text-small">
                 All except:
               </span>
             )}
-            {policy.selectedProfiles.map((profile, index) => (
+            {queues.map((queue, index) => (
               <span
                 key={index}
-                className="profile-tag-item profile-tag-clickable"
-                onClick={(e) => handleProfileClick(profile.profileId, e)}
+                className="queue-tag-item"
               >
-                {profile.profileName}
+                {queue.profileName}
               </span>
             ))}
             <button
-              className="profile-toggle-btn"
-              onClick={(e) => toggleExpandRow(policy.id, e)}
+              className="queue-toggle-btn"
+              onClick={(e) => toggleExpandRow(policy.id + '-queues', e)}
             >
               Show less
             </button>
@@ -202,96 +199,77 @@ const AgCDPlaybook: React.FC = () => {
         return (
           <>
             {policy.selectionMode === 'except' && (
-              <span className="profile-display-text-small">
+              <span className="queue-display-text-small">
                 All except:{' '}
               </span>
             )}
-            <span
-              className="profile-tag-item profile-tag-clickable"
-              onClick={(e) => handleProfileClick(policy.selectedProfiles[0].profileId, e)}
-            >
-              {policy.selectedProfiles[0].profileName}
+            <span className="queue-tag-item">
+              {queues[0].profileName}
             </span>
-            {policy.selectedProfiles.length > 1 && (
+            {queues.length > 1 && (
               <button
-                className="profile-more-count"
-                onClick={(e) => toggleExpandRow(policy.id, e)}
+                className="queue-more-count"
+                onClick={(e) => toggleExpandRow(policy.id + '-queues', e)}
               >
-                +{policy.selectedProfiles.length - 1} more
+                +{queues.length - 1} more
               </button>
             )}
           </>
         );
       }
     }
-    return <span className="no-profile-text">No profiles</span>;
+    return <span className="no-queue-text">No queues</span>;
+  };
+
+  const renderChannels = (policy: PromptData) => {
+    // Use selectedChannel which is a single channel value (Voice or Messaging)
+    const channel = policy.selectedChannel || 'Voice';
+
+    return (
+      <span className="channel-tag-item">
+        {channel}
+      </span>
+    );
   };
 
   return (
     <main className="main-content agcd-playbook-page">
       <div className="playbook-page-wrapper">
-        {/* Tab Switcher */}
-        <div className="agcd-tab-switcher-container">
+        {/* Breadcrumb and Tab Switcher Row */}
+        <div className="agcd-top-row">
+          <nav className="agcd-breadcrumb">
+            <span className="breadcrumb-item">Conversation orchestration (Preview)</span>
+            <span className="breadcrumb-separator">&gt;</span>
+            <span className="breadcrumb-item current">All playbooks</span>
+          </nav>
+          {/* Tab Switcher */}
           <div className="agcd-tab-switcher">
             <button
               className={`agcd-tab-button ${activePageTab === 'home' ? 'active' : ''}`}
               onClick={() => handlePageTabChange('home')}
             >
-              Home
+              New
             </button>
             <button
               className={`agcd-tab-button ${activePageTab === 'playbook' ? 'active' : ''}`}
               onClick={() => handlePageTabChange('playbook')}
             >
-              Playbook
+              All playbooks
             </button>
           </div>
         </div>
 
         <div className="playbook-content-wrapper">
-        {/* Breadcrumb */}
-        <div className="playbook-breadcrumb">
-          <Link to="/agcd" className="breadcrumb-link-style">Orchestration Agent</Link>
-          <svg className="breadcrumb-sep" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-            <path d="M2 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="breadcrumb-active">Playbook</span>
-        </div>
-
         {/* Page Header */}
         <div className="playbook-page-header">
           <div className="header-title-badge">
-            <h1 className="playbook-page-title">Orchestration Agent (Preview)</h1>
+            <h1 className="playbook-page-title">Conversation orchestration</h1>
             <span className="preview-badge-style">Preview</span>
+            <span className="badge-gen-ai">Gen AI</span>
           </div>
           <p className="playbook-page-desc">
-            View and manage all your playbooks. Create playbooks to control routing patterns, working hours, assignment logic, and automated actions.
+            Conversation orchestration is an AI-powered capability that manages the entire conversation lifecycle by continuously evaluating triggers and applying business logic in real time. AI generated content may be inaccurate. <a href="#" className="learn-more-link">Learn more</a>
           </p>
-        </div>
-
-        {/* Filters Card */}
-        <div className="filters-card">
-          <h3 className="filters-card-title">Filters</h3>
-          <div className="filter-pills-container">
-            <button
-              className={`filter-pill ${activeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveFilter('all')}
-            >
-              All
-            </button>
-            <button
-              className={`filter-pill ${activeFilter === 'orchestrator' ? 'active' : ''}`}
-              onClick={() => setActiveFilter('orchestrator')}
-            >
-              Orchestrator
-            </button>
-            <button
-              className={`filter-pill ${activeFilter === 'assignment' ? 'active' : ''}`}
-              onClick={() => setActiveFilter('assignment')}
-            >
-              Assignment
-            </button>
-          </div>
         </div>
 
         {/* Search and New Playbook Button */}
@@ -347,7 +325,8 @@ const AgCDPlaybook: React.FC = () => {
                   <th>Playbook Name</th>
                   <th>Trigger</th>
                   <th>Status</th>
-                  <th>Profiles</th>
+                  <th>Queues</th>
+                  <th>Channels</th>
                   <th>Last Modified</th>
                   <th>Action</th>
                 </tr>
@@ -385,9 +364,14 @@ const AgCDPlaybook: React.FC = () => {
                           {policy.status}
                         </span>
                       </td>
-                      <td className="profiles-display-cell">
-                        <div className="profiles-display-wrapper">
-                          {renderProfiles(policy)}
+                      <td className="queues-display-cell">
+                        <div className="queues-display-wrapper">
+                          {renderQueues(policy)}
+                        </div>
+                      </td>
+                      <td className="channels-display-cell">
+                        <div className="channels-display-wrapper">
+                          {renderChannels(policy)}
                         </div>
                       </td>
                       <td>{policy.lastModified}</td>
@@ -442,7 +426,7 @@ const AgCDPlaybook: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="no-results-text">
+                    <td colSpan={7} className="no-results-text">
                       No playbooks found. Create a new playbook from the Home tab.
                     </td>
                   </tr>

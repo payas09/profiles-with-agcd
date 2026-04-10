@@ -67,6 +67,13 @@ export interface PriorityEscalationEditorState {
   scenarioId?: string;
 }
 
+// Context variable type passed from parent
+interface ParentContextVariable {
+  id: string;
+  label: string;
+  description: string;
+}
+
 interface PriorityEscalationEditorProps {
   scenarioId: string;
   initialRequirement?: string;
@@ -76,6 +83,7 @@ interface PriorityEscalationEditorProps {
   isPublicPreview?: boolean;
   triggerValidation?: boolean;
   onValidationResult?: (hasErrors: boolean, errors: { message: string }[]) => void;
+  contextVariables?: ParentContextVariable[]; // Variables from parent Add Variables section
 }
 
 // Multi-Select Dropdown Component with Include/Exclude mode
@@ -941,9 +949,9 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
           </div>
         )}
 
-        {/* Generated Playbook Preview */}
+        {/* Playbook Preview */}
         <div className="generated-policy-section">
-          <h4 className="generated-policy-title">Generated Playbook</h4>
+          <h4 className="generated-policy-title">Playbook preview</h4>
           <pre className="generated-policy-text">{generatePolicyText()}</pre>
         </div>
       </div>
@@ -967,7 +975,7 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
         {isVariablesSectionOpen && (
           <div className="variables-accordion-content">
             <p className="variables-desc">
-              Add variables to create conditional priority rules based on customer or conversation attributes.
+              Add context variables to create conditional logic in your playbook by specifying different actions for different variable values. Ensure that the context variables you use are populated for the workstream associated with your selected queues. Currently 2 context variables are supported.
             </p>
 
             <div className="variables-grid">

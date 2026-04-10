@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import './AgCDPromptEdit.css';
-import { savePrompt, getPrompt, SelectionMode, TemplateState, ChannelType } from '../utils/promptStorage';
+import { savePrompt, getPrompt, SelectionMode, TemplateState, ChannelType, EditorState } from '../utils/promptStorage';
 // import TemplatePromptEditor from './TemplatePromptEditor';
 import CopilotPromptEditor from './CopilotPromptEditor';
 import TemplateBasedEditor from './TemplateBasedEditor';
 import JsonRuleReviewer from './JsonRuleReviewer';
 import type { TemplateEditorState } from './OverflowHandlingEditor';
 import type { ExpertRoutingEditorState } from './TemplateBasedEditor';
+import type { UserGroupExpansionEditorState } from './UserGroupExpansionEditor';
 
 // Sample workflow JSON for demo (simulates LLM-generated JSON)
 // This matches the prompt: Customer Tier + Region conditions with overflow actions
@@ -270,6 +271,12 @@ const promptTemplates: { [key: string]: { title: string; type: string; descripti
     type: 'Assignment',
     description: 'Expand assignment progressively based on wait time, with final fallback to any queue member.',
     defaultPrompt: 'Assign the conversations to Senior Support Agents or Technical Specialists. If no support rep is available or the conversation remains unassigned for 30 seconds, expand to Standard Support Team. If the conversation is still unassigned after 60 seconds, expand to Escalation team. If the conversation still remains unassigned, assign to any member of the queue.'
+  },
+  'user-group-expansion': {
+    title: 'Assign to expert using User group expansion',
+    type: 'Assignment',
+    description: 'Assign conversations to specific user groups first, then progressively expand to additional groups if the conversation remains unassigned.',
+    defaultPrompt: 'Assign the conversations to Senior Support Agents or Technical Specialists. If no support rep is available or the conversation remains unassigned for 30 seconds, expand to Standard Support Team. If the conversation is still unassigned after 60 seconds, expand to Escalation Team. If the conversation remains unassigned, assign to any member of the queue.'
   },
   // Legacy templates for backward compatibility
   'overflow': {
@@ -644,12 +651,18 @@ const AgCDPromptEdit: React.FC = () => {
   const [editMode, setEditMode] = useState<'simple' | 'builder' | 'copilot' | 'template'>('template');
   const [policyConfig, setPolicyConfig] = useState<PolicyConfig | null>(null);
   const [nlRequirement, setNlRequirement] = useState<string>('');
-  const [templateState, setTemplateState] = useState<TemplateState | undefined>(undefined);
+  const [templateState, setTemplateState] = useState<EditorState | undefined>(undefined);
   const [savedScenarioId, setSavedScenarioId] = useState<string | undefined>(undefined);
+
+  // Check if this is a user-group-expansion scenario (uses queue selection like public preview)
+  const isUserGroupExpansion = promptType === 'user-group-expansion' || savedScenarioId === 'user-group-expansion';
+  // Helper to check if queue selection should be used (instead of profile selection)
+  const useQueueSelection = isPublicPreview || isUserGroupExpansion;
+
   // Track if there are unsaved changes (dirty state)
   const [isDirty, setIsDirty] = useState(false);
   // Store the original saved state for reverting
-  const [savedTemplateState, setSavedTemplateState] = useState<TemplateState | undefined>(undefined);
+  const [savedTemplateState, setSavedTemplateState] = useState<EditorState | undefined>(undefined);
   // Show unsaved changes warning dialog
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
@@ -660,9 +673,9 @@ const AgCDPromptEdit: React.FC = () => {
   // Ref to track if we just saved (skip setting isDirty on immediate post-save onStateChange)
   const justSavedRef = useRef(false);
   // Ref to store saved state for synchronous comparison (mirrors savedTemplateState)
-  const savedTemplateStateRef = useRef<TemplateState | undefined>(undefined);
+  const savedTemplateStateRef = useRef<EditorState | undefined>(undefined);
   // Ref to store current template state for synchronous access (avoids stale state in callbacks)
-  const currentTemplateStateRef = useRef<TemplateState | undefined>(undefined);
+  const currentTemplateStateRef = useRef<EditorState | undefined>(undefined);
   // Track the actual policy ID - set when editing existing or after first save of new policy
   const [savedPolicyId, setSavedPolicyId] = useState<string | null>(null);
   // Confirmation modal state
@@ -677,6 +690,44 @@ const AgCDPromptEdit: React.FC = () => {
   // JSON Rule Reviewer state - for reviewing LLM-generated JSON
   const [showJsonReviewer, setShowJsonReviewer] = useState(false);
   const [workflowJson, setWorkflowJson] = useState<any>(null);
+
+  // Collapsible sections state
+  const [showVariablesSection, setShowVariablesSection] = useState(false);
+
+  // Variables state - passed to template editors
+  const [selectedContextVars, setSelectedContextVars] = useState<{id: string; label: string; description: string}[]>([]);
+  const [showVariableDropdown, setShowVariableDropdown] = useState(false);
+
+  // Available customer attributes for variables
+  const availableCustomerAttributes = [
+    { id: 'CustomerTier', label: 'Customer Tier' },
+    { id: 'Region', label: 'Customer Region' },
+    { id: 'ProductCategory', label: 'Product Category' },
+    { id: 'Language', label: 'Preferred Language' },
+    { id: 'AccountType', label: 'Account Type' },
+    { id: 'IsVIP', label: 'Is VIP Customer' },
+  ];
+
+  const handleAddContextVariable = (attr: {id: string; label: string}) => {
+    if (selectedContextVars.length < 2 && !selectedContextVars.find(v => v.id === attr.id)) {
+      setSelectedContextVars(prev => [...prev, { ...attr, description: '' }]);
+    }
+    setShowVariableDropdown(false);
+  };
+
+  const handleRemoveContextVariable = (varId: string) => {
+    setSelectedContextVars(prev => prev.filter(v => v.id !== varId));
+  };
+
+  const handleContextVarDescriptionChange = (varId: string, description: string) => {
+    setSelectedContextVars(prev => prev.map(v =>
+      v.id === varId ? { ...v, description } : v
+    ));
+  };
+
+  const availableToAddVars = availableCustomerAttributes.filter(
+    attr => !selectedContextVars.find(v => v.id === attr.id)
+  );
 
   // Load saved data or use template defaults
   useEffect(() => {
@@ -785,15 +836,15 @@ const AgCDPromptEdit: React.FC = () => {
 
   const handleSaveProfiles = () => {
     setSelectionMode(tempSelectionMode);
-    if (isPublicPreview) {
+    if (useQueueSelection) {
       setSelectedChannel(tempSelectedChannel);
     }
 
     if (tempSelectionMode === 'all') {
       setSelectedProfiles([]);
     } else {
-      if (isPublicPreview) {
-        // For public preview, map queue IDs to profile-like structure for storage
+      if (useQueueSelection) {
+        // For queue selection scenarios, map queue IDs to profile-like structure for storage
         // Only include queues from the selected channel
         const newSelectedQueues = tempSelectedProfiles
           .map(queueId => {
@@ -885,7 +936,7 @@ const AgCDPromptEdit: React.FC = () => {
       templateState: currentState, // Use ref for most up-to-date state
       scenarioId: effectiveScenarioId, // Store which scenario/template was used
       isPublicPreview,
-      selectedChannel: isPublicPreview ? selectedChannel : undefined
+      selectedChannel: useQueueSelection ? selectedChannel : undefined
     };
     savePrompt(id, promptData);
 
@@ -949,7 +1000,7 @@ const AgCDPromptEdit: React.FC = () => {
       templateState: currentState, // Use ref for most up-to-date state
       scenarioId: effectiveScenarioId, // Store which scenario/template was used
       isPublicPreview,
-      selectedChannel: isPublicPreview ? selectedChannel : undefined,
+      selectedChannel: useQueueSelection ? selectedChannel : undefined,
       workflowJson: updatedJson || workflowJson // Store the reviewed/edited JSON
     };
     savePrompt(id, promptData);
@@ -1060,7 +1111,7 @@ const AgCDPromptEdit: React.FC = () => {
   const renderProfileDisplay = () => {
     if (selectionMode === 'all') {
       return (
-        <div className="profile-display-text">{isPublicPreview ? `All ${selectedChannel} queues` : 'All Engagement profiles'}</div>
+        <div className="profile-display-text">{useQueueSelection ? `All ${selectedChannel} queues` : 'All Engagement profiles'}</div>
       );
     } else if (selectionMode === 'list' && selectedProfiles.length > 0) {
       return (
@@ -1068,7 +1119,7 @@ const AgCDPromptEdit: React.FC = () => {
           {selectedProfiles.map(profile => (
             <div key={profile.profileId} className="profile-list-item">
               <div className="profile-info-group">
-                {isPublicPreview ? (
+                {useQueueSelection ? (
                   <span className="profile-list-name">{profile.profileName}</span>
                 ) : (
                   <>
@@ -1080,7 +1131,7 @@ const AgCDPromptEdit: React.FC = () => {
               <button
                 className="profile-list-remove"
                 onClick={() => handleRemoveProfile(profile.profileId)}
-                aria-label={isPublicPreview ? "Remove queue" : "Remove profile"}
+                aria-label={useQueueSelection ? "Remove queue" : "Remove profile"}
               >
                 ×
               </button>
@@ -1091,12 +1142,12 @@ const AgCDPromptEdit: React.FC = () => {
     } else if (selectionMode === 'except' && selectedProfiles.length > 0) {
       return (
         <div className="profile-except-display">
-          <div className="profile-display-text">{isPublicPreview ? `All ${selectedChannel} queues except:` : 'All engagement profiles except:'}</div>
+          <div className="profile-display-text">{useQueueSelection ? `All ${selectedChannel} queues except:` : 'All engagement profiles except:'}</div>
           <div className="profile-list-display">
             {selectedProfiles.map(profile => (
               <div key={profile.profileId} className="profile-list-item">
                 <div className="profile-info-group">
-                  {isPublicPreview ? (
+                  {useQueueSelection ? (
                     <span className="profile-list-name">{profile.profileName}</span>
                   ) : (
                     <>
@@ -1108,7 +1159,7 @@ const AgCDPromptEdit: React.FC = () => {
                 <button
                   className="profile-list-remove"
                   onClick={() => handleRemoveProfile(profile.profileId)}
-                  aria-label={isPublicPreview ? "Remove queue" : "Remove profile"}
+                  aria-label={useQueueSelection ? "Remove queue" : "Remove profile"}
                 >
                   ×
                 </button>
@@ -1119,117 +1170,222 @@ const AgCDPromptEdit: React.FC = () => {
       );
     }
     return (
-      <div className="profile-display-text">{isPublicPreview ? 'No queues selected' : 'No profiles selected'}</div>
+      <div className="profile-display-text">{useQueueSelection ? 'No queues selected' : 'No profiles selected'}</div>
     );
+  };
+
+  // Get trigger event text based on scenario
+  const getTriggerEventText = () => {
+    if (promptType === 'wait-time-escalation' || savedScenarioId === 'wait-time-escalation') {
+      return 'Conversation is waiting in queue';
+    } else if (promptType === 'queue-transfer-escalation' || savedScenarioId === 'queue-transfer-escalation') {
+      return 'Conversation is transferred to the queue';
+    } else if (promptType === 'user-group-expansion' || savedScenarioId === 'user-group-expansion') {
+      return 'Conversation is routed to the queue';
+    } else if (promptType === 'overflow-conditions-actions' || savedScenarioId === 'overflow-conditions-actions' || isPublicPreview) {
+      return 'Conversation is waiting in queue';
+    }
+    return 'Conversation is waiting in queue';
+  };
+
+  // Get channel text
+  const getChannelText = () => {
+    return selectedChannel || 'Voice';
   };
 
   // Render the main form content (used in both normal and copilot layouts)
   const renderFormContent = (inCopilotMode: boolean = false) => (
     <>
-      {/* Header */}
-      <div className="prompt-header-section">
-        <div className="header-title-group">
-          <h1 className="prompt-page-title">{inCopilotMode ? promptName || 'Assignment Policy' : 'Playbook'}</h1>
+      {/* Header Section with Title and Buttons */}
+      <div className="prompt-header-section-new">
+        <div className="header-left-section">
+          <div className="header-title-row">
+            <h1 className="prompt-page-title-new">{promptName || template?.title || 'New playbook'}</h1>
+            <div className="header-badges">
+              <span className="header-badge badge-preview">Preview</span>
+              <span className="header-badge badge-ai-copilot">AI Copilot</span>
+              <span className="header-badge badge-gen-ai">Gen AI</span>
+            </div>
+          </div>
+          <p className="prompt-page-description-new">
+            Conversation orchestration is an AI-powered capability that manages the entire conversation lifecycle by continuously evaluating triggers and applying business logic in real time. AI generated content may be inaccurate. <a href="#" className="learn-more-link">Learn more</a>
+          </p>
         </div>
-        {!inCopilotMode && (
-          <>
-            <p className="prompt-page-scenario-subtitle">
-              {promptName || template?.title || 'Configure your playbook scenario'}
-            </p>
-            <p className="prompt-page-ai-disclaimer">
-              AI generated content may be inaccurate. <a href="#" className="learn-more-link">Learn more</a>
-            </p>
-          </>
-        )}
+        <div className="header-right-section">
+          <div className="agcd-tab-switcher">
+            <button
+              className="agcd-tab-button"
+              onClick={() => navigate(`${basePath}/prompt/overflow-conditions-actions`)}
+            >
+              New
+            </button>
+            <button
+              className="agcd-tab-button"
+              onClick={() => navigate(`${basePath}/playbook`)}
+            >
+              All playbooks
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Playbook Name - only show in non-copilot mode */}
+      {/* Playbook Name and Queues Row */}
       {!inCopilotMode && (
-        <div className="prompt-name-section">
-          <label className="prompt-name-label">Playbook Name</label>
-          <input
-            type="text"
-            className="prompt-name-input"
-            value={promptName}
-            onChange={(e) => setPromptName(e.target.value)}
-            placeholder="Enter playbook name"
-          />
+        <div className="playbook-name-queues-row">
+          <div className="playbook-name-section">
+            <label className="playbook-name-label">Playbook name</label>
+            <input
+              type="text"
+              className="playbook-name-input"
+              value={promptName}
+              onChange={(e) => setPromptName(e.target.value)}
+              placeholder="Enter playbook name"
+            />
+          </div>
+          <div className="queues-section">
+            <div className="queues-header">
+              <span className="queues-label">Queues</span>
+              <button className="queues-edit-link" onClick={handleAddProfile}>Edit</button>
+            </div>
+            <div className="queues-display">
+              {selectionMode === 'all' ? (
+                <span className="queue-tag-item">All {selectedChannel} queues</span>
+              ) : selectionMode === 'except' ? (
+                <div className="queues-tags-wrapper">
+                  <span className="queues-except-label">All except:</span>
+                  {selectedProfiles.slice(0, 3).map(profile => (
+                    <span key={profile.profileId} className="queue-tag-item">
+                      {profile.profileName}
+                    </span>
+                  ))}
+                  {selectedProfiles.length > 3 && (
+                    <span className="queues-more-count">+{selectedProfiles.length - 3} more</span>
+                  )}
+                </div>
+              ) : selectedProfiles.length > 0 ? (
+                <div className="queues-tags-wrapper">
+                  {selectedProfiles.slice(0, 3).map(profile => (
+                    <span key={profile.profileId} className="queue-tag-item">
+                      {profile.profileName}
+                    </span>
+                  ))}
+                  {selectedProfiles.length > 3 && (
+                    <span className="queues-more-count">+{selectedProfiles.length - 3} more</span>
+                  )}
+                </div>
+              ) : (
+                <span className="queues-text-empty">No queues selected</span>
+              )}
+            </div>
+            <div className="queues-count">
+              {selectionMode === 'list' && selectedProfiles.length > 0 ? `${selectedProfiles.length}/${queueProfileMappings.filter(q => q.channel === selectedChannel).length} selected` : ''}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Profiles/Queues Section - Card */}
-      <div className="edit-card">
-        <div className="profile-section-full">
-          <div className="profile-section-header">
-            <div className="profile-section-header-left">
-              <h2 className="profile-section-title">{isPublicPreview ? 'Queues' : 'Profiles'}</h2>
-              <button className="profile-edit-link" onClick={handleAddProfile}>
-                Edit
+      {/* Add Variables Section */}
+      <div className="variables-section">
+        <div className="variables-header-row">
+          <button className="variables-toggle" onClick={() => setShowVariablesSection(!showVariablesSection)}>
+            <svg className={`chevron-icon ${showVariablesSection ? 'expanded' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="variables-section-title">Add variables (optional)</span>
+          </button>
+          {selectedContextVars.length > 0 && (
+            <span className="variables-count-badge">{selectedContextVars.length}/2 selected</span>
+          )}
+        </div>
+        {showVariablesSection && (
+          <div className="variables-section-content">
+            <p className="variables-section-description">
+              Add context variables to create conditional logic in your playbook by specifying different actions for different variable values. Ensure that the context variables you use are populated for the workstreams associated with your selected queues. Currently 2 context variables are supported.
+            </p>
+
+            {/* Add customer attribute dropdown */}
+            <div className="add-attribute-dropdown-container">
+              <button
+                className="add-attribute-dropdown-trigger"
+                onClick={() => setShowVariableDropdown(!showVariableDropdown)}
+                disabled={selectedContextVars.length >= 2}
+              >
+                <span>+ Add customer attribute</span>
+                <svg className={`dropdown-chevron ${showVariableDropdown ? 'open' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
+              {showVariableDropdown && availableToAddVars.length > 0 && (
+                <div className="add-attribute-dropdown-menu">
+                  {availableToAddVars.map(attr => (
+                    <button
+                      key={attr.id}
+                      className="add-attribute-dropdown-item"
+                      onClick={() => handleAddContextVariable(attr)}
+                    >
+                      {attr.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            {isPublicPreview && (
-              <div className="channel-display-row">
-                <span className="channel-label">Channel:</span>
-                <span className="channel-value">{selectedChannel}</span>
+
+            {/* Selected Variables Cards */}
+            {selectedContextVars.length > 0 && (
+              <div className="variables-cards-row">
+                {selectedContextVars.map(variable => (
+                  <div key={variable.id} className="variable-card">
+                    <div className="variable-card-header">
+                      <span className="variable-card-name">{variable.label}</span>
+                      <button
+                        className="variable-card-remove"
+                        onClick={() => handleRemoveContextVariable(variable.id)}
+                        aria-label="Remove variable"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      className="variable-card-input"
+                      placeholder={`Optionally describe how this appears in playbook (e.g. "${variable.label.toLowerCase()}")`}
+                      value={variable.description}
+                      onChange={(e) => handleContextVarDescriptionChange(variable.id, e.target.value)}
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          <div className="profile-display-box">
-            {renderProfileDisplay()}
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Edit Mode Toggle - REMOVED, now always showing template-based editor */}
-
-      {/* Policy Behavior Card */}
-      <div className="edit-card">
-        {/* Policy Behavior Header and Trigger/Status Row */}
-        <div className="behavior-trigger-row">
-          {/* Playbook Behavior Title and Description - Left */}
-          <div className="policy-behavior-header">
-            <h2 className="policy-behavior-title">{inCopilotMode ? 'Generated Playbook' : 'Describe Playbook Behavior'}</h2>
-            <p className="policy-behavior-desc">
-              {inCopilotMode
-                ? 'This playbook was generated by Copilot based on your conversation.'
-                : 'Update below prompt with correct variables & values. This playbook will be executed on the shown trigger event.'
-              }
-            </p>
-          </div>
-
-          {/* Trigger and Status - Right */}
-          <div className="trigger-status-section-right">
-            <div className="field-group">
-              <label className="field-label-small">Trigger Event</label>
-              {/* Show plain text for all template-based scenarios */}
-              {(promptType === 'wait-time-escalation' || savedScenarioId === 'wait-time-escalation') ? (
-                <div className="trigger-text-display">Conversation is waiting in the queue</div>
-              ) : (promptType === 'queue-transfer-escalation' || savedScenarioId === 'queue-transfer-escalation') ? (
-                <div className="trigger-text-display">Conversation is transferred to the queue</div>
-              ) : (promptType === 'overflow-conditions-actions' || savedScenarioId === 'overflow-conditions-actions' || isPublicPreview) ? (
-                <div className="trigger-text-display">Conversation is waiting in queue</div>
-              ) : (
-                <select
-                  className="field-select"
-                  value={selectedTrigger}
-                  onChange={(e) => setSelectedTrigger(e.target.value)}
-                >
-                  {triggerEvents.map(trigger => (
-                    <option key={trigger.id} value={trigger.id}>
-                      {trigger.label}
-                    </option>
-                  ))}
-                </select>
-              )}
+      {/* Build Playbook Card */}
+      <div className="build-playbook-card">
+        {/* Build Playbook Header with Trigger/Channel/Status */}
+        <div className="build-playbook-header">
+          <h2 className="build-playbook-title">Build playbook</h2>
+          <div className="build-playbook-meta">
+            <div className="meta-item">
+              <span className="meta-label">Trigger event</span>
+              <span className="meta-value">{getTriggerEventText()}</span>
             </div>
-            <div className="field-group">
-              <label className="field-label-small">Status</label>
-              <div className={`status-badge ${status.toLowerCase()}`}>
-                {status}
-              </div>
+            <div className="meta-item">
+              <span className="meta-label">Channel</span>
+              <span className="meta-value">{getChannelText()}</span>
+            </div>
+            <div className="meta-item">
+              <span className="meta-label">Status</span>
+              <span className={`meta-status ${status.toLowerCase()}`}>{status === 'Draft' ? 'New' : status}</span>
             </div>
           </div>
         </div>
+
+        <p className="build-playbook-description">
+          Update below prompt with correct variables & values. This playbook will be executed when the trigger event shown on this page occurs.
+        </p>
 
         {/* Template Based Editor - Always shown (no edit mode toggle) */}
         {!inCopilotMode && (
@@ -1242,10 +1398,11 @@ const AgCDPromptEdit: React.FC = () => {
               isPublicPreview={isPublicPreview}
               triggerValidation={triggerValidation}
               onValidationResult={handleValidationResult}
-              onStateChange={(state: TemplateEditorState | ExpertRoutingEditorState, prompt: string) => {
+              contextVariables={selectedContextVars}
+              onStateChange={(state: TemplateEditorState | ExpertRoutingEditorState | UserGroupExpansionEditorState, prompt: string) => {
                 // Update local state and ref for persistence
-                setTemplateState(state as TemplateEditorState);
-                currentTemplateStateRef.current = state as TemplateEditorState; // Always keep ref in sync
+                setTemplateState(state as EditorState);
+                currentTemplateStateRef.current = state as EditorState; // Always keep ref in sync
                 setPolicyBehavior(prompt);
 
                 // For new playbooks on initial load, save the state as baseline
@@ -1296,7 +1453,7 @@ const AgCDPromptEdit: React.FC = () => {
                   templateState,
                   scenarioId: effectiveScenarioId,
                   isPublicPreview,
-                  selectedChannel: isPublicPreview ? selectedChannel : undefined
+                  selectedChannel: useQueueSelection ? selectedChannel : undefined
                 };
                 savePrompt(id, promptData);
 
@@ -1338,6 +1495,7 @@ const AgCDPromptEdit: React.FC = () => {
             )}
           </div>
         )}
+
       </div>
     </>
   );
@@ -1387,71 +1545,41 @@ const AgCDPromptEdit: React.FC = () => {
       )}
 
       {/* Top Menu Bar */}
-      <div className="top-menu-bar">
-        <div className="menu-left-actions">
-          <button className="menu-back-button" onClick={handleBack}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M10 2l-6 6 6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Back
-          </button>
+      <div className="top-menu-bar-new">
+        <div className="menu-left-actions-new">
           <button
-            className={`menu-btn-secondary ${status === 'Active' ? 'disabled' : ''}`}
+            className={`menu-icon-btn ${status === 'Active' ? 'disabled' : ''}`}
             onClick={handleSave}
             disabled={status === 'Active'}
-            title={
-              status === 'Active'
-                ? 'Save is disabled for a published policy as it will change the playbook state from Active to Draft. Do Save & publish once the playbook is updated'
-                : ''
-            }
+            title={status === 'Active' ? 'Save is disabled for published playbooks' : 'Save'}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M2 1.5A1.5 1.5 0 0 1 3.5 0h9A1.5 1.5 0 0 1 14 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-13zM3.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-9z"/>
-              <path d="M11 3H5v4h6V3zM5 2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H5z"/>
+              <path d="M12.5 1H3.5C2.67 1 2 1.67 2 2.5v11c0 .83.67 1.5 1.5 1.5h9c.83 0 1.5-.67 1.5-1.5v-11c0-.83-.67-1.5-1.5-1.5zM6 2h4v4H6V2zm7 11.5c0 .28-.22.5-.5.5h-9c-.28 0-.5-.22-.5-.5v-11c0-.28.22-.5.5-.5H5v4.5c0 .28.22.5.5.5h5c.28 0 .5-.22.5-.5V2h1.5c.28 0 .5.22.5.5v11z"/>
             </svg>
             Save
           </button>
           <button
-            className={`menu-btn-primary ${hasValidationWarnings ? 'disabled' : ''}`}
+            className={`menu-icon-btn ${hasValidationWarnings ? 'disabled' : ''}`}
             onClick={handlePublishClick}
             disabled={hasValidationWarnings}
-            title={hasValidationWarnings ? 'Resolve the warnings before you can publish the playbook' : ''}
+            title={hasValidationWarnings ? 'Resolve warnings before publishing' : 'Publish'}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.695 8.695 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.75.75 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75zM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5zM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75z"/>
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM7 11V5l5 3-5 3z"/>
             </svg>
-            {status === 'Active' ? 'Save & publish' : 'Publish'}
+            {status === 'Active' ? 'Publish' : 'Publish'}
           </button>
-          {editMode === 'copilot' && (
-            <button className="menu-btn-exit-copilot" onClick={() => setEditMode('simple')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              Exit Copilot
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Tab Switcher - hide in copilot mode */}
-      {editMode !== 'copilot' && (
-        <div className="agcd-tab-switcher-container">
-          <div className="agcd-tab-switcher">
-            <button
-              className={`agcd-tab-button ${activePageTab === 'home' ? 'active' : ''}`}
-              onClick={() => handlePageTabChange('home')}
-            >
-              Home
-            </button>
-            <button
-              className={`agcd-tab-button ${activePageTab === 'playbook' ? 'active' : ''}`}
-              onClick={() => handlePageTabChange('playbook')}
-            >
-              Playbook
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Breadcrumb */}
+      <div className="edit-breadcrumb">
+        <Link to={basePath} className="breadcrumb-link-new">Conversation orchestration (Preview)</Link>
+        <span className="breadcrumb-separator">&gt;</span>
+        <span className="breadcrumb-current-new">Edit playbook</span>
+      </div>
+
+      {/* Tab Switcher - hidden in new design */}
 
       {/* Copilot Split Layout */}
       {editMode === 'copilot' ? (
@@ -1484,7 +1612,7 @@ const AgCDPromptEdit: React.FC = () => {
           <div className="side-panel-overlay" onClick={handleCancelProfiles}></div>
           <div className="side-panel-drawer">
             <div className="side-panel-header">
-              <h2 className="side-panel-title">{isPublicPreview ? 'Queues' : 'Profiles'}</h2>
+              <h2 className="side-panel-title">{useQueueSelection ? 'Queues' : 'Profiles'}</h2>
               <button className="side-panel-close-btn" onClick={handleCancelProfiles}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1492,8 +1620,8 @@ const AgCDPromptEdit: React.FC = () => {
               </button>
             </div>
 
-            {/* Tab Header - Only show for non-public preview */}
-            {!isPublicPreview && (
+            {/* Tab Header - Only show for non-queue selection modes */}
+            {!useQueueSelection && (
               <div className="side-panel-tabs">
                 <button
                   className="side-panel-tab active"
@@ -1505,19 +1633,25 @@ const AgCDPromptEdit: React.FC = () => {
 
             <div className="side-panel-content">
                   <p className="side-panel-description">
-                    {isPublicPreview
+                    {useQueueSelection
                       ? 'Select how you want to apply this playbook to queues.'
                       : 'Select how you want to apply this playbook to engagement profiles.'
                     }
                   </p>
+                  {useQueueSelection && (
+                    <p className="side-panel-note">
+                      <strong>Note:</strong> Channel cannot be changed for published or active playbooks. If you change the channel on a draft playbook, ensure you re-select context variables and update the prompt as previous selections belong to the original channel and will become invalid.
+                    </p>
+                  )}
 
-                  {/* Channel Selection - Only for public preview */}
-                  {isPublicPreview && (
+                  {/* Channel Selection - For queue selection scenarios */}
+                  {useQueueSelection && (
                     <div className="channel-selection-group">
                       <label className="channel-select-label">Channel</label>
                       <select
-                        className="channel-select-dropdown"
+                        className={`channel-select-dropdown ${status === 'Active' ? 'channel-disabled' : ''}`}
                         value={tempSelectedChannel}
+                        disabled={status === 'Active'}
                         onChange={(e) => {
                           setTempSelectedChannel(e.target.value as ChannelType);
                           // Clear selected queues when channel changes
@@ -1525,7 +1659,13 @@ const AgCDPromptEdit: React.FC = () => {
                         }}
                       >
                         <option value="Voice">Voice</option>
-                        <option value="Messaging">Messaging</option>
+                        <option
+                          value="Messaging"
+                          disabled={status === 'Active' && tempSelectedChannel !== 'Messaging'}
+                          className={status === 'Active' && tempSelectedChannel !== 'Messaging' ? 'option-disabled' : ''}
+                        >
+                          Messaging
+                        </option>
                       </select>
                     </div>
                   )}
@@ -1540,7 +1680,7 @@ const AgCDPromptEdit: React.FC = () => {
                         checked={tempSelectionMode === 'all'}
                         onChange={() => setTempSelectionMode('all')}
                       />
-                      <span className="radio-label">{isPublicPreview ? `All ${tempSelectedChannel} queues` : 'All Engagement profiles'}</span>
+                      <span className="radio-label">{useQueueSelection ? `All ${tempSelectedChannel} queues` : 'All Engagement profiles'}</span>
                     </label>
 
                     <label className="radio-option">
@@ -1551,7 +1691,7 @@ const AgCDPromptEdit: React.FC = () => {
                         checked={tempSelectionMode === 'list'}
                         onChange={() => setTempSelectionMode('list')}
                       />
-                      <span className="radio-label">{isPublicPreview ? `List of ${tempSelectedChannel} queues` : 'List of engagement profiles'}</span>
+                      <span className="radio-label">{useQueueSelection ? `List of ${tempSelectedChannel} queues` : 'List of engagement profiles'}</span>
                     </label>
 
                     <label className="radio-option">
@@ -1562,14 +1702,14 @@ const AgCDPromptEdit: React.FC = () => {
                         checked={tempSelectionMode === 'except'}
                         onChange={() => setTempSelectionMode('except')}
                       />
-                      <span className="radio-label">{isPublicPreview ? `All ${tempSelectedChannel} queues except` : 'All engagement profiles except'}</span>
+                      <span className="radio-label">{useQueueSelection ? `All ${tempSelectedChannel} queues except` : 'All engagement profiles except'}</span>
                     </label>
                   </div>
 
                   {/* Profile/Queue List (shown for 'list' and 'except' modes) */}
                   {(tempSelectionMode === 'list' || tempSelectionMode === 'except') && (
                     <div className="profiles-table-container">
-                      {isPublicPreview ? (
+                      {useQueueSelection ? (
                         /* Public Preview - Show only Queues filtered by channel */
                         <table className="profiles-selection-table">
                           <thead>

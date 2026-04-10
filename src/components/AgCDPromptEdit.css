@@ -145,9 +145,10 @@
 
 /* Main Container */
 .prompt-edit-container-new {
-  padding: 20px 40px;
+  padding: 0;
   max-width: 100%;
   margin: 0 auto;
+  background-color: #faf9f8;
 }
 
 /* Card Layout */
@@ -196,6 +197,32 @@
   line-height: 20px;
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
+}
+
+.prompt-page-scenario-subtitle {
+  font-size: 16px;
+  color: #242424;
+  line-height: 22px;
+  margin: 4px 0 0 0;
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: 500;
+}
+
+.prompt-page-ai-disclaimer {
+  font-size: 12px;
+  color: #a19f9d;
+  line-height: 16px;
+  margin: 4px 0 0 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.prompt-page-ai-disclaimer .learn-more-link {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.prompt-page-ai-disclaimer .learn-more-link:hover {
+  text-decoration: underline;
 }
 
 /* Prompt Name Section */
@@ -593,6 +620,22 @@
   line-height: 20px;
   margin: 0 0 20px 0;
   font-family: 'Segoe UI', sans-serif;
+}
+
+.side-panel-note {
+  font-size: 13px;
+  color: #605e5c;
+  line-height: 18px;
+  margin: 0 0 20px 0;
+  padding: 12px;
+  background-color: #fff4ce;
+  border-left: 3px solid #ffb900;
+  border-radius: 2px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.side-panel-note strong {
+  color: #242424;
 }
 
 /* Selection Mode Radio Buttons */
@@ -1313,6 +1356,22 @@
   border-color: #0078d4;
 }
 
+.channel-select-dropdown.channel-disabled {
+  background-color: #f3f2f1;
+  color: #a19f9d;
+  cursor: not-allowed;
+  border-color: #e1dfdd;
+}
+
+.channel-select-dropdown.channel-disabled:focus {
+  border-color: #e1dfdd;
+}
+
+.channel-select-dropdown option.option-disabled {
+  color: #a19f9d;
+  background-color: #f3f2f1;
+}
+
 /* Channel Display Row in Queue Header */
 .channel-display-row {
   display: flex;
@@ -1395,5 +1454,730 @@
 .success-banner-close:hover {
   background-color: rgba(0, 0, 0, 0.05);
   color: #242424;
+}
+
+/* JSON Rule Reviewer Modal Overlay */
+.json-reviewer-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.json-reviewer-modal {
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* ==================== NEW EDIT PAGE STYLES ==================== */
+
+/* Top Menu Bar - New Style */
+.top-menu-bar-new {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  background-color: #f3f2f1;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+.menu-left-actions-new {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menu-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #323130;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.menu-icon-btn:hover {
+  background-color: #e1dfdd;
+}
+
+.menu-icon-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.menu-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Breadcrumb */
+.edit-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #faf9f8;
+}
+
+.breadcrumb-link-new {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.breadcrumb-link-new:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: #a19f9d;
+}
+
+.breadcrumb-current-new {
+  color: #323130;
+}
+
+/* Header Section - New Style */
+.prompt-header-section-new {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 24px;
+  background-color: #faf9f8;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+.header-left-section {
+  flex: 1;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.prompt-page-title-new {
+  font-size: 20px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.header-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.header-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.badge-preview {
+  background-color: #e1dfdd;
+  color: #605e5c;
+}
+
+.badge-ai-copilot {
+  background-color: #e8d4f8;
+  color: #8b5cf6;
+}
+
+.badge-gen-ai {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.prompt-page-description-new {
+  font-size: 12px;
+  color: #605e5c;
+  line-height: 18px;
+  margin: 0;
+  max-width: 800px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.prompt-page-description-new .learn-more-link {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.prompt-page-description-new .learn-more-link:hover {
+  text-decoration: underline;
+}
+
+.header-right-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-new-link {
+  color: #0078d4;
+  text-decoration: none;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.header-new-link:hover {
+  text-decoration: underline;
+}
+
+.header-all-playbooks-btn {
+  padding: 6px 16px;
+  background-color: white;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.15s;
+}
+
+.header-all-playbooks-btn:hover {
+  background-color: #f3f2f1;
+}
+
+/* Playbook Name and Queues Row */
+.playbook-name-queues-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  margin: 16px 24px;
+  padding: 0;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  gap: 0;
+}
+
+.playbook-name-section {
+  flex: 1;
+  max-width: none;
+  padding: 16px 20px;
+  border-right: 1px solid #e1dfdd;
+}
+
+.playbook-name-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  margin-bottom: 6px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.playbook-name-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: white;
+}
+
+.playbook-name-input:focus {
+  outline: none;
+  border-color: #0078d4;
+}
+
+.queues-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 20px;
+}
+
+.queues-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.queues-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-edit-link {
+  background: none;
+  border: none;
+  color: #0078d4;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 0;
+}
+
+.queues-edit-link:hover {
+  text-decoration: underline;
+}
+
+.queues-display {
+  font-size: 14px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queues-count {
+  font-size: 12px;
+  color: #0078d4;
+  font-family: 'Segoe UI', sans-serif;
+  margin-top: 4px;
+}
+
+.queues-tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.queue-tag-item {
+  background-color: #e1f5fe;
+  color: #0078d4;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queues-except-label {
+  font-size: 12px;
+  color: #605e5c;
+  font-style: italic;
+  margin-right: 4px;
+}
+
+.queues-more-count {
+  font-size: 12px;
+  color: #0078d4;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.queues-more-count:hover {
+  text-decoration: underline;
+}
+
+.queues-text-empty {
+  font-size: 13px;
+  color: #a19f9d;
+  font-style: italic;
+}
+
+/* Variables Section */
+.variables-section {
+  margin: 16px 24px;
+  padding: 16px 20px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+}
+
+.variables-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.variables-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.variables-toggle:hover {
+  opacity: 0.8;
+}
+
+.chevron-icon {
+  transition: transform 0.2s;
+  color: #323130;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.variables-title,
+.variables-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #323130;
+}
+
+.variables-count-badge {
+  font-size: 12px;
+  font-weight: 500;
+  color: #0078d4;
+  background-color: #e1f0ff;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.variables-content,
+.variables-section-content {
+  padding: 12px 0 0 0;
+}
+
+.variables-description,
+.variables-section-description {
+  font-size: 12px;
+  color: #605e5c;
+  line-height: 18px;
+  margin: 0 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Add Attribute Dropdown */
+.add-attribute-dropdown-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.add-attribute-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.15s;
+}
+
+.add-attribute-dropdown-trigger:hover:not(:disabled) {
+  background-color: #f3f2f1;
+}
+
+.add-attribute-dropdown-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropdown-chevron {
+  transition: transform 0.2s;
+}
+
+.dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.add-attribute-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 200px;
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.add-attribute-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+  transition: background-color 0.15s;
+}
+
+.add-attribute-dropdown-item:hover {
+  background-color: #f3f2f1;
+}
+
+.add-attribute-dropdown-item:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.add-attribute-dropdown-item:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+/* Variable Cards */
+.variables-cards-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.variable-card {
+  flex: 1;
+  min-width: 300px;
+  max-width: calc(50% - 8px);
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+
+.variable-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.variable-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.variable-card-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #605e5c;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.variable-card-remove:hover {
+  background-color: #f3f2f1;
+  color: #323130;
+}
+
+.variable-card-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: white;
+}
+
+.variable-card-input::placeholder {
+  color: #a19f9d;
+}
+
+.variable-card-input:focus {
+  outline: none;
+  border-color: #0078d4;
+}
+
+/* Build Playbook Card */
+.build-playbook-card {
+  background-color: white;
+  margin: 16px 24px;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.build-playbook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.build-playbook-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.build-playbook-meta {
+  display: flex;
+  gap: 24px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.meta-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.meta-value {
+  font-size: 13px;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.meta-status {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.meta-status.draft,
+.meta-status.new {
+  background-color: #e1f0ff;
+  color: #0078d4;
+}
+
+.meta-status.active {
+  background-color: #dff6dd;
+  color: #107c10;
+}
+
+.build-playbook-description {
+  font-size: 13px;
+  color: #605e5c;
+  line-height: 20px;
+  margin: 0 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Tips Section */
+.tips-section {
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f2f1;
+}
+
+.tips-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tips-toggle:hover {
+  opacity: 0.8;
+}
+
+.tips-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #323130;
+}
+
+.tips-content {
+  padding: 12px 0 0 20px;
+}
+
+.tips-content p {
+  font-size: 13px;
+  color: #605e5c;
+  line-height: 20px;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Playbook Preview Section */
+.playbook-preview-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e1dfdd;
+}
+
+.playbook-preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #323130;
+  margin: 0 0 12px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Override old styles when new layout is active */
+.build-playbook-card .policy-behavior-builder-section.template-full-width {
+  margin: 0;
+  margin-top: 0;
+  padding: 0;
+}
+
+/* Queues text styling */
+.queues-text {
+  font-size: 14px;
+  color: #323130;
+}
+
+/* Ensure proper background for edit page */
+.agcd-prompt-edit-page .main-content.prompt-edit-container-new {
+  background-color: #faf9f8;
+  min-height: calc(100vh - 100px);
+}
+
+/* Add icon styles for preview */
+.preview-icon {
+  color: #605e5c;
+  cursor: pointer;
+}
+
+.preview-icon:hover {
+  color: #323130;
 }
 

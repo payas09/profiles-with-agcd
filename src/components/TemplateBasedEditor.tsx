@@ -16,6 +16,7 @@ import './TemplateBasedEditor.css';
 import RingExpansionEditor from './RingExpansionEditor';
 import OverflowHandlingEditor from './OverflowHandlingEditor';
 import PriorityEscalationEditor from './PriorityEscalationEditor';
+import UserGroupExpansionEditor from './UserGroupExpansionEditor';
 
 // ============================================
 // Variables Configuration
@@ -222,6 +223,7 @@ interface PolicyConfig {
 
 // Import types from OverflowHandlingEditor for state persistence
 import type { TemplateEditorState } from './OverflowHandlingEditor';
+import type { UserGroupExpansionEditorState } from './UserGroupExpansionEditor';
 
 // Export state types for this editor
 export interface ExpertRoutingBranchState {
@@ -250,17 +252,25 @@ export interface ExpertRoutingEditorState {
   scenarioId?: string;
 }
 
+// Context variable type passed from parent
+export interface ContextVariable {
+  id: string;
+  label: string;
+  description: string;
+}
+
 interface TemplateBasedEditorProps {
   scenarioName?: string;
   initialRequirement?: string;
   scenarioId?: string;
-  initialState?: TemplateEditorState | ExpertRoutingEditorState;
+  initialState?: TemplateEditorState | ExpertRoutingEditorState | UserGroupExpansionEditorState;
   onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
   onPolicyConfigChange?: (config: PolicyConfig) => void;
-  onStateChange?: (state: TemplateEditorState | ExpertRoutingEditorState, prompt: string) => void;
+  onStateChange?: (state: TemplateEditorState | ExpertRoutingEditorState | UserGroupExpansionEditorState, prompt: string) => void;
   isPublicPreview?: boolean;
   triggerValidation?: boolean;
   onValidationResult?: (hasErrors: boolean, errors: { message: string }[]) => void;
+  contextVariables?: ContextVariable[];
 }
 
 // ============================================
@@ -276,7 +286,8 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   onStateChange,
   isPublicPreview = false,
   triggerValidation = false,
-  onValidationResult
+  onValidationResult,
+  contextVariables = []
 }) => {
   // Check if this is a ring expansion scenario
   const isRingExpansionScenario = scenarioId === 'ring-expansion-restricted' || scenarioId === 'ring-expansion-open';
@@ -290,6 +301,9 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   // Check if this is a priority escalation scenario
   const isPriorityEscalationScenario = scenarioId === 'wait-time-escalation' ||
     scenarioId === 'queue-transfer-escalation';
+
+  // Check if this is a user group expansion scenario
+  const isUserGroupExpansionScenario = scenarioId === 'user-group-expansion';
 
   // If ring expansion scenario, render the specialized editor
   if (isRingExpansionScenario) {
@@ -316,6 +330,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         isPublicPreview={isPublicPreview}
         triggerValidation={triggerValidation}
         onValidationResult={onValidationResult}
+        contextVariables={contextVariables}
       />
     );
   }
@@ -330,6 +345,23 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         onPromptGenerated={onPromptGenerated}
         onStateChange={onStateChange as any}
         isPublicPreview={isPublicPreview}
+        triggerValidation={triggerValidation}
+        onValidationResult={onValidationResult}
+        contextVariables={contextVariables}
+      />
+    );
+  }
+
+  // If user group expansion scenario, render the user group expansion editor
+  if (isUserGroupExpansionScenario) {
+    return (
+      <UserGroupExpansionEditor
+        scenarioId={scenarioId}
+        initialRequirement={initialRequirement}
+        contextVariables={contextVariables}
+        initialState={initialState as any}
+        onPromptGenerated={onPromptGenerated}
+        onStateChange={onStateChange as any}
         triggerValidation={triggerValidation}
         onValidationResult={onValidationResult}
       />
@@ -730,7 +762,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
               <path d="M6 4l4 4-4 4" />
             </svg>
           </span>
-          <span className="tips-title">Tips for this policy</span>
+          <span className="tips-title">Tips for this scenario</span>
         </div>
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
@@ -947,9 +979,9 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
           </div>
         )}
 
-        {/* Generated Playbook Preview */}
+        {/* Playbook Preview */}
         <div className="generated-policy-section">
-          <h4 className="generated-policy-title">Generated Playbook</h4>
+          <h4 className="generated-policy-title">Playbook preview</h4>
           <pre className="generated-policy-text">{generateFinalPrompt()}</pre>
         </div>
       </div>
@@ -973,7 +1005,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         {isVariablesSectionOpen && (
           <div className="variables-accordion-content">
             <p className="variables-desc">
-              Add variables to create conditional routing rules for specific customers or conversations.
+              Add context variables to create conditional logic in your playbook by specifying different actions for different variable values. Ensure that the context variables you use are populated for the workstream associated with your selected queues. Currently 2 context variables are supported.
             </p>
 
             <div className="variables-grid-inline">

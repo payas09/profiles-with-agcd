@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getUserGroupById, saveUserGroup } from '../lib/userGroupStorage';
 import { MOCK_USERS, MOCK_QUEUES } from '../lib/userGroupMockData';
-import { getEligibleUsers, EXAMPLE_CRITERIA } from '../lib/userGroupEligibility';
-import type { UserGroup, UserGroupType } from '../lib/userGroupTypes';
+import type { UserGroup } from '../lib/userGroupTypes';
 import UserFilterSidecar, { Filters } from './UserFilterSidecar';
 import QueueSelectionSidecar from './QueueSelectionSidecar';
 import './UserGroupEdit.css';
@@ -25,13 +24,6 @@ const UserGroupEdit: React.FC = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
-  // Group type
-  const [groupType, setGroupType] = useState<UserGroupType>('static');
-
-  // Dynamic group fields
-  const [criteria, setCriteria] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
-
   // Static group fields - filters and selection
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -50,22 +42,21 @@ const UserGroupEdit: React.FC = () => {
   const [_hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [originalGroup, setOriginalGroup] = useState<UserGroup | null>(null);
 
+  // Success banner state
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  // Track the saved group ID (for new groups, this gets set after first save)
+  const [savedGroupId, setSavedGroupId] = useState<string | null>(isNew ? null : id || null);
+
   useEffect(() => {
     if (!isNew && id) {
       const group = getUserGroupById(id);
       if (group) {
         setName(group.name);
         setDescription(group.description);
-        setGroupType(group.type || 'dynamic');
         setAssociatedQueueIds(group.associatedQueueIds);
         setOriginalGroup(group);
-
-        if (group.type === 'dynamic' || !group.type) {
-          setCriteria(group.eligibilityCriteria || '');
-          setShowPreview(true);
-        } else {
-          setSelectedUserIds(group.memberUserIds || []);
-        }
+        setSelectedUserIds(group.memberUserIds || []);
       }
     }
   }, [id, isNew]);
@@ -75,21 +66,18 @@ const UserGroupEdit: React.FC = () => {
       const changed =
         name !== originalGroup.name ||
         description !== originalGroup.description ||
-        groupType !== (originalGroup.type || 'dynamic') ||
-        (groupType === 'dynamic' && criteria !== originalGroup.eligibilityCriteria) ||
-        (groupType === 'static' && JSON.stringify(selectedUserIds) !== JSON.stringify(originalGroup.memberUserIds || [])) ||
+        JSON.stringify(selectedUserIds) !== JSON.stringify(originalGroup.memberUserIds || []) ||
         JSON.stringify(associatedQueueIds) !== JSON.stringify(originalGroup.associatedQueueIds);
       setHasUnsavedChanges(changed);
     } else if (isNew) {
       setHasUnsavedChanges(
         name.trim() !== '' ||
         description.trim() !== '' ||
-        (groupType === 'dynamic' && criteria.trim() !== '') ||
-        (groupType === 'static' && selectedUserIds.length > 0) ||
+        selectedUserIds.length > 0 ||
         associatedQueueIds.length > 0
       );
     }
-  }, [name, description, groupType, criteria, selectedUserIds, associatedQueueIds, originalGroup, isNew]);
+  }, [name, description, selectedUserIds, associatedQueueIds, originalGroup, isNew]);
 
   const hasActiveFilters = Object.values(filters).some(arr => arr.length > 0);
 
@@ -156,14 +144,8 @@ const UserGroupEdit: React.FC = () => {
     setCurrentPage(1);
   }, [filters, nameSearch]);
 
-  // Eligible users for dynamic groups
-  const eligibleUsers = useMemo(() => {
-    if (!criteria) return [];
-    return getEligibleUsers(MOCK_USERS, criteria);
-  }, [criteria]);
-
   // Selected users objects (for display in "Group members" section)
-  const selectedUsers = useMemo(() => {
+  const _selectedUsers = useMemo(() => {
     return MOCK_USERS.filter(user => selectedUserIds.includes(user.id));
   }, [selectedUserIds]);
 
@@ -177,34 +159,47 @@ const UserGroupEdit: React.FC = () => {
 
   const handleSave = () => {
     if (!name.trim()) return;
-    if (groupType === 'dynamic' && !criteria.trim()) return;
-    if (groupType === 'static' && selectedUserIds.length === 0) return;
+    if (selectedUserIds.length === 0) return;
 
+    // Determine if this is a new group being created
+    const isCreating = savedGroupId === null;
+    const groupId = isCreating ? Date.now().toString() : (savedGroupId || id || Date.now().toString());
+
+    // V1: Always save as static group
     const group: UserGroup = {
-      id: isNew ? Date.now().toString() : (id || Date.now().toString()),
+      id: groupId,
       name,
       description,
-      type: groupType,
+      type: 'static',
+      memberUserIds: selectedUserIds,
       associatedQueueIds,
       lastUpdated: new Date().toISOString()
     };
 
-    if (groupType === 'dynamic') {
-      group.eligibilityCriteria = criteria;
-    } else {
-      group.memberUserIds = selectedUserIds;
+    saveUserGroup(group);
+
+    // Update the saved group ID for subsequent saves
+    if (isCreating) {
+      setSavedGroupId(groupId);
+      // Update URL to reflect we're now editing an existing group (without navigation)
+      window.history.replaceState({}, '', `/profiles-with-agcd/user-group/${groupId}`);
     }
 
-    saveUserGroup(group);
-    navigate('/user-groups');
+    // Update original group for change tracking
+    setOriginalGroup(group);
+
+    // Show success banner
+    setSuccessMessage(isCreating ? 'User group created' : 'User group saved');
+    setShowSuccessBanner(true);
+
+    // Auto-hide banner after 5 seconds
+    setTimeout(() => {
+      setShowSuccessBanner(false);
+    }, 5000);
   };
 
   const handleBack = () => {
     navigate('/user-groups');
-  };
-
-  const handlePreview = () => {
-    setShowPreview(true);
   };
 
   const handleRemoveQueue = (queueId: string) => {
@@ -221,7 +216,7 @@ const UserGroupEdit: React.FC = () => {
     setFilters(newFilters);
   };
 
-  const clearFilters = () => {
+  const _clearFilters = () => {
     setFilters(emptyFilters);
   };
 
@@ -254,7 +249,7 @@ const UserGroupEdit: React.FC = () => {
     setSelectedUserIds(prev => [...new Set([...prev, ...allMatchingIds])]);
   };
 
-  const handleRemoveUser = (userId: string) => {
+  const _handleRemoveUser = (userId: string) => {
     setSelectedUserIds(prev => prev.filter(id => id !== userId));
   };
 
@@ -271,15 +266,31 @@ const UserGroupEdit: React.FC = () => {
     filteredUsers.every(user => selectedUserIds.includes(user.id));
 
   // Count how many on current page are selected
-  const selectedOnPageCount = paginatedUsers.filter(u => selectedUserIds.includes(u.id)).length;
+  const _selectedOnPageCount = paginatedUsers.filter(u => selectedUserIds.includes(u.id)).length;
 
-  const canSave = name.trim() && (
-    (groupType === 'dynamic' && criteria.trim()) ||
-    (groupType === 'static' && selectedUserIds.length > 0)
-  );
+  // V1: Only static groups, so just need name and at least one user
+  const canSave = name.trim() && selectedUserIds.length > 0;
 
   return (
     <main className="main-content user-group-edit-page">
+      {/* Success Banner */}
+      {showSuccessBanner && (
+        <div className="success-banner">
+          <div className="success-banner-content">
+            <svg className="success-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="#107c10" strokeWidth="2" />
+              <path d="M6 10l3 3 5-6" stroke="#107c10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="success-message">{successMessage}</span>
+          </div>
+          <button className="success-banner-close" onClick={() => setShowSuccessBanner(false)}>
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="toolbar">
         <div className="toolbar-left">
@@ -295,7 +306,7 @@ const UserGroupEdit: React.FC = () => {
         <div className="breadcrumb-nav">
           <Link to="/user-groups" className="breadcrumb-link">User groups</Link>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">{isNew ? 'New' : name}</span>
+          <span className="breadcrumb-current">{savedGroupId ? name || 'Edit' : 'New'}</span>
         </div>
         <div className="title-with-back">
           <button className="back-button" onClick={handleBack}>
@@ -303,54 +314,17 @@ const UserGroupEdit: React.FC = () => {
               <path d="M12.707 5.293a1 1 0 0 1 0 1.414L9.414 10l3.293 3.293a1 1 0 0 1-1.414 1.414l-4-4a1 1 0 0 1 0-1.414l4-4a1 1 0 0 1 1.414 0z" />
             </svg>
           </button>
-          <h1 className="page-title">{isNew ? 'New user group' : name}</h1>
+          <h1 className="page-title">{savedGroupId ? name || 'User group' : 'New user group'}</h1>
         </div>
-        {!isNew && description && (
+        {savedGroupId && description && (
           <p className="page-description">{description}</p>
         )}
       </div>
 
       {/* Form Content */}
       <div className="form-content">
-        {/* Group Type Selection Card */}
+        {/* Name and Description Card */}
         <div className="form-card">
-          <h2 className="card-title">Group type</h2>
-          <div className="group-type-options">
-            <label className="group-type-option">
-              <input
-                type="radio"
-                name="groupType"
-                value="static"
-                checked={groupType === 'static'}
-                onChange={() => setGroupType('static')}
-              />
-              <div className="group-type-content">
-                <span className="group-type-label">Static User Group</span>
-                <span className="group-type-description">Manually select specific users to add to this group</span>
-              </div>
-            </label>
-            <label className="group-type-option group-type-disabled">
-              <input
-                type="radio"
-                name="groupType"
-                value="dynamic"
-                checked={groupType === 'dynamic'}
-                disabled
-              />
-              <div className="group-type-content">
-                <span className="group-type-label">
-                  Dynamic User Group
-                  <span className="coming-soon-badge">Coming soon</span>
-                </span>
-                <span className="group-type-description">Automatically include users based on eligibility criteria</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        {/* Basic Details Card */}
-        <div className="form-card">
-          <h2 className="card-title">Basic details</h2>
           <div className="form-fields">
             <div className="form-field">
               <label htmlFor="name" className="field-label">
@@ -382,11 +356,8 @@ const UserGroupEdit: React.FC = () => {
           </div>
         </div>
 
-        {/* Static Group: Find and Select Users */}
-        {groupType === 'static' && (
-          <>
-            {/* Filter and User Selection Card */}
-            <div className="form-card">
+        {/* Find and Select Users */}
+        <div className="form-card">
               <div className="card-header-with-actions">
                 <div className="card-header-left">
                   <h2 className="card-title">Add users</h2>
@@ -589,135 +560,6 @@ const UserGroupEdit: React.FC = () => {
                 </>
               )}
             </div>
-          </>
-        )}
-
-        {/* Dynamic Group: Eligibility Criteria */}
-        {groupType === 'dynamic' && (
-          <>
-            <div className="form-card">
-              <h2 className="card-title">Eligibility criteria</h2>
-              <p className="card-description">
-                Define users' eligibility criteria using natural language. Supported attributes: Skills, Language, Region, Capacity profile, Intent.
-              </p>
-
-              <div className="form-fields">
-                <div className="form-field">
-                  <textarea
-                    id="criteria"
-                    className="field-textarea field-textarea-mono"
-                    value={criteria}
-                    onChange={(e) => setCriteria(e.target.value)}
-                    placeholder="Example: Users with Spanish or English language, Skills Gold tier or Platinum tier..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="example-criteria">
-                  <p className="example-label">Example criteria:</p>
-                  <div className="example-buttons">
-                    {EXAMPLE_CRITERIA.map((example, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCriteria(example)}
-                        className="example-button"
-                      >
-                        {example.length > 80 ? example.substring(0, 80) + '...' : example}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {criteria && (
-                  <button className="preview-button" onClick={handlePreview} disabled={!criteria.trim()}>
-                    Preview eligible users
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {showPreview && (
-              <div className="form-card">
-                <div className="card-header-with-badge">
-                  <h2 className="card-title">Eligible users</h2>
-                  <span className="count-badge">{eligibleUsers.length}</span>
-                </div>
-                <p className="eligible-users-subtext">
-                  This is only an indicative list of eligible users.
-                </p>
-
-                {eligibleUsers.length === 0 ? (
-                  <div className="empty-message">
-                    No eligible users found based on current eligibility criteria.
-                  </div>
-                ) : (
-                  <div className="users-table-container">
-                    <table className="users-table">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Skills</th>
-                          <th>Language</th>
-                          <th>Region</th>
-                          <th>Capacity Profile</th>
-                          <th>Intent</th>
-                          <th>Current Presence</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {eligibleUsers.map((user) => (
-                          <tr key={user.id}>
-                            <td className="user-name">{user.name}</td>
-                            <td>
-                              <div className="badge-list">
-                                {user.skills.map((skill) => (
-                                  <span key={skill} className="attribute-badge">{skill}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="badge-list">
-                                {user.language.map((lang) => (
-                                  <span key={lang} className="attribute-badge">{lang}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="badge-list">
-                                {user.region.map((reg) => (
-                                  <span key={reg} className="attribute-badge">{reg}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="badge-list">
-                                {user.capacityProfile.map((cap) => (
-                                  <span key={cap} className="attribute-badge">{cap}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="badge-list">
-                                {user.intent.map((int) => (
-                                  <span key={int} className="attribute-badge">{int}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <span className={`presence-badge ${user.presence === 'Available' ? 'presence-available' : 'presence-busy'}`}>
-                                {user.presence}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
 
         {/* Associated Queues Card */}
         <div className="form-card">

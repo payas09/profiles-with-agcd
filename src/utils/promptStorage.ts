@@ -37,6 +37,29 @@ export interface TemplateState {
   scenarioId?: string;
 }
 
+// User Group Expansion state for restoration
+export interface UserGroupExpansionState {
+  branches: {
+    id: string;
+    initialUserGroups: string[];
+    expansionRules: {
+      id: string;
+      waitTimeValue: string;
+      waitTimeUnit: 'seconds' | 'minutes';
+      userGroupIds: string[];
+      waitTimeSeconds?: number; // Legacy field for backwards compatibility
+    }[];
+    variableConditions?: { variableId: string; variableLabel: string; value: string }[];
+  }[];
+  fallbackAction: 'assign-any' | 'keep-retrying';
+  fallbackTimeValue?: number;
+  fallbackTimeUnit?: 'seconds' | 'minutes';
+  scenarioId?: string;
+}
+
+// Union type for all possible editor states
+export type EditorState = TemplateState | UserGroupExpansionState | Record<string, any>;
+
 export type ChannelType = 'Voice' | 'Messaging';
 
 export interface PromptData {
@@ -51,7 +74,7 @@ export interface PromptData {
   type: string;
   createdAt?: number; // Timestamp for when the playbook was first created
   updatedAt?: number; // Timestamp for when the playbook was last saved (for sorting and "New" tag)
-  templateState?: TemplateState; // Stores the template editor state for restoration
+  templateState?: EditorState; // Stores the template editor state for restoration (supports multiple editor types)
   scenarioId?: string; // The scenario/template type used (e.g., 'overflow-conditions-actions')
   selectedQueue?: string; // Selected queue for public preview flow
   isPublicPreview?: boolean; // True if created in "Agentic routing public preview" flow

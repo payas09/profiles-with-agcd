@@ -15,7 +15,7 @@ const QueueSelectionSidecar: React.FC<QueueSelectionSidecarProps> = ({
   onClose,
   onSave,
   availableQueues,
-  currentlyAssociatedIds
+  currentlyAssociatedIds: _currentlyAssociatedIds
 }) => {
   const [selectedQueueIds, setSelectedQueueIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

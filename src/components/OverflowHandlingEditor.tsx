@@ -7,7 +7,7 @@
  * This editor follows the standard template structure documented in the guide.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './TemplateBasedEditor.css';
 
 // Queue data for transfer action
@@ -261,6 +261,13 @@ export interface TemplateEditorState {
   scenarioId?: string;
 }
 
+// Context variable type passed from parent
+interface ParentContextVariable {
+  id: string;
+  label: string;
+  description: string;
+}
+
 interface OverflowHandlingEditorProps {
   scenarioId: string;
   initialRequirement?: string;
@@ -270,6 +277,7 @@ interface OverflowHandlingEditorProps {
   isPublicPreview?: boolean; // When true, shows static condition instead of dropdown
   triggerValidation?: boolean; // When true, run validation
   onValidationResult?: (hasErrors: boolean, errors: { message: string }[]) => void; // Callback with validation result
+  contextVariables?: ParentContextVariable[]; // Variables from parent Add Variables section
 }
 
 // Multi-Select Dropdown Component for variable values
@@ -409,6 +417,21 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
   hasError = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [flipUp, setFlipUp] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Check if dropdown should flip upward based on viewport position
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const dropdownHeight = 300; // Approximate dropdown height
+
+      // If not enough space below, flip upward
+      setFlipUp(spaceBelow < dropdownHeight && rect.top > dropdownHeight);
+    }
+  }, [isOpen]);
 
   const toggleCondition = (conditionId: string) => {
     if (selectedIds.includes(conditionId)) {
@@ -514,7 +537,7 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
   };
 
   return (
-    <div className="overflow-condition-multiselect">
+    <div className="overflow-condition-multiselect" ref={containerRef}>
       <div
         className={`overflow-condition-box ${hasError ? 'has-error' : ''} ${selectedIds.length > 0 ? 'has-selection' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
@@ -527,7 +550,7 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
       {isOpen && (
         <>
           <div className="overflow-condition-backdrop" onClick={() => setIsOpen(false)} />
-          <div className="overflow-condition-menu">
+          <div className={`overflow-condition-menu ${flipUp ? 'flip-up' : ''}`}>
             <div className="condition-mode-toggle-row">
               <button
                 type="button"
@@ -1597,9 +1620,9 @@ For all other customers where no agents are available, offer direct callback.`
           </div>
         )}
 
-        {/* Generated Playbook Preview */}
+        {/* Playbook Preview */}
         <div className="generated-policy-section">
-          <h4 className="generated-policy-title">Generated Playbook</h4>
+          <h4 className="generated-policy-title">Playbook preview</h4>
           <pre className="generated-policy-text">{generateFinalPrompt()}</pre>
         </div>
       </div>
@@ -1623,7 +1646,7 @@ For all other customers where no agents are available, offer direct callback.`
         {isVariablesSectionOpen && (
           <div className="variables-accordion-content">
             <p className="variables-desc">
-              Add variables to create conditional overflow rules based on customer or conversation attributes.
+              Add context variables to create conditional logic in your playbook by specifying different actions for different variable values. Ensure that the context variables you use are populated for the workstream associated with your selected queues. Currently 2 context variables are supported.
             </p>
 
             <div className="variables-grid">

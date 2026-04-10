@@ -98,6 +98,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>User groups</span>
           </Link>
+          <Link to="/user-groups-dynamic" className="nav-item">
+            <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="6" cy="5" r="2" />
+              <circle cx="10" cy="5" r="2" />
+              <path d="M2 12c0-2 1.5-3 4-3s4 1 4 3" />
+              <path d="M6 12c0-2 1.5-3 4-3s4 1 4 3" />
+              <path d="M12 2v3M10.5 3.5h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <span>Dynamic user groups</span>
+          </Link>
           <Link to="/queues" className="nav-item">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
@@ -117,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <circle cx="8" cy="6" r="1" fill="currentColor"/>
               <path d="M6 10l2 2 2-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>Agentic routing</span>
+            <span>Conversation orchestration</span>
           </Link>
           <Link to="/agcd-preview" className={`nav-item ${isAgcdPreviewActive ? 'active' : ''}`} title="Agentic routing public preview">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

@@ -374,10 +374,18 @@
   cursor: not-allowed;
 }
 
+.prompts-section-desc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+}
+
 .prompts-section-desc {
   font-size: 14px;
   color: #605e5c;
-  margin: 4px 0 0 0;
+  margin: 0;
   font-family: 'Segoe UI', sans-serif;
 }
 
@@ -670,10 +678,10 @@
   width: 200px;
 }
 
-/* Top Controls - Filter Buttons and Search */
+/* Top Controls - Search */
 .gallery-top-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 16px;
   gap: 16px;

@@ -16,6 +16,8 @@ import Queues from './components/Queues';
 import QueueEdit from './components/QueueEdit';
 import UserGroups from './components/UserGroups';
 import UserGroupEdit from './components/UserGroupEdit';
+import UserGroupsDynamic from './components/UserGroupsDynamic';
+import UserGroupEditDynamic from './components/UserGroupEditDynamic';
 import AgCDHome from './components/AgCDHome';
 import AgCDHomeConversational from './components/AgCDHomeConversational';
 import AgCDPromptEdit from './components/AgCDPromptEdit';
@@ -73,6 +75,8 @@ const App: React.FC = () => {
           <Route path="/queue/:id" element={<QueueEdit />} />
           <Route path="/user-groups" element={<UserGroups />} />
           <Route path="/user-group/:id" element={<UserGroupEdit />} />
+          <Route path="/user-groups-dynamic" element={<UserGroupsDynamic />} />
+          <Route path="/user-group-dynamic/:id" element={<UserGroupEditDynamic />} />
           <Route path="/channel/:id" element={<ChannelEdit />} />
           <Route path="/voice-channel/:id" element={<VoiceChannelEdit />} />
           <Route path="/conversation-flow/:id" element={<ConversationFlowEdit />} />

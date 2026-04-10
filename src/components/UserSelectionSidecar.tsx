@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { MOCK_USERS } from '../lib/userGroupMockData';
 import { FLAT_FILTER_OPTIONS, HIERARCHICAL_FILTERS, TreeNode } from '../lib/userGroupTypes';
-import type { UserProfile } from '../lib/userGroupTypes';
 import './UserSelectionSidecar.css';
 
 interface UserSelectionSidecarProps {
@@ -172,7 +171,7 @@ const UserSelectionSidecar: React.FC<UserSelectionSidecarProps> = ({
   const renderTreeNode = (node: TreeNode, filterKey: keyof Filters, depth: number = 0) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedNodes.has(node.id);
-    const isLeaf = !hasChildren;
+    const _isLeaf = !hasChildren;
     const isSelected = filters[filterKey].includes(node.id);
 
     return (
@@ -317,7 +316,7 @@ const UserSelectionSidecar: React.FC<UserSelectionSidecarProps> = ({
             {hasActiveFilters && (
               <div className="sidecar-active-filters">
                 {Object.entries(filters).map(([key, values]) =>
-                  values.map(value => (
+                  values.map((value: string) => (
                     <span key={`${key}-${value}`} className="sidecar-filter-chip">
                       {value}
                       <button onClick={() => handleFilterChange(key as keyof Filters, value)}>

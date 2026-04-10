@@ -99,18 +99,10 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
       category: 'Assign personal callbacks'
     },
     {
-      id: 'ring-expansion-restricted',
-      title: 'Ring expansion with restricted fallback',
-      description: 'Expand assignment progressively based on wait time, but restrict to defined user groups only.',
-      category: 'Ring expansion',
-      tags: ['Based on wait time']
-    },
-    {
-      id: 'ring-expansion-open',
-      title: 'Ring expansion with open fallback',
-      description: 'Expand assignment progressively based on wait time, with final fallback to any queue member.',
-      category: 'Ring expansion',
-      tags: ['Based on wait time']
+      id: 'user-group-expansion',
+      title: 'Assign to expert using User group expansion',
+      description: 'Assign conversations to specific user groups first, then progressively expand to additional groups if the conversation remains unassigned.',
+      category: 'Assignment using User group expansion'
     }
   ]
 };
@@ -122,7 +114,11 @@ const AgCDHome: React.FC = () => {
   const [galleryFilterTab, setGalleryFilterTab] = useState<'orchestration' | 'assignment'>('orchestration');
   const [selectedScenario, setSelectedScenario] = useState<string>('');
   const [gallerySearchQuery, setGallerySearchQuery] = useState<string>('');
-  const [isOrchestrationEnabled, setIsOrchestrationEnabled] = useState(false);
+  const [isOrchestrationEnabled, setIsOrchestrationEnabled] = useState(() => {
+    // Initialize from localStorage to persist state across navigation
+    const saved = localStorage.getItem('agcd-orchestration-enabled');
+    return saved === 'true';
+  });
   const [showToggleConfirmModal, setShowToggleConfirmModal] = useState(false);
   const [pendingToggleState, setPendingToggleState] = useState<boolean | null>(null);
 
@@ -174,16 +170,16 @@ const AgCDHome: React.FC = () => {
     setSelectedScenario(scenario);
   };
 
-  // Get unique scenarios for the current filter tab
+  // Get unique scenarios from all cards (orchestration + assignment)
   const getCurrentScenarios = () => {
-    const cards = promptGalleryCards[galleryFilterTab];
-    const scenarios = [...new Set(cards.map(card => card.category))];
+    const allCards = [...promptGalleryCards.orchestration, ...promptGalleryCards.assignment];
+    const scenarios = [...new Set(allCards.map(card => card.category))];
     return scenarios;
   };
 
-  // Filter cards based on selections and search
+  // Filter cards based on selections and search (from all cards)
   const getFilteredCards = () => {
-    let cards = promptGalleryCards[galleryFilterTab];
+    let cards = [...promptGalleryCards.orchestration, ...promptGalleryCards.assignment];
 
     // Filter by scenario
     if (selectedScenario) {
@@ -217,6 +213,8 @@ const AgCDHome: React.FC = () => {
   const handleConfirmToggle = () => {
     if (pendingToggleState !== null) {
       setIsOrchestrationEnabled(pendingToggleState);
+      // Save to localStorage to persist state across navigation
+      localStorage.setItem('agcd-orchestration-enabled', String(pendingToggleState));
     }
     setShowToggleConfirmModal(false);
     setPendingToggleState(null);
@@ -263,7 +261,7 @@ const AgCDHome: React.FC = () => {
           <span className="badge-gen-ai">Gen AI</span>
         </div>
         <p className="agcd-subtitle">
-          Conversation orchestration is an AI-powered capability that manages the entire conversation lifecycle by continuously evaluating triggers and applying business logic in real time. AI generated content may be inaccurate.
+          Conversation orchestration is an AI-powered capability that manages the entire conversation lifecycle by continuously evaluating triggers and applying business logic in real time. AI generated content may be inaccurate. <a href="#" className="learn-more-link">Learn more</a>
         </p>
       </div>
 
@@ -319,19 +317,19 @@ const AgCDHome: React.FC = () => {
       <div className="agcd-prompts-section">
         <div className="prompts-section-header">
           <h2 className="section-title-medium">Get started with prompt templates</h2>
-          <p className="prompts-section-desc">Here are a few prompt templates to get started. You can also open the Prompt Gallery for more options.</p>
-        </div>
-        <div className="prompts-section-actions">
-          <button
-            className={`prompt-gallery-button ${!isOrchestrationEnabled ? 'disabled' : ''}`}
-            onClick={isOrchestrationEnabled ? handleOpenGallery : undefined}
-            disabled={!isOrchestrationEnabled}
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M4 3a2 2 0 0 0-2 2v3.5a.5.5 0 0 0 1 0V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 1 0V5a2 2 0 0 0-2-2H4zm0 8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4zm-1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"/>
-            </svg>
-            Prompt gallery
-          </button>
+          <div className="prompts-section-desc-row">
+            <p className="prompts-section-desc">Here are a few prompt templates to get started. You can also open the Prompt Gallery for more options.</p>
+            <button
+              className={`prompt-gallery-button ${!isOrchestrationEnabled ? 'disabled' : ''}`}
+              onClick={isOrchestrationEnabled ? handleOpenGallery : undefined}
+              disabled={!isOrchestrationEnabled}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4 3a2 2 0 0 0-2 2v3.5a.5.5 0 0 0 1 0V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 1 0V5a2 2 0 0 0-2-2H4zm0 8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4zm-1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"/>
+              </svg>
+              Prompt gallery
+            </button>
+          </div>
         </div>
 
         <div className={`prompts-card-grid ${!isOrchestrationEnabled ? 'disabled' : ''}`}>
@@ -407,7 +405,7 @@ const AgCDHome: React.FC = () => {
           <div className="gallery-modal-overlay" onClick={handleCloseGallery}></div>
           <div className="gallery-modal">
             <div className="gallery-modal-header">
-              <h2 className="gallery-modal-title">Template Gallery</h2>
+              <h2 className="gallery-modal-title">Prompt gallery</h2>
               <button className="gallery-modal-close" onClick={handleCloseGallery}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -416,24 +414,8 @@ const AgCDHome: React.FC = () => {
             </div>
 
             <div className="gallery-modal-content">
-              {/* Filter Buttons and Search Row */}
+              {/* Search Row */}
               <div className="gallery-top-controls">
-                {/* Filter Buttons */}
-                <div className="gallery-filter-buttons">
-                  <button
-                    className={`gallery-filter-btn ${galleryFilterTab === 'orchestration' ? 'active' : ''}`}
-                    onClick={() => handleGalleryFilterChange('orchestration')}
-                  >
-                    Conversation flow
-                  </button>
-                  <button
-                    className={`gallery-filter-btn ${galleryFilterTab === 'assignment' ? 'active' : ''}`}
-                    onClick={() => handleGalleryFilterChange('assignment')}
-                  >
-                    User assignment
-                  </button>
-                </div>
-
                 {/* Search Box */}
                 <div className="gallery-search-wrapper">
                   <svg className="gallery-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

@@ -128,6 +128,15 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
+.playbook-page-desc .learn-more-link {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.playbook-page-desc .learn-more-link:hover {
+  text-decoration: underline;
+}
+
 /* Filters Card */
 .filters-card {
   background-color: white;
@@ -909,4 +918,205 @@
 
 .btn-danger-action:hover {
   background-color: #a4262c;
+}
+
+/* Top Row - Breadcrumb and Tab Switcher */
+.agcd-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.agcd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.agcd-breadcrumb .breadcrumb-item {
+  color: #605e5c;
+}
+
+.agcd-breadcrumb .breadcrumb-item.current {
+  color: #242424;
+  font-weight: 500;
+}
+
+.agcd-breadcrumb .breadcrumb-separator {
+  color: #a19f9d;
+  margin: 0 4px;
+}
+
+/* Gen AI Badge */
+.badge-gen-ai {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Queues Column Styles */
+.queues-display-cell {
+  vertical-align: middle;
+}
+
+.queues-display-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.queues-expanded-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.queue-tag-item {
+  background-color: #e1f5fe;
+  color: #0078d4;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-display-text-small {
+  font-size: 13px;
+  color: #605e5c;
+  font-family: 'Segoe UI', sans-serif;
+  font-style: italic;
+}
+
+.queue-more-count,
+.queue-toggle-btn {
+  font-size: 12px;
+  color: #0078d4;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.queue-more-count:hover,
+.queue-toggle-btn:hover {
+  color: #106ebe;
+}
+
+.no-queue-text {
+  color: #a19f9d;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Channels Column Styles */
+.channels-display-cell {
+  vertical-align: middle;
+}
+
+.channels-display-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.channels-expanded-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.channel-tag-item {
+  background-color: #f3e8ff;
+  color: #6441a5;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-more-count,
+.channel-toggle-btn {
+  font-size: 12px;
+  color: #0078d4;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.channel-more-count:hover,
+.channel-toggle-btn:hover {
+  color: #106ebe;
+}
+
+/* Update column widths for 7 columns */
+.playbooks-data-table th:nth-child(1),
+.playbooks-data-table td:nth-child(1) {
+  width: 25%;
+  min-width: 180px;
+}
+
+.playbooks-data-table th:nth-child(2),
+.playbooks-data-table td:nth-child(2) {
+  width: 18%;
+  min-width: 150px;
+}
+
+.playbooks-data-table th:nth-child(3),
+.playbooks-data-table td:nth-child(3) {
+  width: 8%;
+  min-width: 70px;
+}
+
+.playbooks-data-table th:nth-child(4),
+.playbooks-data-table td:nth-child(4) {
+  width: 14%;
+  min-width: 120px;
+}
+
+.playbooks-data-table th:nth-child(5),
+.playbooks-data-table td:nth-child(5) {
+  width: 12%;
+  min-width: 100px;
+}
+
+.playbooks-data-table th:nth-child(6),
+.playbooks-data-table td:nth-child(6) {
+  width: 12%;
+  min-width: 100px;
+}
+
+.playbooks-data-table th:nth-child(7),
+.playbooks-data-table td:nth-child(7) {
+  width: 6%;
+  min-width: 50px;
+  text-align: center;
 }

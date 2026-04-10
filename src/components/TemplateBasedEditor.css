@@ -527,6 +527,12 @@
   padding-right: 16px;
 }
 
+/* Fallback Action Dropdown - Wider for longer text */
+.template-dropdown.fallback-action-dropdown {
+  min-width: 280px;
+  padding-right: 24px;
+}
+
 /* Multi-Select Dropdown */
 .multi-select-dropdown {
   display: inline-block;
@@ -1325,8 +1331,15 @@
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin-top: 4px;
-  max-height: 400px;
+  max-height: 280px;
   overflow-y: auto;
+}
+
+.overflow-condition-menu.flip-up {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
 }
 
 .condition-mode-toggle-row {
@@ -1487,6 +1500,46 @@
   background-color: #fef0f1;
   border-color: #d13438;
   color: #d13438;
+}
+
+.template-input.small {
+  min-width: 80px;
+  max-width: 120px;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+
+.template-input.time-input {
+  min-width: 50px;
+  max-width: 70px;
+  padding: 4px 6px;
+  text-align: center;
+  margin-right: 4px;
+}
+
+.template-input.time-input::-webkit-outer-spin-button,
+.template-input.time-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.template-input.time-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.time-unit-dropdown {
+  min-width: 80px;
+  padding: 4px 8px;
+  margin-right: 4px;
+}
+
+/* Indented template lines for nested rules */
+.template-line.indented {
+  padding-left: 24px;
+}
+
+.fallback-line.indented {
+  padding-left: 24px;
 }
 
 /* Variable value free text input */
@@ -1704,30 +1757,7 @@
   z-index: 999;
 }
 
-.overflow-condition-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 1000;
-  min-width: 350px;
-  max-width: 420px;
-  background: white;
-  border: 1px solid #e1dfdd;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-top: 4px;
-  max-height: 380px;
-  overflow-y: auto;
-}
-
 /* Mode toggle row in selector */
-.condition-mode-toggle-row {
-  display: flex;
-  padding: 8px;
-  border-bottom: 1px solid #e1dfdd;
-  background: #faf9f8;
-}
-
 .condition-mode-btn {
   flex: 1;
   padding: 6px 12px;
