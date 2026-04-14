@@ -1,0 +1,121 @@
+Prompt:
+Get the customer tier from ContextVariable.CustomerTier and the customer region from ContextVariable.Region.
+For customers where Customer Tier is Gold AND Customer Region is USA and no agents are available, transfer to another queue: overflow queue.
+For customers where Customer Tier is Silver AND Customer Region is France and no agents are available, offer scheduled callback.
+For customers where Customer Tier is Platinum AND Customer Region is UAE and no agents are available, transfer to external number: 1800548756.
+For customers where Customer Tier is Standand and no agents are available, send to voicemail.
+
+
+JSON:
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "triggers": {
+    "WaitingInQueue_Conversation": {
+      "type": "WaitingInQueue",
+      "kind": "Http"
+    }
+  },
+  "actions": {
+    "TransferToOverflowQueue_Gold_USA": {
+      "type": "TransferToQueue",
+      "inputs": {
+        "data": {
+          "targetQueue": "overflow queue"
+        }
+      },
+      "runAfter": {},
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "ContextVariable.CustomerTier",
+              "Gold"
+            ]
+          },
+          {
+            "equals": [
+              "ContextVariable.Region",
+              "USA"
+            ]
+          }
+        ]
+      }
+    },
+    "OfferScheduledCallback_Silver_France": {
+      "type": "OfferScheduledCallback",
+      "inputs": {
+        "data": {}
+      },
+      "runAfter": {
+        "TransferToOverflowQueue_Gold_USA": ["Skipped"]
+      },
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "ContextVariable.CustomerTier",
+              "Silver"
+            ]
+          },
+          {
+            "equals": [
+              "ContextVariable.Region",
+              "France"
+            ]
+          }
+        ]
+      }
+    },
+    "TransferToExternalNumber_Platinum_UAE": {
+      "type": "ExternalTransfer",
+      "inputs": {
+        "data": {
+          "phoneNumber": "1800548756"
+        }
+      },
+      "runAfter": {
+        "OfferScheduledCallback_Silver_France": ["Skipped"]
+      },
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "ContextVariable.CustomerTier",
+              "Platinum"
+            ]
+          },
+          {
+            "equals": [
+              "ContextVariable.Region",
+              "UAE"
+            ]
+          }
+        ]
+      }
+    },
+    "SendToVoicemail_Standand": {
+      "type": "OfferVoicemail",
+      "inputs": {
+        "data": {}
+      },
+      "runAfter": {
+        "TransferToExternalNumber_Platinum_UAE": ["Skipped"]
+      },
+      "expression": {
+        "equals": [
+          "ContextVariable.CustomerTier",
+          "Standand"
+        ]
+      }
+    }
+  },
+  "outputs": {
+    "ruleExecuted": {
+      "type": "string",
+      "value": "Queue transfer, callback, external transfer, and voicemail based on Customer Tier and Region when agent not available"
+    }
+  }
+}
+
+
