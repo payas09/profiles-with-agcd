@@ -819,6 +819,20 @@ const AgCDPromptEdit: React.FC = () => {
     };
   });
 
+  // Filter profiles by channel - only show queues matching the selected channel
+  const getFilteredProfilesWithQueues = (channel: ChannelType) => {
+    return engagementProfiles.map(profile => {
+      const queues = queueProfileMappings
+        .filter(mapping => mapping.profileId === profile.id && mapping.channel === channel)
+        .map(mapping => mapping.queueName);
+      return {
+        profileId: profile.id,
+        profileName: profile.name,
+        queues
+      };
+    }).filter(profile => profile.queues.length > 0); // Only include profiles with queues for this channel
+  };
+
   const handleAddProfile = () => {
     setTempSelectionMode(selectionMode);
     setTempSelectedProfiles(selectedProfiles.map(p => p.profileId));
@@ -836,9 +850,8 @@ const AgCDPromptEdit: React.FC = () => {
 
   const handleSaveProfiles = () => {
     setSelectionMode(tempSelectionMode);
-    if (useQueueSelection) {
-      setSelectedChannel(tempSelectedChannel);
-    }
+    // Always save the selected channel
+    setSelectedChannel(tempSelectedChannel);
 
     if (tempSelectionMode === 'all') {
       setSelectedProfiles([]);
@@ -859,10 +872,11 @@ const AgCDPromptEdit: React.FC = () => {
           .filter(Boolean) as { profileId: string; profileName: string; queues: string[] }[];
         setSelectedProfiles(newSelectedQueues);
       } else {
+        // For profile selection, save profiles with only queues matching the selected channel
         const newSelectedProfiles = tempSelectedProfiles.map(profileId => {
-          const profile = profilesWithQueues.find(p => p.profileId === profileId);
-          return profile!;
-        });
+          const filteredProfile = getFilteredProfilesWithQueues(tempSelectedChannel).find(p => p.profileId === profileId);
+          return filteredProfile!;
+        }).filter(Boolean);
         setSelectedProfiles(newSelectedProfiles);
       }
     }
@@ -1215,7 +1229,7 @@ const AgCDPromptEdit: React.FC = () => {
           <div className="agcd-tab-switcher">
             <button
               className="agcd-tab-button"
-              onClick={() => navigate(`${basePath}/prompt/overflow-conditions-actions`)}
+              onClick={() => navigate(basePath)}
             >
               New
             </button>
@@ -1229,7 +1243,7 @@ const AgCDPromptEdit: React.FC = () => {
         </div>
       </div>
 
-      {/* Playbook Name and Queues Row */}
+      {/* Playbook Name and Profiles/Queues Row */}
       {!inCopilotMode && (
         <div className="playbook-name-queues-row">
           <div className="playbook-name-section">
@@ -1244,41 +1258,61 @@ const AgCDPromptEdit: React.FC = () => {
           </div>
           <div className="queues-section">
             <div className="queues-header">
-              <span className="queues-label">Queues</span>
+              <span className="queues-label">{useQueueSelection ? 'Queues' : 'Engagement profiles'}</span>
               <button className="queues-edit-link" onClick={handleAddProfile}>Edit</button>
             </div>
             <div className="queues-display">
               {selectionMode === 'all' ? (
-                <span className="queue-tag-item">All {selectedChannel} queues</span>
+                <div className="queues-tags-wrapper">
+                  <span className={`queue-tag-item ${useQueueSelection ? '' : 'profile-tag-all'}`}>
+                    {useQueueSelection ? `All ${selectedChannel} queues` : `All ${selectedChannel} engagement profiles`}
+                  </span>
+                </div>
               ) : selectionMode === 'except' ? (
                 <div className="queues-tags-wrapper">
                   <span className="queues-except-label">All except:</span>
                   {selectedProfiles.slice(0, 3).map(profile => (
-                    <span key={profile.profileId} className="queue-tag-item">
-                      {profile.profileName}
-                    </span>
+                    useQueueSelection ? (
+                      <span key={profile.profileId} className="queue-tag-item">
+                        {profile.profileName}
+                      </span>
+                    ) : (
+                      <span key={profile.profileId} className="queue-tag-item profile-tag-two-line">
+                        <span className="profile-tag-name">{profile.profileName}</span>
+                        <span className="profile-tag-queues">{profile.queues.join(', ')}</span>
+                      </span>
+                    )
                   ))}
                   {selectedProfiles.length > 3 && (
-                    <span className="queues-more-count">+{selectedProfiles.length - 3} more</span>
+                    <span className="queues-more-count" onClick={handleAddProfile}>+{selectedProfiles.length - 3} more</span>
                   )}
                 </div>
               ) : selectedProfiles.length > 0 ? (
                 <div className="queues-tags-wrapper">
                   {selectedProfiles.slice(0, 3).map(profile => (
-                    <span key={profile.profileId} className="queue-tag-item">
-                      {profile.profileName}
-                    </span>
+                    useQueueSelection ? (
+                      <span key={profile.profileId} className="queue-tag-item">
+                        {profile.profileName}
+                      </span>
+                    ) : (
+                      <span key={profile.profileId} className="queue-tag-item profile-tag-two-line">
+                        <span className="profile-tag-name">{profile.profileName}</span>
+                        <span className="profile-tag-queues">{profile.queues.join(', ')}</span>
+                      </span>
+                    )
                   ))}
                   {selectedProfiles.length > 3 && (
-                    <span className="queues-more-count">+{selectedProfiles.length - 3} more</span>
+                    <span className="queues-more-count" onClick={handleAddProfile}>+{selectedProfiles.length - 3} more</span>
                   )}
                 </div>
               ) : (
-                <span className="queues-text-empty">No queues selected</span>
+                <div className="queues-tags-wrapper">
+                  <span className="queues-text-empty">{useQueueSelection ? 'No queues selected' : 'No profiles selected'}</span>
+                </div>
               )}
             </div>
             <div className="queues-count">
-              {selectionMode === 'list' && selectedProfiles.length > 0 ? `${selectedProfiles.length}/${queueProfileMappings.filter(q => q.channel === selectedChannel).length} selected` : ''}
+              {selectionMode === 'list' && selectedProfiles.length > 0 ? `${selectedProfiles.length}/${useQueueSelection ? queueProfileMappings.filter(q => q.channel === selectedChannel).length : getFilteredProfilesWithQueues(selectedChannel).length} selected` : ''}
             </div>
           </div>
         </div>
@@ -1638,37 +1672,36 @@ const AgCDPromptEdit: React.FC = () => {
                       : 'Select how you want to apply this playbook to engagement profiles.'
                     }
                   </p>
-                  {useQueueSelection && (
-                    <p className="side-panel-note">
-                      <strong>Note:</strong> Channel cannot be changed for published or active playbooks. If you change the channel on a draft playbook, ensure you re-select context variables and update the prompt as previous selections belong to the original channel and will become invalid.
-                    </p>
-                  )}
+                  <p className="side-panel-note">
+                    <strong>Note:</strong> {useQueueSelection
+                      ? 'Channel cannot be changed for published or active playbooks. If you change the channel on a draft playbook, ensure you re-select context variables and update the prompt as previous selections belong to the original channel and will become invalid.'
+                      : 'Select a channel to filter engagement profiles. Only queues associated with the selected channel will be displayed for each profile. If a profile has no queues for the selected channel, it will not appear in the list.'
+                    }
+                  </p>
 
-                  {/* Channel Selection - For queue selection scenarios */}
-                  {useQueueSelection && (
-                    <div className="channel-selection-group">
-                      <label className="channel-select-label">Channel</label>
-                      <select
-                        className={`channel-select-dropdown ${status === 'Active' ? 'channel-disabled' : ''}`}
-                        value={tempSelectedChannel}
-                        disabled={status === 'Active'}
-                        onChange={(e) => {
-                          setTempSelectedChannel(e.target.value as ChannelType);
-                          // Clear selected queues when channel changes
-                          setTempSelectedProfiles([]);
-                        }}
+                  {/* Channel Selection - For both queue and profile selection */}
+                  <div className="channel-selection-group">
+                    <label className="channel-select-label">Channel</label>
+                    <select
+                      className={`channel-select-dropdown ${status === 'Active' ? 'channel-disabled' : ''}`}
+                      value={tempSelectedChannel}
+                      disabled={status === 'Active'}
+                      onChange={(e) => {
+                        setTempSelectedChannel(e.target.value as ChannelType);
+                        // Clear selected items when channel changes
+                        setTempSelectedProfiles([]);
+                      }}
+                    >
+                      <option value="Voice">Voice</option>
+                      <option
+                        value="Messaging"
+                        disabled={status === 'Active' && tempSelectedChannel !== 'Messaging'}
+                        className={status === 'Active' && tempSelectedChannel !== 'Messaging' ? 'option-disabled' : ''}
                       >
-                        <option value="Voice">Voice</option>
-                        <option
-                          value="Messaging"
-                          disabled={status === 'Active' && tempSelectedChannel !== 'Messaging'}
-                          className={status === 'Active' && tempSelectedChannel !== 'Messaging' ? 'option-disabled' : ''}
-                        >
-                          Messaging
-                        </option>
-                      </select>
-                    </div>
-                  )}
+                        Messaging
+                      </option>
+                    </select>
+                  </div>
 
                   {/* Selection Mode Radio Buttons */}
                   <div className="selection-mode-group">
@@ -1739,39 +1772,47 @@ const AgCDPromptEdit: React.FC = () => {
                           </tbody>
                         </table>
                       ) : (
-                        /* Regular flow - Show Engagement Profiles with Queue Names */
+                        /* Regular flow - Show Engagement Profiles with Queue Names filtered by channel */
                         <table className="profiles-selection-table">
                           <thead>
                             <tr>
                               <th style={{ width: '40px' }}></th>
                               <th>Engagement Profile</th>
-                              <th>Queue Names</th>
+                              <th>{tempSelectedChannel} Queues</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {profilesWithQueues.map(profile => (
-                              <tr key={profile.profileId}>
-                                <td>
-                                  <input
-                                    type="checkbox"
-                                    checked={tempSelectedProfiles.includes(profile.profileId)}
-                                    onChange={() => handleProfileCheckbox(profile.profileId)}
-                                    className="profile-checkbox-input"
-                                  />
+                            {getFilteredProfilesWithQueues(tempSelectedChannel).length > 0 ? (
+                              getFilteredProfilesWithQueues(tempSelectedChannel).map(profile => (
+                                <tr key={profile.profileId}>
+                                  <td>
+                                    <input
+                                      type="checkbox"
+                                      checked={tempSelectedProfiles.includes(profile.profileId)}
+                                      onChange={() => handleProfileCheckbox(profile.profileId)}
+                                      className="profile-checkbox-input"
+                                    />
+                                  </td>
+                                  <td className="profile-name-cell">
+                                    <Link
+                                      to={`/engagement-profile/${profile.profileId}`}
+                                      className="profile-name-link"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {profile.profileName}
+                                    </Link>
+                                  </td>
+                                  <td className="queue-names-cell">{profile.queues.join(', ')}</td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={3} className="no-profiles-message">
+                                  No engagement profiles have {tempSelectedChannel} queues associated.
                                 </td>
-                                <td className="profile-name-cell">
-                                  <Link
-                                    to={`/engagement-profile/${profile.profileId}`}
-                                    className="profile-name-link"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    {profile.profileName}
-                                  </Link>
-                                </td>
-                                <td className="queue-names-cell">{profile.queues.join(', ')}</td>
                               </tr>
-                            ))}
+                            )}
                           </tbody>
                         </table>
                       )}

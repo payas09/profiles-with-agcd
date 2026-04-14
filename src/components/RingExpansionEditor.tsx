@@ -7,7 +7,7 @@
  * This editor follows the standard template structure documented in the guide.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TemplateBasedEditor.css';
 
 // User groups data
@@ -22,7 +22,8 @@ const userGroups = [
   { id: 'ug8', name: 'Account Management Team' },
 ];
 
-const contextVariables = [
+// Renamed to avoid confusion with contextVariables prop from parent
+const availableContextVariables = [
   { id: 'IsVIP', label: 'Is VIP Customer', values: ['True', 'False'] },
   { id: 'CustomerTier', label: 'Customer Tier', values: ['Gold', 'Silver', 'Bronze', 'Standard', 'Platinum', 'Diamond', 'Enterprise', 'SMB', 'Startup'] },
   { id: 'Language', label: 'Preferred Language', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese'] },
@@ -105,12 +106,20 @@ export interface RingExpansionEditorState {
   scenarioId?: string;
 }
 
+// Context variable type passed from parent
+interface ParentContextVariable {
+  id: string;
+  label: string;
+  description: string;
+}
+
 interface RingExpansionEditorProps {
   scenarioId: string;
   initialRequirement?: string;
   initialState?: RingExpansionEditorState;
   onPromptGenerated?: (prompt: string, config: PolicyConfig) => void;
   onStateChange?: (state: RingExpansionEditorState, prompt: string) => void;
+  contextVariables?: ParentContextVariable[]; // Variables from parent Add Variables section
 }
 
 // Multi-Select Dropdown Component (same as TemplateBasedEditor)
@@ -233,7 +242,8 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
   initialRequirement,
   initialState,
   onPromptGenerated: _onPromptGenerated,
-  onStateChange
+  onStateChange,
+  contextVariables: parentContextVariables = []
 }) => {
   const isRestrictedFallback = scenarioId === 'ring-expansion-restricted';
 
@@ -250,7 +260,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
   });
 
   // Helper to restore variables from state
-  const restoreVariablesFromState = (savedVars: SelectedVariableState[] | undefined, sourceVars: typeof contextVariables): SelectedVariable[] => {
+  const restoreVariablesFromState = (savedVars: SelectedVariableState[] | undefined, sourceVars: typeof availableContextVariables): SelectedVariable[] => {
     if (!savedVars || savedVars.length === 0) return [];
     return savedVars.map(sv => {
       const sourceVar = sourceVars.find(v => v.id === sv.id);
@@ -267,7 +277,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
   // Selected variables - initialize from initialState if provided
   const [selectedContextVars, setSelectedContextVars] = useState<SelectedVariable[]>(() => {
     if (initialState?.selectedContextVars) {
-      return restoreVariablesFromState(initialState.selectedContextVars, contextVariables);
+      return restoreVariablesFromState(initialState.selectedContextVars, availableContextVariables);
     }
     return [];
   });
@@ -302,13 +312,49 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<{ branchId: string; fieldId: string; message: string }[]>([]);
 
+  // Sync with parent context variables when they change (like UserGroupExpansionEditor)
+  useEffect(() => {
+    if (parentContextVariables && parentContextVariables.length > 0) {
+      setSelectedContextVars(prev => {
+        const newVars: SelectedVariable[] = [];
+
+        // Add all parent-provided context variables
+        parentContextVariables.forEach(parentVar => {
+          // Check if already exists in local state
+          const existing = prev.find(v => v.id === parentVar.id);
+          if (existing) {
+            // Keep existing with its current description and values
+            newVars.push(existing);
+          } else {
+            // Find the full variable data from availableContextVariables array
+            const localVar = availableContextVariables.find(v => v.id === parentVar.id);
+            newVars.push({
+              id: parentVar.id,
+              label: parentVar.label,
+              description: parentVar.description || '',
+              type: 'context',
+              values: localVar?.values || []
+            });
+          }
+        });
+
+        return newVars;
+      });
+      // Open variables section when variables are added from parent
+      setIsVariablesSectionOpen(true);
+    } else if (parentContextVariables && parentContextVariables.length === 0) {
+      // Clear context vars when parent sends empty array
+      setSelectedContextVars([]);
+    }
+  }, [parentContextVariables]);
+
   // Get all selected variables
   const allSelectedVariables: SelectedVariable[] = [...selectedContextVars, ...selectedLWIVars];
 
   // Add context variable
   const addContextVariable = (varId: string) => {
     if (!varId || selectedContextVars.find(v => v.id === varId)) return;
-    const variable = contextVariables.find(v => v.id === varId);
+    const variable = availableContextVariables.find(v => v.id === varId);
     if (variable) {
       setSelectedContextVars(prev => [...prev, {
         ...variable,
@@ -352,7 +398,7 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
     ));
   };
 
-  const availableContextVars = contextVariables.filter(
+  const availableContextVars = availableContextVariables.filter(
     v => !selectedContextVars.find(sv => sv.id === v.id)
   );
   const availableLWIVars = liveWorkItemVariables.filter(
@@ -702,9 +748,9 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
             const activeVariables = allSelectedVariables.filter(
               v => !(branch.disabledVariables || []).includes(v.id)
             );
-            const disabledVariables = allSelectedVariables.filter(
-              v => (branch.disabledVariables || []).includes(v.id)
-            );
+
+            // Track active variable index for "and" connector
+            let activeVarIndex = 0;
 
             return (
               <React.Fragment key={branch.id}>
@@ -713,31 +759,12 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
                   {activeVariables.length > 0 ? (
                     <>
                       For customers where{' '}
-                      {activeVariables.map((v, varIdx) => (
-                        <React.Fragment key={v.id}>
-                          {varIdx > 0 && ' and '}
-                          <span className="variable-condition">
-                            <button
-                              className="variable-toggle-btn"
-                              onClick={() => toggleVariableForBranch(branch.id, v.id)}
-                              title="Click to disable this variable for this branch"
-                            >×</button>
-                            {v.description || v.label}{' '}
-                            is{' '}
-                            <MultiSelectDropdown
-                              options={v.values}
-                              selected={branch.variableValues[v.id] || []}
-                              onChange={(values) => handleBranchValueChange(branch.id, v.id, values)}
-                              placeholder="choose"
-                              excludeMode={branch.variableExcludeMode?.[v.id] || false}
-                              onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
-                            />
-                          </span>
-                        </React.Fragment>
-                      ))}
-                      {disabledVariables.length > 0 && (
-                        <span className="disabled-variables">
-                          {disabledVariables.map(v => (
+                      {allSelectedVariables.map((v) => {
+                        const isDisabled = (branch.disabledVariables || []).includes(v.id);
+
+                        if (isDisabled) {
+                          // Render disabled variable chip in its original position
+                          return (
                             <button
                               key={v.id}
                               className="disabled-variable-chip"
@@ -746,9 +773,37 @@ const RingExpansionEditor: React.FC<RingExpansionEditorProps> = ({
                             >
                               + {v.description || v.label}
                             </button>
-                          ))}
-                        </span>
-                      )}
+                          );
+                        } else {
+                          // Render active variable with dropdown
+                          const currentActiveIndex = activeVarIndex;
+                          activeVarIndex++;
+                          return (
+                            <React.Fragment key={v.id}>
+                              {currentActiveIndex > 0 && ' and '}
+                              <span className="variable-condition">
+                                <span className="variable-name-tag">
+                                  {v.description || v.label}
+                                  <button
+                                    className="variable-remove-btn"
+                                    onClick={() => toggleVariableForBranch(branch.id, v.id)}
+                                    title="Click to remove this variable from this branch"
+                                  >×</button>
+                                </span>
+                                {' '}is{' '}
+                                <MultiSelectDropdown
+                                  options={v.values}
+                                  selected={branch.variableValues[v.id] || []}
+                                  onChange={(values) => handleBranchValueChange(branch.id, v.id, values)}
+                                  placeholder="choose"
+                                  excludeMode={branch.variableExcludeMode?.[v.id] || false}
+                                  onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
+                                />
+                              </span>
+                            </React.Fragment>
+                          );
+                        }
+                      })}
                       , assign to{' '}
                     </>
                   ) : (

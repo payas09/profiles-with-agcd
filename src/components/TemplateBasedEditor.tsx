@@ -314,6 +314,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         initialState={initialState as any}
         onPromptGenerated={onPromptGenerated}
         onStateChange={onStateChange as any}
+        contextVariables={contextVariables}
       />
     );
   }
@@ -808,9 +809,9 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
             const activeVariables = allSelectedVariables.filter(
               v => !(branch.disabledVariables || []).includes(v.id)
             );
-            const disabledVariables = allSelectedVariables.filter(
-              v => (branch.disabledVariables || []).includes(v.id)
-            );
+
+            // Track active variable index for "and" connector
+            let activeVarIndex = 0;
 
             return (
               <React.Fragment key={branch.id}>
@@ -819,37 +820,12 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                   {activeVariables.length > 0 ? (
                     <>
                       For customers where{' '}
-                      {activeVariables.map((v, varIdx) => (
-                        <React.Fragment key={v.id}>
-                          {varIdx > 0 && ' and '}
-                          <span className="variable-condition">
-                            <button
-                              className="variable-toggle-btn"
-                              onClick={() => toggleVariableForBranch(branch.id, v.id)}
-                              title="Click to disable this variable for this branch"
-                            >×</button>
-                            {v.description || v.label}{' '}
-                            is{' '}
-                            <MultiSelectDropdown
-                              options={v.values}
-                              selected={branch.variableValues[v.id] || []}
-                              onChange={(values) => {
-                                handleBranchValueChange(branch.id, v.id, values);
-                                if (values.length > 0) {
-                                  setValidationErrors(prev => prev.filter(e => !(e.branchId === branch.id && e.variableId === v.id)));
-                                }
-                              }}
-                              placeholder="choose"
-                              excludeMode={branch.variableExcludeMode?.[v.id] || false}
-                              onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
-                              hasError={hasError(branch.id, v.id)}
-                            />
-                          </span>
-                        </React.Fragment>
-                      ))}
-                      {disabledVariables.length > 0 && (
-                        <span className="disabled-variables">
-                          {disabledVariables.map(v => (
+                      {allSelectedVariables.map((v) => {
+                        const isDisabled = (branch.disabledVariables || []).includes(v.id);
+
+                        if (isDisabled) {
+                          // Render disabled variable chip in its original position
+                          return (
                             <button
                               key={v.id}
                               className="disabled-variable-chip"
@@ -858,9 +834,43 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                             >
                               + {v.description || v.label}
                             </button>
-                          ))}
-                        </span>
-                      )}
+                          );
+                        } else {
+                          // Render active variable with dropdown
+                          const currentActiveIndex = activeVarIndex;
+                          activeVarIndex++;
+                          return (
+                            <React.Fragment key={v.id}>
+                              {currentActiveIndex > 0 && ' and '}
+                              <span className="variable-condition">
+                                <span className="variable-name-tag">
+                                  {v.description || v.label}
+                                  <button
+                                    className="variable-remove-btn"
+                                    onClick={() => toggleVariableForBranch(branch.id, v.id)}
+                                    title="Click to remove this variable from this branch"
+                                  >×</button>
+                                </span>
+                                {' '}is{' '}
+                                <MultiSelectDropdown
+                                  options={v.values}
+                                  selected={branch.variableValues[v.id] || []}
+                                  onChange={(values) => {
+                                    handleBranchValueChange(branch.id, v.id, values);
+                                    if (values.length > 0) {
+                                      setValidationErrors(prev => prev.filter(e => !(e.branchId === branch.id && e.variableId === v.id)));
+                                    }
+                                  }}
+                                  placeholder="choose"
+                                  excludeMode={branch.variableExcludeMode?.[v.id] || false}
+                                  onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
+                                  hasError={hasError(branch.id, v.id)}
+                                />
+                              </span>
+                            </React.Fragment>
+                          );
+                        }
+                      })}
                       , offer to{' '}
                     </>
                   ) : (

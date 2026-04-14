@@ -11,8 +11,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const location = useLocation();
 
   // Check if current path matches the nav item
-  const isAgcdActive = location.pathname.startsWith('/agcd') && !location.pathname.startsWith('/agcd-preview');
-  const isAgcdPreviewActive = location.pathname.startsWith('/agcd-preview');
+  const isAgcdActive = location.pathname.startsWith('/agcd');
   const isChannelsActive = location.pathname === '/' || location.pathname.startsWith('/chat-channels') || location.pathname.startsWith('/voice-channels');
 
   return (
@@ -128,14 +127,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <path d="M6 10l2 2 2-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>Conversation orchestration</span>
-          </Link>
-          <Link to="/agcd-preview" className={`nav-item ${isAgcdPreviewActive ? 'active' : ''}`} title="Agentic routing public preview">
-            <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <circle cx="8" cy="6" r="1" fill="currentColor"/>
-              <path d="M6 10l2 2 2-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Agentic routing public preview</span>
           </Link>
           <a href="#" className="nav-item">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

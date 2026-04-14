@@ -734,3 +734,147 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
+/* Overflow Rules Section */
+.overflow-rules-section {
+  background-color: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.overflow-rules-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #242424;
+  margin: 0 0 16px 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.overflow-info-banner {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background-color: #fdf6e3;
+  border-left: 4px solid #f0ad4e;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.overflow-info-banner.info-banner-blue {
+  background-color: #e6f2fb;
+  border-left-color: #0078d4;
+}
+
+.overflow-info-banner .info-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.overflow-info-text {
+  font-size: 13px;
+  color: #323130;
+  line-height: 1.5;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.overflow-rules-list {
+  margin-bottom: 16px;
+}
+
+.overflow-rule-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  padding: 12px 0;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+.overflow-rule-row:last-child {
+  border-bottom: none;
+}
+
+.overflow-rule-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.overflow-rule-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.overflow-rule-select {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  background-color: white;
+  color: #323130;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.overflow-rule-select:hover {
+  border-color: #323130;
+}
+
+.overflow-rule-select:focus {
+  outline: none;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 1px #0078d4;
+}
+
+.overflow-rule-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  color: #605e5c;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.overflow-rule-delete:hover {
+  background-color: #fde7e9;
+  border-color: #d13438;
+  color: #d13438;
+}
+
+.add-overflow-rule-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #323130;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.add-overflow-rule-btn:hover {
+  background-color: #f3f2f1;
+  border-color: #323130;
+}
+
+.add-overflow-rule-btn svg {
+  width: 14px;
+  height: 14px;
+}
+

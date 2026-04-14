@@ -769,6 +769,45 @@
   position: relative;
 }
 
+/* Variable name tag - chip style with X button */
+.variable-name-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background-color: #f3f2f1;
+  border: 1px solid #d2d0ce;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #323130;
+  vertical-align: middle;
+}
+
+.variable-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 2px;
+  border: none;
+  border-radius: 2px;
+  background-color: transparent;
+  color: #605e5c;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.variable-remove-btn:hover {
+  color: #d13438;
+  background-color: rgba(209, 52, 56, 0.1);
+}
+
+/* Legacy toggle button - keeping for backwards compatibility */
 .variable-toggle-btn {
   display: inline-flex;
   align-items: center;
@@ -804,14 +843,15 @@
 .disabled-variable-chip {
   display: inline-block;
   padding: 2px 8px;
-  margin-left: 4px;
+  margin: 0 4px;
   background-color: #f3f2f1;
   border: 1px dashed #a19f9d;
-  border-radius: 12px;
-  font-size: 11px;
-  color: #8a8886;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #605e5c;
   cursor: pointer;
   transition: all 0.15s;
+  vertical-align: middle;
 }
 
 .disabled-variable-chip:hover {
@@ -1799,8 +1839,7 @@
 
 /* Condition options list with checkboxes */
 .condition-options-list {
-  max-height: 280px;
-  overflow-y: auto;
+  /* Scrolling handled by parent .overflow-condition-menu */
 }
 
 .condition-checkbox-option {

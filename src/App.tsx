@@ -22,8 +22,6 @@ import AgCDHome from './components/AgCDHome';
 import AgCDHomeConversational from './components/AgCDHomeConversational';
 import AgCDPromptEdit from './components/AgCDPromptEdit';
 import AgCDPlaybook from './components/AgCDPlaybook';
-import AgCDHomePublicPreview from './components/AgCDHomePublicPreview';
-import AgCDPlaybookPublicPreview from './components/AgCDPlaybookPublicPreview';
 import { APP_CONFIG } from './config';
 import './App.css';
 
@@ -86,11 +84,6 @@ const App: React.FC = () => {
           <Route path="/agcd/prompt/:promptType" element={<AgCDPromptEdit />} />
           <Route path="/agcd/policy/:policyId" element={<AgCDPromptEdit />} />
           <Route path="/agcd/playbook" element={<AgCDPlaybook />} />
-          {/* Public Preview Routes */}
-          <Route path="/agcd-preview" element={<AgCDHomePublicPreview />} />
-          <Route path="/agcd-preview/prompt/:promptType" element={<AgCDPromptEdit />} />
-          <Route path="/agcd-preview/policy/:policyId" element={<AgCDPromptEdit />} />
-          <Route path="/agcd-preview/playbook" element={<AgCDPlaybookPublicPreview />} />
         </Routes>
       </Layout>
     </Router>

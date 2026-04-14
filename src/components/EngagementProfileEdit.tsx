@@ -97,19 +97,19 @@ const EngagementProfileEdit: React.FC = () => {
 
     return (
       <div className="agcd-section-card">
-        {/* AgCD Section Header */}
-        <h3 className="agcd-section-header">Agentic Conversation Distribution</h3>
+        {/* Conversation Orchestration Section Header */}
+        <h3 className="agcd-section-header">Conversation orchestration</h3>
 
-        {/* AgCD Integration Banner */}
+        {/* Conversation Orchestration Integration Banner */}
         <div className="agcd-integration-banner">
           <p className="agcd-integration-text">
-            Configure {tabName} using natural language playbooks via Agentic Conversation Distribution (AgCD)
+            Configure {tabName} using natural language playbooks via Conversation orchestration
           </p>
           <button
             className="agcd-integration-cta"
-            onClick={() => navigate(`/agcd?openGallery=true&tab=${filterTab}&scenario=${scenario}`)}
+            onClick={() => navigate(`/agcd?openGallery=true&tab=${filterTab}`)}
           >
-            Configure with AgCD
+            Configure with Conversation orchestration
           </button>
         </div>
 
@@ -117,7 +117,7 @@ const EngagementProfileEdit: React.FC = () => {
         {playbooks.length > 0 && (
           <div className="agcd-playbooks-section">
             <div className="agcd-playbooks-header">
-              <h3 className="agcd-playbooks-title">Playbooks already configured:</h3>
+              <h3 className="agcd-playbooks-title">Playbooks configured</h3>
               <button
                 className="view-playbook-page-btn"
                 onClick={() => navigate('/agcd/playbook')}
@@ -130,9 +130,10 @@ const EngagementProfileEdit: React.FC = () => {
               <table className="agcd-playbooks-table">
                 <thead>
                   <tr>
-                    <th>Policy Name</th>
+                    <th>Playbook name</th>
                     <th>Trigger</th>
                     <th>Status</th>
+                    <th>Channel</th>
                     <th>Last Modified</th>
                     <th>Actions</th>
                   </tr>
@@ -159,6 +160,7 @@ const EngagementProfileEdit: React.FC = () => {
                           {policy.status}
                         </span>
                       </td>
+                      <td>{policy.selectedChannel || 'Voice'}</td>
                       <td>{policy.lastModified}</td>
                       <td>
                         <div className="action-menu-container">
@@ -654,8 +656,110 @@ const EngagementProfileEdit: React.FC = () => {
                   Overflow strategies ensure customers receive timely assistance even during high-demand periods.
                 </p>
 
-                {/* AgCD Section */}
+                {/* Conversation Orchestration Section */}
                 {renderAgCDSection('Overflow', 'orchestration', 'Overflow handling', 'overflowManagement')}
+
+                {/* Pre-queue rules Section */}
+                <div className="overflow-rules-section">
+                  <h3 className="overflow-rules-title">Pre-queue rules</h3>
+                  <div className="overflow-info-banner">
+                    <svg className="info-icon" width="20" height="20" viewBox="0 0 20 20" fill="#0078d4">
+                      <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 14.5a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13zM9.25 6.5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zM9.25 9v4.5a.75.75 0 1 0 1.5 0V9a.75.75 0 1 0-1.5 0z"/>
+                    </svg>
+                    <p className="overflow-info-text">
+                      Pre-queue rules are evaluated at the moment a conversation is about to enter the queue, before any agent is involved. Use these rules to handle situations where accepting the conversation into the queue would be inappropriate — for example, when the queue is already at capacity, when operating hours have ended, or when predicted wait time is already too high. Taking action at this stage (such as offering a callback or routing elsewhere) is less disruptive than waiting until the customer has already been queuing for several minutes.
+                    </p>
+                  </div>
+
+                  <div className="overflow-rules-list">
+                    <div className="overflow-rule-row">
+                      <div className="overflow-rule-field">
+                        <label className="overflow-rule-label">Trigger</label>
+                        <select className="overflow-rule-select">
+                          <option value="">Select trigger</option>
+                          <option value="queue-capacity">Queue at capacity</option>
+                          <option value="outside-hours">Outside operating hours</option>
+                          <option value="wait-time-high">Predicted wait time exceeds threshold</option>
+                          <option value="no-agents">No agents available</option>
+                        </select>
+                      </div>
+                      <div className="overflow-rule-field">
+                        <label className="overflow-rule-label">Action</label>
+                        <select className="overflow-rule-select">
+                          <option value="">Select action</option>
+                          <option value="offer-callback">Offer callback</option>
+                          <option value="route-elsewhere">Route to another queue</option>
+                          <option value="voicemail">Send to voicemail</option>
+                          <option value="disconnect">Play message and disconnect</option>
+                        </select>
+                      </div>
+                      <button className="overflow-rule-delete" title="Delete rule">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                          <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button className="add-overflow-rule-btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Add pre-queue rule
+                  </button>
+                </div>
+
+                {/* In-queue rules Section */}
+                <div className="overflow-rules-section">
+                  <h3 className="overflow-rules-title">In-queue rules</h3>
+                  <div className="overflow-info-banner info-banner-blue">
+                    <svg className="info-icon" width="20" height="20" viewBox="0 0 20 20" fill="#0078d4">
+                      <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 14.5a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13zM9.25 6.5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zM9.25 9v4.5a.75.75 0 1 0 1.5 0V9a.75.75 0 1 0-1.5 0z"/>
+                    </svg>
+                    <p className="overflow-info-text">
+                      In-queue rules are evaluated continuously while a conversation is actively waiting for an agent. Use these to respond to changing conditions after the conversation has already entered the queue — for example, if wait time climbs beyond an acceptable threshold or all agents go offline unexpectedly. These rules allow you to proactively intervene rather than leaving customers to wait indefinitely with no resolution path.
+                    </p>
+                  </div>
+
+                  <div className="overflow-rules-list">
+                    <div className="overflow-rule-row">
+                      <div className="overflow-rule-field">
+                        <label className="overflow-rule-label">Trigger</label>
+                        <select className="overflow-rule-select">
+                          <option value="">Select trigger</option>
+                          <option value="wait-time-exceeded">Wait time exceeds threshold</option>
+                          <option value="agents-offline">All agents go offline</option>
+                          <option value="queue-position">Position in queue exceeds threshold</option>
+                          <option value="customer-idle">Customer idle timeout</option>
+                        </select>
+                      </div>
+                      <div className="overflow-rule-field">
+                        <label className="overflow-rule-label">Action</label>
+                        <select className="overflow-rule-select">
+                          <option value="">Select action</option>
+                          <option value="offer-callback">Offer callback</option>
+                          <option value="escalate">Escalate to supervisor</option>
+                          <option value="transfer-queue">Transfer to another queue</option>
+                          <option value="send-update">Send wait time update</option>
+                        </select>
+                      </div>
+                      <button className="overflow-rule-delete" title="Delete rule">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                          <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button className="add-overflow-rule-btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Add in-queue rule
+                  </button>
+                </div>
               </div>
             )}
 

@@ -10,7 +10,8 @@ import './TemplateBasedEditor.css';
 // Variables Configuration (same as other editors)
 // ============================================
 
-const contextVariables = [
+// Renamed to avoid confusion with contextVariables prop from parent
+const availableContextVariables = [
   { id: 'IsVIP', label: 'Is VIP Customer', workstream: 'Premium Support - Voice', values: ['True', 'False'] },
   { id: 'CustomerTier', label: 'Customer Tier', workstream: 'General Support - Voice', values: ['Gold', 'Silver', 'Bronze', 'Standard', 'Platinum', 'Diamond', 'Enterprise', 'SMB', 'Startup'] },
   { id: 'Language', label: 'Preferred Language', workstream: 'Chat Support - Messaging', values: ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese'] },
@@ -231,7 +232,8 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
   onStateChange,
   isPublicPreview = false,
   triggerValidation = false,
-  onValidationResult
+  onValidationResult,
+  contextVariables: parentContextVariables = []
 }) => {
   const config = scenarioConfig[scenarioId] || scenarioConfig['wait-time-escalation'];
 
@@ -240,7 +242,7 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
   const [showBranchLimitPopup, setShowBranchLimitPopup] = useState(false);
 
   // Helper to restore variables from state
-  const restoreVariablesFromState = (savedVars: SelectedVariableState[] | undefined, sourceVars: typeof contextVariables): SelectedVariable[] => {
+  const restoreVariablesFromState = (savedVars: SelectedVariableState[] | undefined, sourceVars: typeof availableContextVariables): SelectedVariable[] => {
     if (!savedVars || savedVars.length === 0) return [];
     return savedVars.map(sv => {
       const sourceVar = sourceVars.find(v => v.id === sv.id);
@@ -271,7 +273,7 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
 
   const [selectedContextVars, setSelectedContextVars] = useState<SelectedVariable[]>(
     initialState?.selectedContextVars
-      ? restoreVariablesFromState(initialState.selectedContextVars, contextVariables)
+      ? restoreVariablesFromState(initialState.selectedContextVars, availableContextVariables)
       : []
   );
   const [selectedLWIVars, setSelectedLWIVars] = useState<SelectedVariable[]>(
@@ -291,8 +293,44 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<{ branchId: string; fieldId: string; message: string }[]>([]);
 
+  // Sync with parent context variables when they change (like UserGroupExpansionEditor)
+  useEffect(() => {
+    if (parentContextVariables && parentContextVariables.length > 0) {
+      setSelectedContextVars(prev => {
+        const newVars: SelectedVariable[] = [];
+
+        // Add all parent-provided context variables
+        parentContextVariables.forEach(parentVar => {
+          // Check if already exists in local state
+          const existing = prev.find(v => v.id === parentVar.id);
+          if (existing) {
+            // Keep existing with its current description and values
+            newVars.push(existing);
+          } else {
+            // Find the full variable data from availableContextVariables array
+            const localVar = availableContextVariables.find(v => v.id === parentVar.id);
+            newVars.push({
+              id: parentVar.id,
+              label: parentVar.label,
+              description: parentVar.description || '',
+              type: 'context',
+              values: localVar?.values || []
+            });
+          }
+        });
+
+        return newVars;
+      });
+      // Open variables section when variables are added from parent
+      setIsVariablesSectionOpen(true);
+    } else if (parentContextVariables && parentContextVariables.length === 0) {
+      // Clear context vars when parent sends empty array
+      setSelectedContextVars([]);
+    }
+  }, [parentContextVariables]);
+
   const allSelectedVariables = [...selectedContextVars, ...selectedLWIVars];
-  const availableContextVars = contextVariables.filter(v => !selectedContextVars.find(sv => sv.id === v.id));
+  const availableContextVars = availableContextVariables.filter(v => !selectedContextVars.find(sv => sv.id === v.id));
   const availableLWIVars = liveWorkItemVariables.filter(v => !selectedLWIVars.find(sv => sv.id === v.id));
 
   // Variable management
@@ -303,7 +341,7 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
       return;
     }
 
-    const variable = contextVariables.find(v => v.id === varId);
+    const variable = availableContextVariables.find(v => v.id === varId);
     if (variable) {
       setSelectedContextVars(prev => [...prev, {
         id: variable.id,
@@ -805,9 +843,9 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
             const activeVariables = allSelectedVariables.filter(
               v => !(branch.disabledVariables || []).includes(v.id)
             );
-            const disabledVariables = allSelectedVariables.filter(
-              v => (branch.disabledVariables || []).includes(v.id)
-            );
+
+            // Track active variable index for "and" connector
+            let activeVarIndex = 0;
 
             return (
               <div key={branch.id} className="template-line overflow-single-line">
@@ -815,34 +853,12 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
                 {activeVariables.length > 0 ? (
                   <>
                     For customers where{' '}
-                    {activeVariables.map((v, varIdx) => (
-                      <React.Fragment key={v.id}>
-                        {varIdx > 0 && ' and '}
-                        <span className="variable-condition">
-                          <button
-                            className="variable-toggle-btn"
-                            onClick={() => toggleVariableForBranch(branch.id, v.id)}
-                            title="Click to disable this variable for this rule"
-                          >×</button>
-                          {v.description || v.label}{' '}
-                          is{' '}
-                          <input
-                            type="text"
-                            className="variable-value-input"
-                            placeholder="enter value"
-                            value={(branch.variableValues[v.id] || []).join(', ')}
-                            onChange={(e) => {
-                              const textValue = e.target.value;
-                              // Store as array with single value for compatibility
-                              handleBranchValueChange(branch.id, v.id, textValue ? [textValue] : []);
-                            }}
-                          />
-                        </span>
-                      </React.Fragment>
-                    ))}
-                    {disabledVariables.length > 0 && (
-                      <span className="disabled-variables">
-                        {disabledVariables.map(v => (
+                    {allSelectedVariables.map((v) => {
+                      const isDisabled = (branch.disabledVariables || []).includes(v.id);
+
+                      if (isDisabled) {
+                        // Render disabled variable chip in its original position
+                        return (
                           <button
                             key={v.id}
                             className="disabled-variable-chip"
@@ -851,9 +867,40 @@ const PriorityEscalationEditor: React.FC<PriorityEscalationEditorProps> = ({
                           >
                             + {v.description || v.label}
                           </button>
-                        ))}
-                      </span>
-                    )}
+                        );
+                      } else {
+                        // Render active variable with input
+                        const currentActiveIndex = activeVarIndex;
+                        activeVarIndex++;
+                        return (
+                          <React.Fragment key={v.id}>
+                            {currentActiveIndex > 0 && ' and '}
+                            <span className="variable-condition">
+                              <span className="variable-name-tag">
+                                {v.description || v.label}
+                                <button
+                                  className="variable-remove-btn"
+                                  onClick={() => toggleVariableForBranch(branch.id, v.id)}
+                                  title="Click to remove this variable from this rule"
+                                >×</button>
+                              </span>
+                              {' '}is{' '}
+                              <input
+                                type="text"
+                                className="variable-value-input"
+                                placeholder="enter value"
+                                value={(branch.variableValues[v.id] || []).join(', ')}
+                                onChange={(e) => {
+                                  const textValue = e.target.value;
+                                  // Store as array with single value for compatibility
+                                  handleBranchValueChange(branch.id, v.id, textValue ? [textValue] : []);
+                                }}
+                              />
+                            </span>
+                          </React.Fragment>
+                        );
+                      }
+                    })}
                     ,{' '}
                   </>
                 ) : (

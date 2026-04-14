@@ -160,18 +160,18 @@ const AgCDPlaybook: React.FC = () => {
     });
   };
 
-  const renderQueues = (policy: PromptData) => {
-    // Use selectedProfiles which contains queue/profile data
-    const queues = policy.selectedProfiles || [];
+  const renderProfiles = (policy: PromptData) => {
+    // Use selectedProfiles which contains profile data
+    const profiles = policy.selectedProfiles || [];
 
     if (policy.selectionMode === 'all') {
       return (
         <span className="queue-tag-item">
-          All Queues
+          All Profiles
         </span>
       );
-    } else if (queues.length > 0) {
-      if (expandedRows.has(policy.id + '-queues')) {
+    } else if (profiles.length > 0) {
+      if (expandedRows.has(policy.id + '-profiles')) {
         return (
           <div className="queues-expanded-list">
             {policy.selectionMode === 'except' && (
@@ -179,17 +179,17 @@ const AgCDPlaybook: React.FC = () => {
                 All except:
               </span>
             )}
-            {queues.map((queue, index) => (
+            {profiles.map((profile, index) => (
               <span
                 key={index}
                 className="queue-tag-item"
               >
-                {queue.profileName}
+                {profile.profileName}
               </span>
             ))}
             <button
               className="queue-toggle-btn"
-              onClick={(e) => toggleExpandRow(policy.id + '-queues', e)}
+              onClick={(e) => toggleExpandRow(policy.id + '-profiles', e)}
             >
               Show less
             </button>
@@ -204,21 +204,26 @@ const AgCDPlaybook: React.FC = () => {
               </span>
             )}
             <span className="queue-tag-item">
-              {queues[0].profileName}
+              {profiles[0].profileName}
             </span>
-            {queues.length > 1 && (
+            {profiles.length > 1 && (
               <button
                 className="queue-more-count"
-                onClick={(e) => toggleExpandRow(policy.id + '-queues', e)}
+                onClick={(e) => toggleExpandRow(policy.id + '-profiles', e)}
               >
-                +{queues.length - 1} more
+                +{profiles.length - 1} more
               </button>
             )}
           </>
         );
       }
     }
-    return <span className="no-queue-text">No queues</span>;
+    // Default to "All Profiles" since profiles are mandatory
+    return (
+      <span className="queue-tag-item">
+        All Profiles
+      </span>
+    );
   };
 
   const renderChannels = (policy: PromptData) => {
@@ -325,7 +330,7 @@ const AgCDPlaybook: React.FC = () => {
                   <th>Playbook Name</th>
                   <th>Trigger</th>
                   <th>Status</th>
-                  <th>Queues</th>
+                  <th>Profiles</th>
                   <th>Channels</th>
                   <th>Last Modified</th>
                   <th>Action</th>
@@ -366,7 +371,7 @@ const AgCDPlaybook: React.FC = () => {
                       </td>
                       <td className="queues-display-cell">
                         <div className="queues-display-wrapper">
-                          {renderQueues(policy)}
+                          {renderProfiles(policy)}
                         </div>
                       </td>
                       <td className="channels-display-cell">
