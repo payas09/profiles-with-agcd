@@ -34,24 +34,6 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
       description: 'Set up overflow rules combining multiple conditions (wait time, agent availability, queue status) with actions (transfer, callback, voicemail).',
       category: 'Overflow handling'
     },
-    {
-      id: 'overflow-conversation-accepted',
-      title: 'Configure overflow based on conversation accepted by CSR',
-      description: 'Trigger overflow actions when a conversation is accepted by a customer service representative.',
-      category: 'Overflow handling'
-    },
-    {
-      id: 'overflow-conversation-rejected',
-      title: 'Configure overflow based on conversation rejected by CSR',
-      description: 'Trigger overflow actions when a conversation is rejected by a customer service representative.',
-      category: 'Overflow handling'
-    },
-    {
-      id: 'overflow-missed-notification',
-      title: 'Configure overflow based on missed notification',
-      description: 'Trigger overflow actions when an agent misses a notification for an incoming conversation.',
-      category: 'Overflow handling'
-    },
     // Automated messages
     {
       id: 'interval-messages',
@@ -64,39 +46,14 @@ const promptGalleryCards: { orchestration: PromptCard[], assignment: PromptCard[
       title: 'Combine frequent messages with overflow actions',
       description: 'Coordinate automated messaging with overflow routing to keep customers informed.',
       category: 'Automated messages'
-    },
-    // Callback handling
-    {
-      id: 'transfer-callback-queue',
-      title: 'Transfer to dedicated callback queue',
-      description: 'Route callback requests to a dedicated queue optimized for handling scheduled and direct callbacks.',
-      category: 'Callback handling'
     }
   ],
   assignment: [
     {
       id: 'preferred-then-last-expert',
-      title: 'Assign to preferred expert and then last interacted expert',
-      description: 'First attempt to assign to the customer\'s preferred expert, then fall back to the last expert they interacted with.',
+      title: 'Assign to previous or preferred expert',
+      description: 'Assign conversations to a preferred expert mapped to customer or to an expert who previously interacted with customer, for improved customer experience.',
       category: 'Assign to a predicted expert'
-    },
-    {
-      id: 'last-interacted-expert',
-      title: 'Assign to last interacted expert',
-      description: 'Route conversations to the expert who most recently handled this customer\'s previous interactions.',
-      category: 'Assign to a predicted expert'
-    },
-    {
-      id: 'callback-creator',
-      title: 'Assign to expert who created the callback',
-      description: 'Route scheduled callbacks to the same expert who originally created the callback request.',
-      category: 'Assign personal callbacks'
-    },
-    {
-      id: 'reattempt-callback-assignment',
-      title: 'Reattempt assignment to expert who created the callback',
-      description: 'If the callback creator is unavailable, retry assignment to them before routing to other experts.',
-      category: 'Assign personal callbacks'
     },
     {
       id: 'user-group-expansion',
