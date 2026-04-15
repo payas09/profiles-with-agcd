@@ -1265,7 +1265,7 @@ const AgCDPromptEdit: React.FC = () => {
               {selectionMode === 'all' ? (
                 <div className="queues-tags-wrapper">
                   <span className={`queue-tag-item ${useQueueSelection ? '' : 'profile-tag-all'}`}>
-                    {useQueueSelection ? `All ${selectedChannel} queues` : `All ${selectedChannel} engagement profiles`}
+                    {useQueueSelection ? `All ${selectedChannel} queues` : 'All engagement profiles'}
                   </span>
                 </div>
               ) : selectionMode === 'except' ? (

@@ -167,7 +167,7 @@ const AgCDPlaybook: React.FC = () => {
     if (policy.selectionMode === 'all') {
       return (
         <span className="queue-tag-item">
-          All Profiles
+          All engagement profiles
         </span>
       );
     } else if (profiles.length > 0) {
@@ -218,10 +218,10 @@ const AgCDPlaybook: React.FC = () => {
         );
       }
     }
-    // Default to "All Profiles" since profiles are mandatory
+    // Default to "All engagement profiles" since profiles are mandatory
     return (
       <span className="queue-tag-item">
-        All Profiles
+        All engagement profiles
       </span>
     );
   };
