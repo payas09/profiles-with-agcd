@@ -227,21 +227,20 @@ const parseWorkflowToConditions = (workflow: WorkflowJson): ParsedOverflowCondit
     // Parse conditions
     const conditions = parseExpression(action.expression);
 
-    // Only add if there are conditions (skip empty/catch-all)
-    if (conditions !== null) {
-      parsedConditions.push({
-        id: actionName,
-        name: actionName,
-        conditions,
-        action: {
-          type: actionType,
-          typeLabel: actionLabel,
-          icon: actionIcon,
-          details
-        },
-        hasConditions: true
-      });
-    }
+    // Include both conditional and fallback actions
+    const isFallback = conditions === null;
+    parsedConditions.push({
+      id: actionName,
+      name: isFallback ? 'Fallback (All Other Customers)' : actionName,
+      conditions,
+      action: {
+        type: actionType,
+        typeLabel: actionLabel,
+        icon: actionIcon,
+        details
+      },
+      hasConditions: !isFallback
+    });
   });
 
   return parsedConditions;
@@ -400,8 +399,8 @@ const ConditionCard: React.FC<ConditionCardProps> = ({
                 isEditing={isEditing}
               />
             ) : (
-              <div className="no-conditions">
-                <span className="no-conditions-text">No conditions specified</span>
+              <div className="no-conditions fallback-condition">
+                <span className="no-conditions-text">For all other customers (fallback)</span>
               </div>
             )}
           </div>

@@ -357,6 +357,17 @@
   font-style: italic;
 }
 
+.no-conditions.fallback-condition {
+  background: linear-gradient(135deg, #e8f4fd 0%, #f0f7ff 100%);
+  border: 1px solid #cce4f7;
+}
+
+.no-conditions.fallback-condition .no-conditions-text {
+  color: #0078d4;
+  font-style: normal;
+  font-weight: 500;
+}
+
 .no-conditions-message {
   display: flex;
   align-items: center;

@@ -84,6 +84,10 @@ const App: React.FC = () => {
           <Route path="/agcd/prompt/:promptType" element={<AgCDPromptEdit />} />
           <Route path="/agcd/policy/:policyId" element={<AgCDPromptEdit />} />
           <Route path="/agcd/playbook" element={<AgCDPlaybook />} />
+          {/* Public Preview routes - enables JsonRuleReviewer for JSON visualization */}
+          <Route path="/agcd-preview" element={<AgCDHome />} />
+          <Route path="/agcd-preview/prompt/:promptType" element={<AgCDPromptEdit />} />
+          <Route path="/agcd-preview/policy/:policyId" element={<AgCDPromptEdit />} />
         </Routes>
       </Layout>
     </Router>

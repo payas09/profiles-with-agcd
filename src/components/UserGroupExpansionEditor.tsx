@@ -5,7 +5,7 @@
  * with a configurable fallback action.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TemplateBasedEditor.css';
 
 // User groups data
@@ -50,6 +50,7 @@ interface UserGroupExpansionBranch {
   initialUserGroups: string[];
   expansionRules: ExpansionRule[];
   variableConditions: VariableCondition[];
+  disabledVariables: string[];
 }
 
 interface PolicyConfig {
@@ -70,6 +71,7 @@ export interface UserGroupExpansionBranchState {
   initialUserGroups: string[];
   expansionRules: ExpansionRule[];
   variableConditions?: VariableCondition[];
+  disabledVariables?: string[];
 }
 
 export interface UserGroupExpansionEditorState {
@@ -206,7 +208,8 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
       variableId: v.id,
       variableLabel: v.label,
       value: ''
-    }))
+    })),
+    disabledVariables: []
   });
 
   // Helper to migrate old waitTimeSeconds to new format
@@ -229,7 +232,8 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
         id: b.id,
         initialUserGroups: b.initialUserGroups || [],
         expansionRules: (b.expansionRules || [{ id: `expansion-${b.id}-0`, waitTimeValue: '30', waitTimeUnit: 'seconds', userGroupIds: [] }]).map(migrateExpansionRule),
-        variableConditions: b.variableConditions || []
+        variableConditions: b.variableConditions || [],
+        disabledVariables: b.disabledVariables || []
       }));
     }
     return [createDefaultBranch(0, contextVariables)];
@@ -255,7 +259,7 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
   const [validationErrors, setValidationErrors] = useState<{ branchId: string; fieldId: string; message: string }[]>([]);
 
   // Handle validation trigger from parent
-  React.useEffect(() => {
+  useEffect(() => {
     if (triggerValidation && onValidationResult) {
       // Perform validation
       const errors: { branchId: string; fieldId: string; message: string }[] = [];
@@ -287,9 +291,9 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
     }
   }, [triggerValidation]);
 
-  // Update branches when context variables change
-  React.useEffect(() => {
-    if (contextVariables.length > 0) {
+  // Sync with parent context variables when they change
+  useEffect(() => {
+    if (contextVariables && contextVariables.length > 0) {
       setBranches(prev => prev.map(branch => {
         // Update variableConditions to match current context variables
         const updatedConditions = contextVariables.map(v => {
@@ -302,8 +306,8 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
         });
         return { ...branch, variableConditions: updatedConditions };
       }));
-    } else {
-      // Clear variable conditions when no variables selected
+    } else if (contextVariables && contextVariables.length === 0) {
+      // Clear variable conditions when parent sends empty array
       setBranches(prev => prev.map(branch => ({
         ...branch,
         variableConditions: []
@@ -318,6 +322,22 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
           vc.variableId === variableId ? { ...vc, value } : vc
         );
         return { ...branch, variableConditions: updatedConditions };
+      }
+      return branch;
+    }));
+  };
+
+  // Toggle variable enabled/disabled for a branch
+  const toggleVariableForBranch = (branchId: string, variableId: string) => {
+    setBranches(prev => prev.map(branch => {
+      if (branch.id === branchId) {
+        const isDisabled = branch.disabledVariables?.includes(variableId);
+        return {
+          ...branch,
+          disabledVariables: isDisabled
+            ? branch.disabledVariables.filter(id => id !== variableId)
+            : [...(branch.disabledVariables || []), variableId]
+        };
       }
       return branch;
     }));
@@ -424,7 +444,7 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
 
   const generateFinalPrompt = (): string => {
     const lines: string[] = [];
-    const hasVariables = contextVariables.length > 0;
+    const hasVariables = contextVariables && contextVariables.length > 0;
 
     // Add variable declarations if any context variables are selected
     if (hasVariables) {
@@ -442,10 +462,14 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
       const initialGroups = branch.initialUserGroups.map(id => getUserGroupName(id));
       const initialGroupsText = initialGroups.length > 0 ? initialGroups.join(' or ') : '[choose user group]';
 
-      // Build condition text if variables are present
+      // Build condition text if variables are present (excluding disabled ones)
       let branchLine = '';
-      if (hasVariables && branch.variableConditions && branch.variableConditions.length > 0) {
-        const conditionParts = branch.variableConditions.map(vc => {
+      const activeConditions = branch.variableConditions?.filter(
+        vc => !(branch.disabledVariables || []).includes(vc.variableId)
+      ) || [];
+
+      if (hasVariables && activeConditions.length > 0) {
+        const conditionParts = activeConditions.map(vc => {
           const valueText = vc.value || '<value>';
           return `${vc.variableLabel.toLowerCase()} is ${valueText}`;
         });
@@ -479,14 +503,15 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
   };
 
   // Notify parent of state changes for persistence
-  React.useEffect(() => {
+  useEffect(() => {
     if (onStateChange) {
       const currentState: UserGroupExpansionEditorState = {
         branches: branches.map(b => ({
           id: b.id,
           initialUserGroups: b.initialUserGroups,
           expansionRules: b.expansionRules,
-          variableConditions: b.variableConditions
+          variableConditions: b.variableConditions,
+          disabledVariables: b.disabledVariables
         })),
         fallbackAction,
         fallbackTimeValue: parseInt(fallbackTimeValue) || 60,
@@ -554,7 +579,7 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
 
         <div className="template-output">
           {/* Variable Declaration */}
-          {contextVariables.length > 0 && (
+          {contextVariables && contextVariables.length > 0 && (
             <div className="template-line">
               Get{' '}
               {contextVariables.map((v, idx) => (
@@ -571,31 +596,88 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
 
           {/* Condition Branches */}
           {branches.map((branch, branchIdx) => {
-            const hasVariableConditions = contextVariables.length > 0 && branch.variableConditions && branch.variableConditions.length > 0;
+            // Filter out disabled variables to get active ones
+            const activeVariableConditions = branch.variableConditions?.filter(
+              vc => !(branch.disabledVariables || []).includes(vc.variableId)
+            ) || [];
+            const hasActiveVariables = contextVariables && contextVariables.length > 0 && activeVariableConditions.length > 0;
+
+            // Track active variable index for "and" connector
+            let activeVarIndex = 0;
+
             return (
               <React.Fragment key={branch.id}>
                 {/* Main condition line with variable conditions */}
                 <div className="template-line condition-line">
-                  {hasVariableConditions ? (
+                  {hasActiveVariables ? (
                     <>
                       For customer where{' '}
-                      {branch.variableConditions.map((vc, vcIdx) => (
-                        <React.Fragment key={vc.variableId}>
-                          {vcIdx > 0 && ' and '}
-                          {vc.variableLabel.toLowerCase()} is{' '}
-                          <input
-                            type="text"
-                            className="template-input small"
-                            value={vc.value}
-                            onChange={(e) => handleVariableConditionChange(branch.id, vc.variableId, e.target.value)}
-                            placeholder="<value>"
-                          />
-                        </React.Fragment>
-                      ))}
+                      {branch.variableConditions?.map((vc) => {
+                        const isDisabled = (branch.disabledVariables || []).includes(vc.variableId);
+
+                        if (isDisabled) {
+                          // Render disabled variable chip in its original position
+                          return (
+                            <button
+                              key={vc.variableId}
+                              className="disabled-variable-chip"
+                              onClick={() => toggleVariableForBranch(branch.id, vc.variableId)}
+                              title="Click to enable this variable"
+                            >
+                              + {vc.variableLabel}
+                            </button>
+                          );
+                        } else {
+                          // Render active variable with input and remove button
+                          const currentActiveIndex = activeVarIndex;
+                          activeVarIndex++;
+                          return (
+                            <React.Fragment key={vc.variableId}>
+                              {currentActiveIndex > 0 && ' and '}
+                              <span className="variable-condition">
+                                <span className="variable-name-tag">
+                                  {vc.variableLabel}
+                                  <button
+                                    className="variable-remove-btn"
+                                    onClick={() => toggleVariableForBranch(branch.id, vc.variableId)}
+                                    title="Click to remove this variable from this branch"
+                                  >×</button>
+                                </span>
+                                {' '}is{' '}
+                                <input
+                                  type="text"
+                                  className="template-input small"
+                                  value={vc.value}
+                                  onChange={(e) => handleVariableConditionChange(branch.id, vc.variableId, e.target.value)}
+                                  placeholder="<value>"
+                                />
+                              </span>
+                            </React.Fragment>
+                          );
+                        }
+                      })}
                       , assign the conversations to{' '}
                     </>
                   ) : (
-                    <>Assign the conversations to{' '}</>
+                    <>
+                      {/* Show disabled variable chips even when no active variables */}
+                      {contextVariables && contextVariables.length > 0 && branch.variableConditions?.some(vc => (branch.disabledVariables || []).includes(vc.variableId)) && (
+                        <>
+                          {branch.variableConditions?.filter(vc => (branch.disabledVariables || []).includes(vc.variableId)).map(vc => (
+                            <button
+                              key={vc.variableId}
+                              className="disabled-variable-chip"
+                              onClick={() => toggleVariableForBranch(branch.id, vc.variableId)}
+                              title="Click to enable this variable"
+                            >
+                              + {vc.variableLabel}
+                            </button>
+                          ))}
+                          {' '}
+                        </>
+                      )}
+                      Assign the conversations to{' '}
+                    </>
                   )}
                   <MultiSelectDropdown
                     options={userGroups.map(g => g.name)}
@@ -610,14 +692,14 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
                     placeholder="choose user group(s)"
                     hasError={hasError(branch.id, 'initialUserGroups')}
                   />.
-                  {hasVariableConditions && branches.length < 5 && branchIdx === branches.length - 1 && (
+                  {contextVariables && contextVariables.length > 0 && branches.length < 5 && branchIdx === branches.length - 1 && (
                     <button
                       className="inline-add-btn"
                       onClick={addBranch}
                       title="Add another condition branch (max 5)"
                     >+</button>
                   )}
-                  {hasVariableConditions && branches.length > 1 && (
+                  {contextVariables && contextVariables.length > 0 && branches.length > 1 && (
                     <button
                       className="inline-remove-btn"
                       onClick={() => removeBranch(branch.id)}
