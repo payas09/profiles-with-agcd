@@ -173,3 +173,4 @@ tsc.out
 vite.err
 vite.out
 nul
+.claude/settings.local.json
