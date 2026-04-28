@@ -123,6 +123,133 @@ const sampleWorkflowJson = {
   }
 };
 
+// Map template action IDs to workflow JSON action types
+const actionIdToWorkflowType: { [key: string]: string } = {
+  'transfer-queue': 'TransferToQueue',
+  'transfer-external': 'ExternalTransfer',
+  'offer-callback': 'OfferDirectCallback',
+  'send-voicemail': 'OfferVoicemail',
+  'scheduled-callback': 'OfferScheduledCallback',
+  'end-conversation': 'EndConversation',
+};
+
+// Convert TemplateState to WorkflowJson
+const convertTemplateStateToWorkflowJson = (templateState: TemplateState | undefined): any => {
+  if (!templateState || !('branches' in templateState)) {
+    return sampleWorkflowJson; // Fallback to sample if no valid state
+  }
+
+  const state = templateState as TemplateState;
+  const actions: { [key: string]: any } = {};
+  let previousActionName: string | null = null;
+
+  state.branches.forEach((branch, index) => {
+    const actionType = actionIdToWorkflowType[branch.actionId] || branch.actionId;
+
+    // Build action name from conditions and action type
+    const conditionParts: string[] = [];
+
+    // Add variable conditions to name
+    Object.entries(branch.variableValues || {}).forEach(([varId, values]) => {
+      if (values && values.length > 0) {
+        conditionParts.push(`${varId}_${values[0]}`);
+      }
+    });
+
+    const actionName = conditionParts.length > 0
+      ? `${actionType}_${conditionParts.join('_')}_${index}`
+      : `${actionType}_Condition${index + 1}`;
+
+    // Build expression from variable values
+    const expressionConditions: any[] = [];
+
+    // Add context/LWI variable conditions
+    Object.entries(branch.variableValues || {}).forEach(([varId, values]) => {
+      if (values && values.length > 0) {
+        // Find if it's a context or LWI variable
+        const isLWI = state.selectedLWIVars?.some(v => v.id === varId);
+        const prefix = isLWI ? 'LiveWorkItem' : 'ContextVariable';
+
+        if (values.length === 1) {
+          expressionConditions.push({
+            equals: [`${prefix}.${varId}`, values[0]]
+          });
+        } else {
+          // Multiple values = OR condition
+          expressionConditions.push({
+            or: values.map(val => ({
+              equals: [`${prefix}.${varId}`, val]
+            }))
+          });
+        }
+      }
+    });
+
+    // Build action inputs
+    const inputs: any = { data: {} };
+    if (branch.actionId === 'transfer-queue' && branch.actionValue) {
+      inputs.data.targetQueue = branch.actionValue;
+    } else if (branch.actionId === 'transfer-external' && branch.actionValue) {
+      inputs.data.phoneNumber = branch.actionValue;
+    }
+
+    // Build the action object
+    const action: any = {
+      type: actionType,
+      inputs,
+      runAfter: previousActionName ? { [previousActionName]: ['Skipped'] } : {},
+    };
+
+    // Add expression only if there are conditions
+    if (expressionConditions.length === 1) {
+      action.expression = expressionConditions[0];
+    } else if (expressionConditions.length > 1) {
+      action.expression = { and: expressionConditions };
+    }
+
+    actions[actionName] = action;
+    previousActionName = actionName;
+  });
+
+  // Add fallback branch if enabled (no conditions - catches all other cases)
+  if (state.hasFallbackBranch && state.fallbackActionId) {
+    const fallbackActionType = actionIdToWorkflowType[state.fallbackActionId] || state.fallbackActionId;
+    const fallbackActionName = `${fallbackActionType}_Fallback`;
+
+    const fallbackInputs: any = { data: {} };
+    if (state.fallbackActionId === 'transfer-queue' && state.fallbackActionValue) {
+      fallbackInputs.data.targetQueue = state.fallbackActionValue;
+    } else if (state.fallbackActionId === 'transfer-external' && state.fallbackActionValue) {
+      fallbackInputs.data.phoneNumber = state.fallbackActionValue;
+    }
+
+    actions[fallbackActionName] = {
+      type: fallbackActionType,
+      inputs: fallbackInputs,
+      runAfter: previousActionName ? { [previousActionName]: ['Skipped'] } : {},
+      // No expression = fallback/catch-all
+    };
+  }
+
+  return {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "triggers": {
+      "WaitingInQueue_Conversation": {
+        "type": "WaitingInQueue",
+        "kind": "Http"
+      }
+    },
+    "actions": actions,
+    "outputs": {
+      "ruleExecuted": {
+        "type": "string",
+        "value": "Workflow generated from template configuration"
+      }
+    }
+  };
+};
+
 // Policy config interface for editable display
 interface ConditionDef {
   variableId: string;
@@ -195,7 +322,7 @@ const promptTemplates: { [key: string]: { title: string; type: string; descripti
     title: 'Configure combination of overflow conditions and actions',
     type: 'Orchestrator',
     description: 'Set up overflow rules combining multiple conditions (wait time, agent availability, queue status) with actions (transfer, callback, voicemail).',
-    defaultPrompt: 'For customers where the estimated average wait time > 5 minutes or all agents are offline, transfer to Overflow Queue.'
+    defaultPrompt: 'For conversations where the estimated average wait time > 5 minutes or all agents are offline, transfer to Overflow Queue.'
   },
   'overflow-conversation-accepted': {
     title: 'Configure overflow based on conversation accepted by CSR',
@@ -366,7 +493,7 @@ const generatePromptFromConfig = (config: PolicyConfig): string => {
       actionText = "should be assigned based on the queue's assignment strategy";
     }
 
-    lines.push(`${index === 0 ? 'All' : 'For'} customers where ${conditionText} ${actionText}.`);
+    lines.push(`${index === 0 ? 'All' : 'For'} conversations where ${conditionText} ${actionText}.`);
     lines.push('');
   });
 
@@ -473,7 +600,7 @@ const EditablePolicyDisplay: React.FC<EditablePolicyDisplayProps> = ({ config, o
             <span className="policy-condition-number">Condition {condIdx + 1}</span>
           </div>
           <div className="editable-policy-line">
-            <span className="policy-text">{condIdx === 0 ? 'All' : 'For'} customers where </span>
+            <span className="policy-text">{condIdx === 0 ? 'All' : 'For'} conversations where </span>
             {cond.conditions.map((condition, idx) => (
               <React.Fragment key={condition.variableId}>
                 {idx > 0 && <span className="policy-text"> and </span>}
@@ -978,10 +1105,11 @@ const AgCDPromptEdit: React.FC = () => {
     setShowPublishConfirm(false);
 
     // For public preview overflow scenario, show the JSON reviewer
-    // This simulates LLM generating JSON from the prompt
+    // Convert the actual template state to workflow JSON
     if (isPublicPreview && (promptType === 'overflow-conditions-actions' || savedScenarioId === 'overflow-conditions-actions')) {
-      // Set the sample workflow JSON (in production, this would come from LLM)
-      setWorkflowJson(sampleWorkflowJson);
+      // Convert the user's template configuration to workflow JSON
+      const generatedJson = convertTemplateStateToWorkflowJson(currentTemplateStateRef.current as TemplateState);
+      setWorkflowJson(generatedJson);
       setShowJsonReviewer(true);
       return;
     }

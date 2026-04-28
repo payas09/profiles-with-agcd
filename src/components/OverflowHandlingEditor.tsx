@@ -83,11 +83,11 @@ const timeOptions = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120];
 const conversationCountOptions = [5, 10, 15, 20, 25, 30, 50, 75, 100];
 
 // Example Playbook for Overflow
-const examplePlaybook = `For VIP customers where the estimated average wait time > 5 minutes or all agents are offline or away, transfer to VIP Support Queue.
+const examplePlaybook = `For VIP conversations where the estimated average wait time > 5 minutes or all agents are offline or away, transfer to VIP Support Queue.
 
-For all other customers where the actual in queue wait time > 10 minutes, offer direct callback.
+For all other conversations where the actual in queue wait time > 10 minutes, offer direct callback.
 
-For customers where the queue is out of operating hours, transfer to After Hours Queue.`;
+For conversations where the queue is out of operating hours, transfer to After Hours Queue.`;
 
 // Preset configurations for common overflow scenarios
 interface OverflowPreset {
@@ -122,7 +122,7 @@ const overflowPresets: OverflowPreset[] = [
   {
     id: 'vip-priority',
     name: 'VIP Priority Handling',
-    description: 'Fast-track VIP customers, offer callback for others',
+    description: 'Fast-track VIP conversations, offer callback for others',
     branches: [
       {
         selectedConditionIds: ['estimated-wait-time', 'all-agents-offline'],
@@ -255,11 +255,24 @@ export interface SelectedVariableState {
   values: string[];
 }
 
+// Fallback branch - simpler structure without conditions
+export interface FallbackBranchState {
+  id: string;
+  actionId: string;
+  actionValue?: string;
+}
+
 export interface TemplateEditorState {
   branches: OverflowBranchState[];
   selectedContextVars: SelectedVariableState[];
   selectedLWIVars: SelectedVariableState[];
   scenarioId?: string;
+  // Fallback branches for "all other conversations"
+  fallbackBranches?: FallbackBranchState[];
+  // Legacy fields for backward compatibility
+  hasFallbackBranch?: boolean;
+  fallbackActionId?: string;
+  fallbackActionValue?: string;
 }
 
 // Context variable type passed from parent
@@ -400,20 +413,16 @@ const _MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 // Overflow Condition Multi-Select Dropdown with inline value display
 interface OverflowConditionMultiSelectProps {
   selectedIds: string[];
-  excludeMode: boolean;
   conditionValues: { [conditionId: string]: string | number };
   onSelectionChange: (selectedIds: string[]) => void;
-  onExcludeModeChange: (exclude: boolean) => void;
   onValueChange: (conditionId: string, value: number) => void;
   hasError?: boolean;
 }
 
 const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> = ({
   selectedIds,
-  excludeMode,
   conditionValues,
   onSelectionChange,
-  onExcludeModeChange,
   onValueChange,
   hasError = false
 }) => {
@@ -442,58 +451,12 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
     }
   };
 
-  // Render the display content showing conditions with values
+  // Render the display content showing conditions with values (OR logic)
   const renderDisplayContent = () => {
     if (selectedIds.length === 0) {
       return <span className="placeholder">choose overflow condition</span>;
     }
 
-    // For exclude mode, show conditions with their values (same as include, but with "AND" connector)
-    if (excludeMode) {
-      return (
-        <span className="conditions-display-text">
-          {selectedIds.map((condId, idx) => {
-            const option = overflowConditionOptions.find(o => o.id === condId);
-            if (!option) return null;
-            const value = conditionValues[condId];
-            return (
-              <React.Fragment key={condId}>
-                {idx > 0 && <span className="condition-connector-black"> and </span>}
-                <span className="condition-text-part">
-                  {option.label}
-                  {option.requiresValue && (
-                    <>
-                      {' '}
-                      <select
-                        className="inline-value-select"
-                        value={value || (option.valueType === 'number' ? 10 : 5)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          onValueChange(condId, parseInt(e.target.value));
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {option.valueType === 'number'
-                          ? conversationCountOptions.map(c => (
-                              <option key={c} value={c}>{c}</option>
-                            ))
-                          : timeOptions.map(t => (
-                              <option key={t} value={t}>{t}</option>
-                            ))
-                        }
-                      </select>
-                      {' '}{option.valueLabel}
-                    </>
-                  )}
-                </span>
-              </React.Fragment>
-            );
-          })}
-        </span>
-      );
-    }
-
-    // For include mode, show conditions with their values
     return (
       <span className="conditions-display-text">
         {selectedIds.map((condId, idx) => {
@@ -552,24 +515,8 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
         <>
           <div className="overflow-condition-backdrop" onClick={() => setIsOpen(false)} />
           <div className={`overflow-condition-menu ${flipUp ? 'flip-up' : ''}`}>
-            <div className="condition-mode-toggle-row">
-              <button
-                type="button"
-                className={`condition-mode-btn ${!excludeMode ? 'active' : ''}`}
-                onClick={() => onExcludeModeChange(false)}
-              >
-                Include
-              </button>
-              <button
-                type="button"
-                className={`condition-mode-btn ${excludeMode ? 'active' : ''}`}
-                onClick={() => onExcludeModeChange(true)}
-              >
-                Exclude
-              </button>
-            </div>
             <div className="condition-list-hint">
-              {excludeMode ? 'Select conditions to exclude:' : 'Select conditions to include:'}
+              Select one or more conditions (OR logic):
             </div>
             <div className="condition-options-list">
               {overflowConditionOptions.map(option => (
@@ -662,6 +609,33 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       }));
     }
     return [createDefaultBranch(0)];
+  });
+
+  // Fallback branches state - "For all other conversations" branches
+  // Shows one fallback by default; user can add more or remove all
+  const [fallbackBranches, setFallbackBranches] = useState<FallbackBranchState[]>(() => {
+    // First check for new fallbackBranches array format
+    if (initialState?.fallbackBranches && initialState.fallbackBranches.length > 0) {
+      return initialState.fallbackBranches;
+    }
+    // Legacy support: migrate from old single fallback format
+    if (initialState?.hasFallbackBranch && initialState?.fallbackActionId) {
+      return [{
+        id: 'fallback-0',
+        actionId: initialState.fallbackActionId,
+        actionValue: initialState.fallbackActionValue || ''
+      }];
+    }
+    // Check if legacy explicitly disabled fallback
+    if (initialState?.hasFallbackBranch === false) {
+      return [];
+    }
+    // Default: show one fallback branch for new editors
+    return [{
+      id: 'fallback-0',
+      actionId: 'end-conversation',
+      actionValue: ''
+    }];
   });
 
   // Section collapse states - open Variables section if we have variables from restored state
@@ -982,15 +956,8 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       if (isPublicPreview) {
         // Public preview: always use static condition
         overflowConditionText = 'no agents are available';
-      } else if (branch.overflowConditionExcludeMode) {
-        // Exclude mode: "all conditions except X"
-        const excludedConditions = branch.selectedConditionIds.map(condId => {
-          const option = overflowConditionOptions.find(o => o.id === condId);
-          return option?.label || condId;
-        });
-        overflowConditionText = `all conditions except (${excludedConditions.join(' and ')})`;
       } else {
-        // Include mode: "condition1 or condition2"
+        // Multiple conditions with OR logic
         const overflowConditionParts = branch.selectedConditionIds.map(condId =>
           formatConditionText(condId, branch.conditionValues[condId])
         );
@@ -1002,23 +969,29 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       let conditionText = '';
       if (customerConditionParts.length > 0) {
         if (isPublicPreview) {
-          conditionText = `For customers where ${customerConditionParts.join(' AND ')} and ${overflowConditionText}`;
-        } else if (branch.overflowConditionExcludeMode) {
-          conditionText = `For customers where ${customerConditionParts.join(' AND ')} and ${overflowConditionText}`;
+          conditionText = `For conversations where ${customerConditionParts.join(' AND ')} and ${overflowConditionText}`;
         } else {
-          conditionText = `For customers where ${customerConditionParts.join(' AND ')} and (${overflowConditionText})`;
+          conditionText = `For conversations where ${customerConditionParts.join(' AND ')} and (${overflowConditionText})`;
         }
       } else {
-        if (isPublicPreview) {
-          conditionText = `For all customers where ${overflowConditionText}`;
-        } else if (branch.overflowConditionExcludeMode) {
-          conditionText = `For all customers, where ${overflowConditionText}`;
-        } else {
-          conditionText = `For all customers where ${overflowConditionText}`;
-        }
+        conditionText = `For all conversations where ${overflowConditionText}`;
       }
 
       lines.push(`${conditionText}, ${actionText.toLowerCase()}.`);
+    });
+
+    // Add fallback branches
+    fallbackBranches.forEach((fallback, idx) => {
+      if (fallback.actionId) {
+        const fallbackActionText = formatActionText(fallback.actionId, fallback.actionValue);
+        if (isPublicPreview) {
+          lines.push(`For all other conversations where no agents are available, ${fallbackActionText.toLowerCase()}.`);
+        } else {
+          // For multiple fallback branches, indicate the order
+          const prefix = fallbackBranches.length > 1 ? `Otherwise, ` : `For all other conversations, `;
+          lines.push(`${idx === 0 ? 'For all other conversations, ' : prefix}${fallbackActionText.toLowerCase()}.`);
+        }
+      }
     });
 
     return lines.join('\n\n');
@@ -1053,12 +1026,17 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
           type: v.type,
           values: v.values
         })),
-        scenarioId
+        scenarioId,
+        fallbackBranches: fallbackBranches.map(fb => ({
+          id: fb.id,
+          actionId: fb.actionId,
+          actionValue: fb.actionValue
+        }))
       };
       const prompt = generateFinalPrompt();
       onStateChange(currentState, prompt);
     }
-  }, [branches, selectedContextVars, selectedLWIVars, scenarioId]);
+  }, [branches, selectedContextVars, selectedLWIVars, scenarioId, fallbackBranches]);
 
   // Helper to get a normalized condition signature for comparison
   const getConditionSignature = (branch: OverflowBranch): string => {
@@ -1146,7 +1124,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   const describeBranchConditions = (branch: OverflowBranch, branchIndex: number): string => {
     const activeVars = allSelectedVariables.filter(v => !(branch.disabledVariables || []).includes(v.id));
     if (activeVars.length === 0) {
-      return `Condition ${branchIndex + 1}: "For all customers"`;
+      return `Condition ${branchIndex + 1}: "For all conversations"`;
     }
 
     const parts = activeVars.map(v => {
@@ -1180,12 +1158,10 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
           errors.push({
             branchId: branch.id,
             fieldId: 'conditions',
-            message: branch.overflowConditionExcludeMode
-              ? `${conditionLabel}: Please select at least one condition to exclude.`
-              : `${conditionLabel}: Please select at least one overflow condition.`
+            message: `${conditionLabel}: Please select at least one overflow condition.`
           });
-        } else if (!branch.overflowConditionExcludeMode) {
-          // Only validate values for include mode (exclude mode doesn't need values)
+        } else {
+          // Validate values for conditions that require them
           branch.selectedConditionIds.forEach((condId) => {
             const option = overflowConditionOptions.find(o => o.id === condId);
             if (option?.requiresValue && !branch.conditionValues[condId]) {
@@ -1442,9 +1418,9 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
             <div className="tips-example">
               <strong>Example:</strong>
               <pre className="tips-example-text">{isPublicPreview
-                ? `For VIP customers where no agents are available, transfer to VIP Support Queue.
+                ? `For VIP conversations where no agents are available, transfer to VIP Support Queue.
 
-For all other customers where no agents are available, offer direct callback.`
+For all other conversations where no agents are available, offer direct callback.`
                 : examplePlaybook}</pre>
             </div>
           </div>
@@ -1490,7 +1466,7 @@ For all other customers where no agents are available, offer direct callback.`
                 {/* Customer condition part */}
                 {activeVariables.length > 0 ? (
                   <>
-                    For customers where{' '}
+                    For conversations where{' '}
                     {allSelectedVariables.map((v) => {
                       const isDisabled = (branch.disabledVariables || []).includes(v.id);
 
@@ -1542,56 +1518,45 @@ For all other customers where no agents are available, offer direct callback.`
                     {' '}and{' '}
                   </>
                 ) : (
-                  <>For all customers where{' '}</>
+                  <>For all conversations where{' '}</>
                 )}
 
                 {/* Overflow Condition - Static field for public preview, dropdown for regular */}
                 {isPublicPreview ? (
                   <span className="overflow-condition-static">no agents are available</span>
                 ) : (
-                  <>
-                    {branch.overflowConditionExcludeMode && (
-                      <span className="condition-text-static">all conditions <strong>except</strong> </span>
-                    )}
-                    <OverflowConditionMultiSelect
-                      selectedIds={branch.selectedConditionIds}
-                      excludeMode={branch.overflowConditionExcludeMode}
-                      conditionValues={branch.conditionValues}
-                      onSelectionChange={(selectedIds) => {
-                        setBranches(prev => prev.map(b => {
-                          if (b.id === branch.id) {
-                            // Initialize default values for newly selected conditions
-                            const newConditionValues = { ...b.conditionValues };
-                            selectedIds.forEach(condId => {
-                              const option = overflowConditionOptions.find(o => o.id === condId);
-                              if (option?.requiresValue && !(condId in newConditionValues)) {
-                                newConditionValues[condId] = option.valueType === 'number' ? 10 : 5;
-                              }
-                            });
-                            // Remove values for deselected conditions
-                            Object.keys(newConditionValues).forEach(key => {
-                              if (!selectedIds.includes(key)) {
-                                delete newConditionValues[key];
-                              }
-                            });
-                            return {
-                              ...b,
-                              selectedConditionIds: selectedIds,
-                              conditionValues: newConditionValues
-                            };
-                          }
-                          return b;
-                        }));
-                      }}
-                      onExcludeModeChange={(exclude) => {
-                        setBranches(prev => prev.map(b =>
-                          b.id === branch.id ? { ...b, overflowConditionExcludeMode: exclude } : b
-                        ));
-                      }}
-                      onValueChange={(conditionId, value) => handleConditionValueChange(branch.id, conditionId, value)}
-                      hasError={hasError(branch.id, 'conditions')}
-                    />
-                  </>
+                  <OverflowConditionMultiSelect
+                    selectedIds={branch.selectedConditionIds}
+                    conditionValues={branch.conditionValues}
+                    onSelectionChange={(selectedIds) => {
+                      setBranches(prev => prev.map(b => {
+                        if (b.id === branch.id) {
+                          // Initialize default values for newly selected conditions
+                          const newConditionValues = { ...b.conditionValues };
+                          selectedIds.forEach(condId => {
+                            const option = overflowConditionOptions.find(o => o.id === condId);
+                            if (option?.requiresValue && !(condId in newConditionValues)) {
+                              newConditionValues[condId] = option.valueType === 'number' ? 10 : 5;
+                            }
+                          });
+                          // Remove values for deselected conditions
+                          Object.keys(newConditionValues).forEach(key => {
+                            if (!selectedIds.includes(key)) {
+                              delete newConditionValues[key];
+                            }
+                          });
+                          return {
+                            ...b,
+                            selectedConditionIds: selectedIds,
+                            conditionValues: newConditionValues
+                          };
+                        }
+                        return b;
+                      }));
+                    }}
+                    onValueChange={(conditionId, value) => handleConditionValueChange(branch.id, conditionId, value)}
+                    hasError={hasError(branch.id, 'conditions')}
+                  />
                 )}
 
                 {/* Action */}
@@ -1647,6 +1612,113 @@ For all other customers where no agents are available, offer direct callback.`
               </div>
             );
           })}
+
+          {/* Divider between Condition and Fallback branches */}
+          <div className="branches-divider">
+            <span className="branches-divider-text">Fallback</span>
+          </div>
+
+          {/* Fallback Branches */}
+          {fallbackBranches.map((fallback, fallbackIndex) => {
+              const currentAction = overflowActionOptions.find(a => a.id === fallback.actionId);
+              const isFirstFallback = fallbackIndex === 0;
+
+              return (
+                <div key={fallback.id} className="template-line overflow-single-line fallback-branch">
+                  <span className="fallback-label">
+                    {isFirstFallback ? 'For all other conversations' : 'Otherwise'}
+                  </span>
+                  {isPublicPreview && isFirstFallback && (
+                    <span className="overflow-condition-static"> where no agents are available</span>
+                  )}
+                  <span className="action-arrow">→</span>
+                  <select
+                    className="template-dropdown action-dropdown"
+                    value={fallback.actionId}
+                    onChange={(e) => {
+                      setFallbackBranches(prev => prev.map(fb =>
+                        fb.id === fallback.id ? { ...fb, actionId: e.target.value, actionValue: '' } : fb
+                      ));
+                    }}
+                  >
+                    <option value="">select overflow action</option>
+                    {overflowActionOptions.map(action => (
+                      <option key={action.id} value={action.id}>{action.label}</option>
+                    ))}
+                  </select>
+                  {currentAction?.requiresValue && currentAction.valueType === 'queue' && (
+                    <select
+                      className="template-dropdown"
+                      value={fallback.actionValue || ''}
+                      onChange={(e) => {
+                        setFallbackBranches(prev => prev.map(fb =>
+                          fb.id === fallback.id ? { ...fb, actionValue: e.target.value } : fb
+                        ));
+                      }}
+                    >
+                      <option value="">Select queue...</option>
+                      {queues.map(q => (
+                        <option key={q.id} value={q.id}>{q.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  {currentAction?.requiresValue && currentAction.valueType === 'phone' && (
+                    <input
+                      type="text"
+                      className="template-input"
+                      placeholder={currentAction.valuePlaceholder}
+                      value={fallback.actionValue || ''}
+                      onChange={(e) => {
+                        setFallbackBranches(prev => prev.map(fb =>
+                          fb.id === fallback.id ? { ...fb, actionValue: e.target.value } : fb
+                        ));
+                      }}
+                    />
+                  )}
+                  <span className="rule-actions">
+                    <button
+                      className="inline-add-btn"
+                      onClick={() => {
+                        setFallbackBranches(prev => [...prev, {
+                          id: `fallback-${Date.now()}`,
+                          actionId: 'end-conversation',
+                          actionValue: ''
+                        }]);
+                      }}
+                      title="Add another fallback action"
+                    >+</button>
+                    <button
+                      className="inline-remove-btn"
+                      onClick={() => {
+                        setFallbackBranches(prev => prev.filter(fb => fb.id !== fallback.id));
+                      }}
+                      title="Remove this fallback"
+                    >×</button>
+                  </span>
+                </div>
+              );
+            })}
+
+          {/* Add fallback button when no fallbacks exist */}
+          {fallbackBranches.length === 0 && (
+            <div className="add-fallback-section">
+              <button
+                className="add-fallback-btn"
+                onClick={() => {
+                  setFallbackBranches([{
+                    id: `fallback-${Date.now()}`,
+                    actionId: 'end-conversation',
+                    actionValue: ''
+                  }]);
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Add fallback
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Validation Warnings */}

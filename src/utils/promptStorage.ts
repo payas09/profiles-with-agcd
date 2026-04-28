@@ -30,11 +30,24 @@ export interface SelectedVariableState {
   values: string[];
 }
 
+// Fallback branch - simpler structure without conditions
+export interface FallbackBranchState {
+  id: string;
+  actionId: string;
+  actionValue?: string;
+}
+
 export interface TemplateState {
   branches: OverflowBranchState[];
   selectedContextVars: SelectedVariableState[];
   selectedLWIVars: SelectedVariableState[];
   scenarioId?: string;
+  // Fallback branches for "all other conversations"
+  fallbackBranches?: FallbackBranchState[];
+  // Legacy fields for backward compatibility
+  hasFallbackBranch?: boolean;
+  fallbackActionId?: string;
+  fallbackActionValue?: string;
 }
 
 // User Group Expansion state for restoration
@@ -120,7 +133,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
       {
         id: 'sample-1',
         promptName: 'Overflow routing policy',
-        policyBehavior: 'For all customers, when no agents are available, route to the overflow queue "General Overflow Queue". For customers where Is VIP Customer is True, route to the overflow queue "VIP Overflow Queue". For all other customers, end the conversation.',
+        policyBehavior: 'For all conversations, when no agents are available, route to the overflow queue "General Overflow Queue". For conversations where Is VIP Customer is True, route to the overflow queue "VIP Overflow Queue". For all other conversations, end the conversation.',
         selectedProfiles: [
           { profileId: 'profile1', profileName: 'Standard Support Profile', queues: ['General Support Queue', 'Chat Support Queue'] }
         ],
@@ -135,7 +148,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
       {
         id: 'sample-2',
         promptName: 'VIP customer routing',
-        policyBehavior: 'For all customers, increase the priority score of the conversation by 10 for every 30 seconds increase in wait time. For customers where Is VIP Customer is True, increase the priority score of the conversation by 25 for every 30 seconds increase in wait time. For all other customers, increase priority score by 5.',
+        policyBehavior: 'For all conversations, increase the priority score of the conversation by 10 for every 30 seconds increase in wait time. For conversations where Is VIP Customer is True, increase the priority score of the conversation by 25 for every 30 seconds increase in wait time. For all other conversations, increase priority score by 5.',
         selectedProfiles: [
           { profileId: 'profile2', profileName: 'VIP Customer Profile', queues: ['VIP Support Queue', 'Emergency Queue'] }
         ],
@@ -151,7 +164,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
       {
         id: 'sample-3',
         promptName: 'After hours automated response',
-        policyBehavior: 'For all customers, when no agents are available, send a message to customer "Thank you for contacting us. Our business hours are 9 AM to 5 PM. We will respond to your inquiry during the next business day." and then end the conversation.',
+        policyBehavior: 'For all conversations, when no agents are available, send a message to customer "Thank you for contacting us. Our business hours are 9 AM to 5 PM. We will respond to your inquiry during the next business day." and then end the conversation.',
         selectedProfiles: [
           { profileId: 'q1', profileName: 'General Support Queue', queues: ['General Support Queue'] }
         ],
@@ -167,7 +180,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
       {
         id: 'sample-4',
         promptName: 'Escalate priority on transfer',
-        policyBehavior: 'For all customers, increase priority score of conversations by 20. For customers where Is VIP Customer is True, increase priority score of conversations by 50. For all other customers, increase priority score by 10.',
+        policyBehavior: 'For all conversations, increase priority score of conversations by 20. For conversations where Is VIP Customer is True, increase priority score of conversations by 50. For all other conversations, increase priority score by 10.',
         selectedProfiles: [
           { profileId: 'q6', profileName: 'Chat Support Queue', queues: ['Chat Support Queue'] }
         ],

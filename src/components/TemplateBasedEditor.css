@@ -1290,6 +1290,73 @@
   background-color: #f0f7ff;
 }
 
+/* Branches Divider Styles */
+.branches-divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0 12px 0;
+  gap: 12px;
+}
+
+.branches-divider::before,
+.branches-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed #d2d0ce;
+}
+
+.branches-divider-text {
+  font-size: 11px;
+  color: #8a8886;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  padding: 0 4px;
+}
+
+/* Fallback Branch Styles */
+.fallback-branch {
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+.fallback-branch .fallback-label {
+  font-weight: 500;
+  color: #605e5c;
+}
+
+.add-fallback-section {
+  margin-top: 12px;
+}
+
+.add-fallback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px dashed #d2d0ce;
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: #8a8886;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-fallback-btn:hover {
+  border-color: #8a8886;
+  color: #605e5c;
+  background-color: #f3f2f1;
+}
+
+.add-fallback-btn svg {
+  opacity: 0.6;
+}
+
+.add-fallback-btn:hover svg {
+  opacity: 1;
+}
+
 /* Legacy styles for backwards compatibility */
 .overflow-conditions-line {
   padding-left: 20px;
