@@ -32,13 +32,13 @@ const contextVariables = [
   { id: 'SpendTier', label: 'Spend Tier', values: ['High Value', 'Medium Value', 'Low Value', 'New Customer'] },
 ];
 
-const liveWorkItemVariables = [
-  { id: 'Intent', label: 'Conversation Intent', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns'] },
-  { id: 'Channel', label: 'Channel', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
-  { id: 'Priority', label: 'Priority', values: ['Urgent', 'High', 'Medium', 'Low'] },
-  { id: 'Sentiment', label: 'Customer Sentiment', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
-  { id: 'ProductCategory', label: 'Product Category', values: ['Software', 'Hardware', 'Services', 'Subscription', 'Support', 'Training'] },
-  { id: 'IssueComplexity', label: 'Issue Complexity', values: ['Simple', 'Moderate', 'Complex', 'Escalation Required'] },
+const liveWorkItemVariables: ContextVariable[] = [
+  { id: 'Intent', label: 'Conversation Intent', description: 'conversation intent', values: ['Fraud Assist', 'Billing Inquiry', 'Technical Support', 'General Inquiry', 'Account Management', 'Sales', 'Complaints', 'Returns'] },
+  { id: 'Channel', label: 'Channel', description: 'channel', values: ['Voice', 'Chat', 'Email', 'Social', 'SMS', 'WhatsApp', 'Teams', 'Web'] },
+  { id: 'Priority', label: 'Priority', description: 'priority', values: ['Urgent', 'High', 'Medium', 'Low'] },
+  { id: 'Sentiment', label: 'Customer Sentiment', description: 'customer sentiment', values: ['Very Positive', 'Positive', 'Neutral', 'Negative', 'Very Negative'] },
+  { id: 'ProductCategory', label: 'Product Category', description: 'product category', values: ['Software', 'Hardware', 'Services', 'Subscription', 'Support', 'Training'] },
+  { id: 'IssueComplexity', label: 'Issue Complexity', description: 'issue complexity', values: ['Simple', 'Moderate', 'Complex', 'Escalation Required'] },
 ];
 
 const actionOptions = [
@@ -85,8 +85,7 @@ interface SelectedVariable {
 
 interface ConditionBranch {
   id: string;
-  variableValues: { [variableId: string]: string[] };
-  variableExcludeMode: { [variableId: string]: boolean };
+  variableValues: { [variableId: string]: string };
   disabledVariables: string[];
   action: string;
   lookbackDays?: number;
@@ -228,8 +227,7 @@ import type { UserGroupExpansionEditorState } from './UserGroupExpansionEditor';
 // Export state types for this editor
 export interface ExpertRoutingBranchState {
   id: string;
-  variableValues: { [variableId: string]: string[] };
-  variableExcludeMode: { [variableId: string]: boolean };
+  variableValues: { [variableId: string]: string };
   disabledVariables: string[];
   action: string;
   lookbackDays?: number;
@@ -257,6 +255,7 @@ export interface ContextVariable {
   id: string;
   label: string;
   description: string;
+  values?: string[];
 }
 
 interface TemplateBasedEditorProps {
@@ -373,7 +372,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   const createDefaultBranch = (index: number): ConditionBranch => ({
     id: `branch-${index}`,
     variableValues: {},
-    variableExcludeMode: {},
     disabledVariables: [],
     action: 'preferred-expert',
     lookbackDays: 14,
@@ -419,7 +417,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
       return expertState.branches.map(b => ({
         id: b.id,
         variableValues: b.variableValues || {},
-        variableExcludeMode: b.variableExcludeMode || {},
         disabledVariables: b.disabledVariables || [],
         action: b.action || 'preferred-expert',
         lookbackDays: b.lookbackDays || 14,
@@ -439,6 +436,42 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<{ branchId: string; variableId: string; message: string }[]>([]);
 
+  // Sync with parent context variables when they change
+  React.useEffect(() => {
+    if (contextVariables && contextVariables.length > 0) {
+      setSelectedContextVars(prev => {
+        const newVars: SelectedVariable[] = [];
+
+        // Add all parent-provided context variables
+        contextVariables.forEach(parentVar => {
+          // Check if already exists in local state
+          const existing = prev.find(v => v.id === parentVar.id);
+          if (existing) {
+            // Keep existing with its current description and values
+            newVars.push(existing);
+          } else {
+            // Find the full variable data from local contextVariables array
+            const localVar = contextVariables.find(v => v.id === parentVar.id);
+            newVars.push({
+              id: parentVar.id,
+              label: parentVar.label,
+              description: parentVar.description || '',
+              type: 'context',
+              values: localVar?.values || []
+            });
+          }
+        });
+
+        return newVars;
+      });
+      // Open variables section when variables are added from parent
+      setIsVariablesSectionOpen(true);
+    } else if (contextVariables && contextVariables.length === 0) {
+      // Clear context vars when parent sends empty array
+      setSelectedContextVars([]);
+    }
+  }, [contextVariables]);
+
   // Get all selected variables
   const allSelectedVariables: SelectedVariable[] = [...selectedContextVars, ...selectedLWIVars];
 
@@ -448,9 +481,11 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     const variable = contextVariables.find(v => v.id === varId);
     if (variable) {
       setSelectedContextVars(prev => [...prev, {
-        ...variable,
-        description: '',
-        type: 'context'
+        id: variable.id,
+        label: variable.label,
+        description: variable.description || '',
+        type: 'context',
+        values: variable.values || []
       }]);
     }
   };
@@ -466,9 +501,11 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     const variable = liveWorkItemVariables.find(v => v.id === varId);
     if (variable) {
       setSelectedLWIVars(prev => [...prev, {
-        ...variable,
-        description: '',
-        type: 'lwi'
+        id: variable.id,
+        label: variable.label,
+        description: variable.description || '',
+        type: 'lwi',
+        values: variable.values || []
       }]);
     }
   };
@@ -483,7 +520,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     const newBranch: ConditionBranch = {
       id: `branch-${Date.now()}`,
       variableValues: {},
-      variableExcludeMode: {},
       disabledVariables: [],
       action: 'preferred-expert',
       lookbackDays: 14,
@@ -516,26 +552,13 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
     }));
   };
 
-  // Handle branch value change (multi-select)
-  const handleBranchValueChange = (branchId: string, variableId: string, values: string[]) => {
+  // Handle branch value change (text input)
+  const handleBranchValueChange = (branchId: string, variableId: string, value: string) => {
     setBranches(prev => prev.map(branch => {
       if (branch.id === branchId) {
         return {
           ...branch,
-          variableValues: { ...branch.variableValues, [variableId]: values }
-        };
-      }
-      return branch;
-    }));
-  };
-
-  // Handle variable exclude mode toggle
-  const handleVariableExcludeModeChange = (branchId: string, variableId: string, exclude: boolean) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return {
-          ...branch,
-          variableExcludeMode: { ...(branch.variableExcludeMode || {}), [variableId]: exclude }
+          variableValues: { ...branch.variableValues, [variableId]: value }
         };
       }
       return branch;
@@ -631,19 +654,11 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
       );
 
       const conditionParts = activeVariables.map(v => {
-        const values = branch.variableValues[v.id] || [];
-        const isExclude = branch.variableExcludeMode?.[v.id] || false;
-        const isAllSelected = values.length === v.values.length && v.values.every(val => values.includes(val));
-        if (values.length === 0) {
-          return `${v.description || v.label} is [choose value]`;
+        const value = branch.variableValues[v.id] || '';
+        if (!value) {
+          return `${v.description || v.label} is <value>`;
         }
-        if (isExclude) {
-          return `${v.description || v.label} is All except ${values.join(', ')}`;
-        }
-        if (isAllSelected) {
-          return `${v.description || v.label} is All`;
-        }
-        return `${v.description || v.label} is ${values.join(' or ')}`;
+        return `${v.description || v.label} is ${value}`;
       });
 
       const conditionText = conditionParts.length > 0 ? conditionParts.join(' and ') : '';
@@ -694,7 +709,6 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
         branches: branches.map(b => ({
           id: b.id,
           variableValues: b.variableValues,
-          variableExcludeMode: b.variableExcludeMode,
           disabledVariables: b.disabledVariables,
           action: b.action,
           lookbackDays: b.lookbackDays,
@@ -836,7 +850,7 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                             </button>
                           );
                         } else {
-                          // Render active variable with dropdown
+                          // Render active variable with text input
                           const currentActiveIndex = activeVarIndex;
                           activeVarIndex++;
                           return (
@@ -852,19 +866,17 @@ const TemplateBasedEditor: React.FC<TemplateBasedEditorProps> = ({
                                   >×</button>
                                 </span>
                                 {' '}is{' '}
-                                <MultiSelectDropdown
-                                  options={v.values}
-                                  selected={branch.variableValues[v.id] || []}
-                                  onChange={(values) => {
-                                    handleBranchValueChange(branch.id, v.id, values);
-                                    if (values.length > 0) {
-                                      setValidationErrors(prev => prev.filter(e => !(e.branchId === branch.id && e.variableId === v.id)));
+                                <input
+                                  type="text"
+                                  className="template-input small"
+                                  value={branch.variableValues[v.id] || ''}
+                                  onChange={(e) => {
+                                    handleBranchValueChange(branch.id, v.id, e.target.value);
+                                    if (e.target.value) {
+                                      setValidationErrors(prev => prev.filter(err => !(err.branchId === branch.id && err.variableId === v.id)));
                                     }
                                   }}
-                                  placeholder="choose"
-                                  excludeMode={branch.variableExcludeMode?.[v.id] || false}
-                                  onExcludeModeChange={(exclude) => handleVariableExcludeModeChange(branch.id, v.id, exclude)}
-                                  hasError={hasError(branch.id, v.id)}
+                                  placeholder="<value>"
                                 />
                               </span>
                             </React.Fragment>

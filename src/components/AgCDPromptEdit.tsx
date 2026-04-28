@@ -1556,7 +1556,7 @@ const AgCDPromptEdit: React.FC = () => {
               key={editorKey}
               initialRequirement={nlRequirement}
               scenarioId={promptType || savedScenarioId || urlScenario || undefined}
-              initialState={templateState}
+              initialState={templateState as (TemplateEditorState | ExpertRoutingEditorState | UserGroupExpansionEditorState | undefined)}
               isPublicPreview={isPublicPreview}
               triggerValidation={triggerValidation}
               onValidationResult={handleValidationResult}
