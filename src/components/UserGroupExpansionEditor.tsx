@@ -439,7 +439,7 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
 
           {/* Expansion Levels 1-4 */}
           {expansionLevels.map((level, idx) => (
-            <div key={level.id} className="template-line level-line indented">
+            <div key={level.id} className="template-line level-line">
               <span className="level-label">Level {level.level}:</span>
               {' '}If the conversation remains unassigned for{' '}
               <input
