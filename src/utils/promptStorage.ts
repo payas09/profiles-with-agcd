@@ -7,6 +7,12 @@ interface ProfileWithQueues {
   queues: string[];
 }
 
+// Inbound profile for DID (Direct Inward Dialing) playbooks
+export interface InboundProfile {
+  profileId: string;
+  profileName: string;
+}
+
 export type SelectionMode = 'all' | 'list' | 'except';
 
 // Template state for overflow handling editor
@@ -50,9 +56,23 @@ export interface TemplateState {
   fallbackActionValue?: string;
 }
 
-// User Group Expansion state for restoration
+// Expansion level state for user group expansion
+export interface ExpansionLevelState {
+  id: string;
+  level: number;
+  waitTimeValue: string;
+  waitTimeUnit: 'seconds' | 'minutes';
+  userGroupIds: string[];
+}
+
+// User Group Expansion state for restoration (new format)
 export interface UserGroupExpansionState {
-  branches: {
+  initialUserGroups?: string[]; // Level 0
+  expansionLevels?: ExpansionLevelState[]; // Levels 1-4
+  fallbackAction: 'assign-any' | 'keep-retrying';
+  scenarioId?: string;
+  // Legacy fields for backward compatibility
+  branches?: {
     id: string;
     initialUserGroups: string[];
     expansionRules: {
@@ -60,14 +80,12 @@ export interface UserGroupExpansionState {
       waitTimeValue: string;
       waitTimeUnit: 'seconds' | 'minutes';
       userGroupIds: string[];
-      waitTimeSeconds?: number; // Legacy field for backwards compatibility
+      waitTimeSeconds?: number;
     }[];
     variableConditions?: { variableId: string; variableLabel: string; value: string }[];
   }[];
-  fallbackAction: 'assign-any' | 'keep-retrying';
   fallbackTimeValue?: number;
   fallbackTimeUnit?: 'seconds' | 'minutes';
-  scenarioId?: string;
 }
 
 // Union type for all possible editor states
@@ -88,10 +106,11 @@ export interface PromptData {
   createdAt?: number; // Timestamp for when the playbook was first created
   updatedAt?: number; // Timestamp for when the playbook was last saved (for sorting and "New" tag)
   templateState?: EditorState; // Stores the template editor state for restoration (supports multiple editor types)
-  scenarioId?: string; // The scenario/template type used (e.g., 'overflow-conditions-actions')
+  scenarioId?: string; // The scenario/template type used (e.g., 'overflow-conditions-actions', 'direct-inward-dialing')
   selectedQueue?: string; // Selected queue for public preview flow
   isPublicPreview?: boolean; // True if created in "Agentic routing public preview" flow
   selectedChannel?: ChannelType; // Selected channel for public preview flow (Voice or Messaging)
+  selectedInboundProfiles?: InboundProfile[]; // Selected inbound profiles for DID playbooks
 }
 
 // Load from localStorage

@@ -2,7 +2,7 @@
  * User Group Expansion Editor - Specialized template editor for user group expansion scenarios
  *
  * This editor allows users to configure progressive assignment to user groups
- * with a configurable fallback action.
+ * with levels (0-4) and a configurable fallback action.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -22,18 +22,19 @@ const userGroups = [
 
 // Fallback action options
 const fallbackActionOptions = [
-  { id: 'assign-any', label: 'assign to any available agent in the queue' },
-  { id: 'keep-retrying', label: 'retry assignment within the configured user groups' },
+  { id: 'assign-any', label: 'assign to any member of the queue' },
+  { id: 'keep-retrying', label: 'keep retrying among the previously defined user groups' },
 ];
 
 // Example Playbook for User Group Expansion
-const examplePlaybook = `Assign the conversations to Senior Support Agents or Technical Specialists.
-If no support representative is available or the conversation remains unassigned for 30 seconds, expand to Standard Support Team.
-If the conversation is still unassigned after 60 seconds, expand to Escalation Team.
-If the conversation remains unassigned after 90 seconds, assign to any available agent in the queue.`;
+const examplePlaybook = `Level 0: For all conversations, attempt assignment to Senior Support Agents or Technical Specialists.
+Level 1: If the conversation remains unassigned for 30 seconds, expand to Standard Support Team.
+Level 2: If the conversation remains unassigned for 60 seconds, expand to Escalation Team.
+If the conversation still remains unassigned, assign to any member of the queue.`;
 
-interface ExpansionRule {
+interface ExpansionLevel {
   id: string;
+  level: number;
   waitTimeValue: string;
   waitTimeUnit: 'seconds' | 'minutes';
   userGroupIds: string[];
@@ -43,14 +44,6 @@ export interface VariableCondition {
   variableId: string;
   variableLabel: string;
   value: string;
-}
-
-interface UserGroupExpansionBranch {
-  id: string;
-  initialUserGroups: string[];
-  expansionRules: ExpansionRule[];
-  variableConditions: VariableCondition[];
-  disabledVariables: string[];
 }
 
 interface PolicyConfig {
@@ -66,20 +59,23 @@ interface PolicyConfig {
 }
 
 // Export types for state persistence
-export interface UserGroupExpansionBranchState {
+export interface ExpansionLevelState {
   id: string;
-  initialUserGroups: string[];
-  expansionRules: ExpansionRule[];
-  variableConditions?: VariableCondition[];
-  disabledVariables?: string[];
+  level: number;
+  waitTimeValue: string;
+  waitTimeUnit: 'seconds' | 'minutes';
+  userGroupIds: string[];
 }
 
 export interface UserGroupExpansionEditorState {
-  branches: UserGroupExpansionBranchState[];
+  initialUserGroups: string[]; // Level 0
+  expansionLevels: ExpansionLevelState[]; // Levels 1-4
   fallbackAction: 'assign-any' | 'keep-retrying';
+  scenarioId?: string;
+  // Legacy fields for backward compatibility
+  branches?: any[];
   fallbackTimeValue?: number;
   fallbackTimeUnit?: 'seconds' | 'minutes';
-  scenarioId?: string;
 }
 
 // Context variable type passed from parent
@@ -100,55 +96,44 @@ interface UserGroupExpansionEditorProps {
   onValidationResult?: (hasErrors: boolean, errors: { message: string }[]) => void;
 }
 
-// Multi-Select Dropdown Component
-interface MultiSelectDropdownProps {
-  options: string[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
+// Multi-Select Dropdown Component for User Groups
+interface UserGroupMultiSelectProps {
+  selectedIds: string[];
+  onChange: (selectedIds: string[]) => void;
   placeholder?: string;
   hasError?: boolean;
 }
 
-const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
-  options,
-  selected,
+const UserGroupMultiSelect: React.FC<UserGroupMultiSelectProps> = ({
+  selectedIds,
   onChange,
-  placeholder = 'choose',
+  placeholder = 'choose user group(s)',
   hasError = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const isAllSelected = selected.length === options.length && options.every(opt => selected.includes(opt));
 
-  const toggleOption = (option: string) => {
-    if (selected.includes(option)) {
-      onChange(selected.filter(s => s !== option));
+  const toggleOption = (groupId: string) => {
+    if (selectedIds.includes(groupId)) {
+      onChange(selectedIds.filter(id => id !== groupId));
     } else {
-      onChange([...selected, option]);
-    }
-  };
-
-  const toggleAll = () => {
-    if (isAllSelected) {
-      onChange([]);
-    } else {
-      onChange([...options]);
+      onChange([...selectedIds, groupId]);
     }
   };
 
   const getDisplayText = () => {
-    if (selected.length === 0) return placeholder;
-    if (isAllSelected) return 'All';
-    return selected.join(' or ');
+    if (selectedIds.length === 0) return placeholder;
+    const names = selectedIds.map(id => userGroups.find(g => g.id === id)?.name).filter(Boolean);
+    return names.join(' or ');
   };
 
   return (
     <div className="multi-select-dropdown">
       <button
         type="button"
-        className={`multi-select-trigger ${isAllSelected ? 'all-selected' : ''} ${hasError ? 'has-error' : ''}`}
+        className={`multi-select-trigger ${hasError ? 'has-error' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={selected.length > 0 ? 'has-selection' : 'placeholder'}>
+        <span className={selectedIds.length > 0 ? 'has-selection' : 'placeholder'}>
           {getDisplayText()}
         </span>
         <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
@@ -160,24 +145,16 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
           <div className="multi-select-backdrop" onClick={() => setIsOpen(false)} />
           <div className="multi-select-menu">
             <div className="multi-select-hint">
-              Select values to include:
+              Select one or more user groups:
             </div>
-            <label className="multi-select-option all-option">
-              <input
-                type="checkbox"
-                checked={isAllSelected}
-                onChange={toggleAll}
-              />
-              <span>All</span>
-            </label>
-            {options.map(option => (
-              <label key={option} className="multi-select-option">
+            {userGroups.map(group => (
+              <label key={group.id} className="multi-select-option">
                 <input
                   type="checkbox"
-                  checked={selected.includes(option)}
-                  onChange={() => toggleOption(option)}
+                  checked={selectedIds.includes(group.id)}
+                  onChange={() => toggleOption(group.id)}
                 />
-                <span>{option}</span>
+                <span>{group.name}</span>
               </label>
             ))}
           </div>
@@ -197,46 +174,60 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
   triggerValidation = false,
   onValidationResult
 }) => {
-  // Create default branch helper function with sensible defaults
-  const createDefaultBranch = (index: number, vars: ContextVariable[] = []): UserGroupExpansionBranch => ({
-    id: `branch-${index}`,
-    initialUserGroups: ['ug1'],
-    expansionRules: [
-      { id: `expansion-${index}-0`, waitTimeValue: '30', waitTimeUnit: 'seconds', userGroupIds: ['ug3'] }
-    ],
-    variableConditions: vars.map(v => ({
-      variableId: v.id,
-      variableLabel: v.label,
-      value: ''
-    })),
-    disabledVariables: []
-  });
-
-  // Helper to migrate old waitTimeSeconds to new format
-  const migrateExpansionRule = (rule: any): ExpansionRule => {
-    if (rule.waitTimeValue !== undefined) {
-      return rule;
+  // Helper to migrate old state format to new format
+  const migrateFromOldState = (state: any): { initialUserGroups: string[], expansionLevels: ExpansionLevel[] } => {
+    if (state?.branches && state.branches.length > 0) {
+      const branch = state.branches[0];
+      const initialUserGroups = branch.initialUserGroups || [];
+      const expansionLevels: ExpansionLevel[] = (branch.expansionRules || []).map((rule: any, idx: number) => ({
+        id: rule.id || `level-${idx + 1}`,
+        level: idx + 1,
+        waitTimeValue: rule.waitTimeValue || '30',
+        waitTimeUnit: rule.waitTimeUnit || 'seconds',
+        userGroupIds: rule.userGroupIds || []
+      }));
+      return { initialUserGroups, expansionLevels };
     }
-    // Migrate from old waitTimeSeconds format
-    const seconds = rule.waitTimeSeconds || 30;
-    if (seconds >= 60 && seconds % 60 === 0) {
-      return { ...rule, waitTimeValue: String(seconds / 60), waitTimeUnit: 'minutes' };
-    }
-    return { ...rule, waitTimeValue: String(seconds), waitTimeUnit: 'seconds' };
+    return { initialUserGroups: [], expansionLevels: [] };
   };
 
-  // Branch configuration - initialize from initialState or with default branch
-  const [branches, setBranches] = useState<UserGroupExpansionBranch[]>(() => {
-    if (initialState?.branches && initialState.branches.length > 0) {
-      return initialState.branches.map(b => ({
-        id: b.id,
-        initialUserGroups: b.initialUserGroups || [],
-        expansionRules: (b.expansionRules || [{ id: `expansion-${b.id}-0`, waitTimeValue: '30', waitTimeUnit: 'seconds', userGroupIds: [] }]).map(migrateExpansionRule),
-        variableConditions: b.variableConditions || [],
-        disabledVariables: b.disabledVariables || []
+  // Level 0: Initial user groups
+  const [initialUserGroups, setInitialUserGroups] = useState<string[]>(() => {
+    if (initialState?.initialUserGroups && initialState.initialUserGroups.length > 0) {
+      return initialState.initialUserGroups;
+    }
+    // Try to migrate from old format
+    const migrated = migrateFromOldState(initialState);
+    if (migrated.initialUserGroups.length > 0) {
+      return migrated.initialUserGroups;
+    }
+    return ['ug1']; // Default
+  });
+
+  // Levels 1-4: Expansion levels
+  const [expansionLevels, setExpansionLevels] = useState<ExpansionLevel[]>(() => {
+    if (initialState?.expansionLevels && initialState.expansionLevels.length > 0) {
+      return initialState.expansionLevels.map(l => ({
+        id: l.id,
+        level: l.level,
+        waitTimeValue: l.waitTimeValue,
+        waitTimeUnit: l.waitTimeUnit,
+        userGroupIds: l.userGroupIds
       }));
     }
-    return [createDefaultBranch(0, contextVariables)];
+    // Try to migrate from old format
+    const migrated = migrateFromOldState(initialState);
+    if (migrated.expansionLevels.length > 0) {
+      return migrated.expansionLevels;
+    }
+    // Default: one expansion level
+    return [{
+      id: 'level-1',
+      level: 1,
+      waitTimeValue: '30',
+      waitTimeUnit: 'seconds',
+      userGroupIds: ['ug3']
+    }];
   });
 
   // Fallback action state
@@ -244,46 +235,33 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
     return initialState?.fallbackAction || 'assign-any';
   });
 
-  // Fallback time state
-  const [fallbackTimeValue, setFallbackTimeValue] = useState<string>(() => {
-    return initialState?.fallbackTimeValue?.toString() || '60';
-  });
-  const [fallbackTimeUnit, setFallbackTimeUnit] = useState<'seconds' | 'minutes'>(() => {
-    return initialState?.fallbackTimeUnit || 'seconds';
-  });
-
   // Section collapse states
   const [isTipsSectionOpen, setIsTipsSectionOpen] = useState(false);
 
   // Validation errors
-  const [validationErrors, setValidationErrors] = useState<{ branchId: string; fieldId: string; message: string }[]>([]);
+  const [validationErrors, setValidationErrors] = useState<{ fieldId: string; message: string }[]>([]);
 
   // Handle validation trigger from parent
   useEffect(() => {
     if (triggerValidation && onValidationResult) {
-      // Perform validation
-      const errors: { branchId: string; fieldId: string; message: string }[] = [];
+      const errors: { fieldId: string; message: string }[] = [];
 
-      branches.forEach((branch, branchIdx) => {
-        // Check initial user groups
-        if (branch.initialUserGroups.length === 0) {
+      // Check Level 0
+      if (initialUserGroups.length === 0) {
+        errors.push({
+          fieldId: 'level-0',
+          message: 'Level 0: Please select at least one user group'
+        });
+      }
+
+      // Check expansion levels
+      expansionLevels.forEach((level) => {
+        if (level.userGroupIds.length === 0) {
           errors.push({
-            branchId: branch.id,
-            fieldId: 'initialUserGroups',
-            message: `Branch ${branchIdx + 1}: Please select at least one initial user group`
+            fieldId: level.id,
+            message: `Level ${level.level}: Please select at least one user group`
           });
         }
-
-        // Check expansion rules
-        branch.expansionRules.forEach((rule, ruleIdx) => {
-          if (rule.userGroupIds.length === 0) {
-            errors.push({
-              branchId: branch.id,
-              fieldId: rule.id,
-              message: `Branch ${branchIdx + 1}, Expansion ${ruleIdx + 1}: Please select at least one user group`
-            });
-          }
-        });
       });
 
       setValidationErrors(errors);
@@ -291,150 +269,51 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
     }
   }, [triggerValidation]);
 
-  // Sync with parent context variables when they change
-  useEffect(() => {
-    if (contextVariables && contextVariables.length > 0) {
-      setBranches(prev => prev.map(branch => {
-        // Update variableConditions to match current context variables
-        const updatedConditions = contextVariables.map(v => {
-          const existing = branch.variableConditions?.find(vc => vc.variableId === v.id);
-          return existing || {
-            variableId: v.id,
-            variableLabel: v.label,
-            value: ''
-          };
-        });
-        return { ...branch, variableConditions: updatedConditions };
-      }));
-    } else if (contextVariables && contextVariables.length === 0) {
-      // Clear variable conditions when parent sends empty array
-      setBranches(prev => prev.map(branch => ({
-        ...branch,
-        variableConditions: []
-      })));
-    }
-  }, [contextVariables]);
-
-  const handleVariableConditionChange = (branchId: string, variableId: string, value: string) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        const updatedConditions = branch.variableConditions.map(vc =>
-          vc.variableId === variableId ? { ...vc, value } : vc
-        );
-        return { ...branch, variableConditions: updatedConditions };
-      }
-      return branch;
-    }));
-  };
-
-  // Toggle variable enabled/disabled for a branch
-  const toggleVariableForBranch = (branchId: string, variableId: string) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        const isDisabled = branch.disabledVariables?.includes(variableId);
-        return {
-          ...branch,
-          disabledVariables: isDisabled
-            ? branch.disabledVariables.filter(id => id !== variableId)
-            : [...(branch.disabledVariables || []), variableId]
-        };
-      }
-      return branch;
-    }));
-  };
-
-  const addBranch = () => {
-    if (branches.length < 5) {
-      const newBranch = createDefaultBranch(Date.now(), contextVariables);
-      setBranches(prev => [...prev, newBranch]);
+  // Add expansion level
+  const addExpansionLevel = () => {
+    if (expansionLevels.length < 4) {
+      const newLevel = expansionLevels.length + 1;
+      setExpansionLevels(prev => [...prev, {
+        id: `level-${newLevel}-${Date.now()}`,
+        level: newLevel,
+        waitTimeValue: '60',
+        waitTimeUnit: 'seconds',
+        userGroupIds: []
+      }]);
     }
   };
 
-  const removeBranch = (branchId: string) => {
-    if (branches.length > 1) {
-      setBranches(prev => prev.filter(b => b.id !== branchId));
+  // Remove expansion level
+  const removeExpansionLevel = (levelId: string) => {
+    setExpansionLevels(prev => {
+      const filtered = prev.filter(l => l.id !== levelId);
+      // Re-number the levels
+      return filtered.map((l, idx) => ({ ...l, level: idx + 1 }));
+    });
+  };
+
+  // Update expansion level user groups
+  const handleExpansionUserGroupsChange = (levelId: string, userGroupIds: string[]) => {
+    setExpansionLevels(prev => prev.map(level =>
+      level.id === levelId ? { ...level, userGroupIds } : level
+    ));
+    if (userGroupIds.length > 0) {
+      setValidationErrors(prev => prev.filter(e => e.fieldId !== levelId));
     }
   };
 
-  const handleInitialUserGroupsChange = (branchId: string, userGroupIds: string[]) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return { ...branch, initialUserGroups: userGroupIds };
-      }
-      return branch;
-    }));
+  // Update expansion level wait time
+  const handleExpansionWaitTimeChange = (levelId: string, value: string) => {
+    setExpansionLevels(prev => prev.map(level =>
+      level.id === levelId ? { ...level, waitTimeValue: value } : level
+    ));
   };
 
-  const handleExpansionUserGroupsChange = (branchId: string, ruleId: string, userGroupIds: string[]) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return {
-          ...branch,
-          expansionRules: branch.expansionRules.map(rule =>
-            rule.id === ruleId ? { ...rule, userGroupIds } : rule
-          )
-        };
-      }
-      return branch;
-    }));
-  };
-
-  const handleExpansionWaitTimeValueChange = (branchId: string, ruleId: string, value: string) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return {
-          ...branch,
-          expansionRules: branch.expansionRules.map(rule =>
-            rule.id === ruleId ? { ...rule, waitTimeValue: value } : rule
-          )
-        };
-      }
-      return branch;
-    }));
-  };
-
-  const handleExpansionWaitTimeUnitChange = (branchId: string, ruleId: string, unit: 'seconds' | 'minutes') => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId) {
-        return {
-          ...branch,
-          expansionRules: branch.expansionRules.map(rule =>
-            rule.id === ruleId ? { ...rule, waitTimeUnit: unit } : rule
-          )
-        };
-      }
-      return branch;
-    }));
-  };
-
-  const addExpansionRule = (branchId: string) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId && branch.expansionRules.length < 4) {
-        const newRule: ExpansionRule = {
-          id: `expansion-${branchId}-${Date.now()}`,
-          waitTimeValue: '60',
-          waitTimeUnit: 'seconds',
-          userGroupIds: []
-        };
-        return {
-          ...branch,
-          expansionRules: [...branch.expansionRules, newRule]
-        };
-      }
-      return branch;
-    }));
-  };
-
-  const removeExpansionRule = (branchId: string, ruleId: string) => {
-    setBranches(prev => prev.map(branch => {
-      if (branch.id === branchId && branch.expansionRules.length > 1) {
-        return {
-          ...branch,
-          expansionRules: branch.expansionRules.filter(rule => rule.id !== ruleId)
-        };
-      }
-      return branch;
-    }));
+  // Update expansion level wait time unit
+  const handleExpansionWaitTimeUnitChange = (levelId: string, unit: 'seconds' | 'minutes') => {
+    setExpansionLevels(prev => prev.map(level =>
+      level.id === levelId ? { ...level, waitTimeUnit: unit } : level
+    ));
   };
 
   const getUserGroupName = (id: string) => {
@@ -444,60 +323,23 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
 
   const generateFinalPrompt = (): string => {
     const lines: string[] = [];
-    const hasVariables = contextVariables && contextVariables.length > 0;
 
-    // Add variable declarations if any context variables are selected
-    if (hasVariables) {
-      let varLine = 'Get ';
-      varLine += contextVariables.map((v, idx) => {
-        const prefix = idx > 0 ? ' and ' : '';
-        const desc = v.description || v.label.toLowerCase();
-        return `${prefix}the ${desc} from "ContextVariable.${v.id}"`;
-      }).join('');
-      varLine += '.';
-      lines.push(varLine);
-    }
+    // Level 0
+    const initialGroupNames = initialUserGroups.map(id => getUserGroupName(id)).filter(Boolean);
+    const initialGroupsText = initialGroupNames.length > 0 ? initialGroupNames.join(' or ') : '[choose user group(s)]';
+    lines.push(`Level 0: For all conversations, attempt assignment to ${initialGroupsText}.`);
 
-    branches.forEach((branch) => {
-      const initialGroups = branch.initialUserGroups.map(id => getUserGroupName(id));
-      const initialGroupsText = initialGroups.length > 0 ? initialGroups.join(' or ') : '[choose user group]';
-
-      // Build condition text if variables are present (excluding disabled ones)
-      let branchLine = '';
-      const activeConditions = branch.variableConditions?.filter(
-        vc => !(branch.disabledVariables || []).includes(vc.variableId)
-      ) || [];
-
-      if (hasVariables && activeConditions.length > 0) {
-        const conditionParts = activeConditions.map(vc => {
-          const valueText = vc.value || '<value>';
-          return `${vc.variableLabel.toLowerCase()} is ${valueText}`;
-        });
-        const conditionText = conditionParts.join(' and ');
-        branchLine = `For customer where ${conditionText}, assign the conversations to ${initialGroupsText}.`;
-      } else {
-        branchLine = `Assign the conversations to ${initialGroupsText}.`;
-      }
-      lines.push(branchLine);
-
-      branch.expansionRules.forEach((rule, ruleIdx) => {
-        const groupNames = rule.userGroupIds.map(id => getUserGroupName(id)).filter(Boolean);
-        const groupNamesText = groupNames.length > 0 ? groupNames.join(' or ') : '[choose user group(s)]';
-        const waitText = `${rule.waitTimeValue || '30'} ${rule.waitTimeUnit || 'seconds'}`;
-
-        if (ruleIdx === 0) {
-          lines.push(`    If no support representative is available or the conversation remains unassigned for ${waitText}, expand to ${groupNamesText}.`);
-        } else {
-          lines.push(`    If the conversation is still unassigned after ${waitText}, expand to ${groupNamesText}.`);
-        }
-      });
+    // Levels 1-4
+    expansionLevels.forEach((level) => {
+      const groupNames = level.userGroupIds.map(id => getUserGroupName(id)).filter(Boolean);
+      const groupNamesText = groupNames.length > 0 ? groupNames.join(' or ') : '[choose user group(s)]';
+      const waitText = `${level.waitTimeValue || '30'} ${level.waitTimeUnit || 'seconds'}`;
+      lines.push(`Level ${level.level}: If the conversation remains unassigned for ${waitText}, expand to ${groupNamesText}.`);
     });
 
-    // Add fallback action based on selection with time
+    // Fallback
     const fallbackActionLabel = fallbackActionOptions.find(opt => opt.id === fallbackAction)?.label || 'assign to any member of the queue';
-    const timeValue = fallbackTimeValue || '60';
-    const timeUnit = fallbackTimeUnit || 'seconds';
-    lines.push(`If the conversation remains unassigned after ${timeValue} ${timeUnit}, ${fallbackActionLabel}.`);
+    lines.push(`If the conversation still remains unassigned, ${fallbackActionLabel}.`);
 
     return lines.join('\n');
   };
@@ -506,25 +348,24 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
   useEffect(() => {
     if (onStateChange) {
       const currentState: UserGroupExpansionEditorState = {
-        branches: branches.map(b => ({
-          id: b.id,
-          initialUserGroups: b.initialUserGroups,
-          expansionRules: b.expansionRules,
-          variableConditions: b.variableConditions,
-          disabledVariables: b.disabledVariables
+        initialUserGroups,
+        expansionLevels: expansionLevels.map(l => ({
+          id: l.id,
+          level: l.level,
+          waitTimeValue: l.waitTimeValue,
+          waitTimeUnit: l.waitTimeUnit,
+          userGroupIds: l.userGroupIds
         })),
         fallbackAction,
-        fallbackTimeValue: parseInt(fallbackTimeValue) || 60,
-        fallbackTimeUnit,
         scenarioId
       };
       const prompt = generateFinalPrompt();
       onStateChange(currentState, prompt);
     }
-  }, [branches, fallbackAction, fallbackTimeValue, fallbackTimeUnit, scenarioId, contextVariables]);
+  }, [initialUserGroups, expansionLevels, fallbackAction, scenarioId]);
 
-  const hasError = (branchId: string, fieldId: string): boolean => {
-    return validationErrors.some(e => e.branchId === branchId && e.fieldId === fieldId);
+  const hasError = (fieldId: string): boolean => {
+    return validationErrors.some(e => e.fieldId === fieldId);
   };
 
   return (
@@ -559,9 +400,10 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
           <div className="tips-accordion-content">
             <ul className="tips-list">
               <li>This policy will apply to the queues you select.</li>
-              <li>Conversations are first assigned to the initial user group(s).</li>
-              <li>If unassigned, the system progressively expands to additional groups based on wait time.</li>
-              <li>Choose the fallback action to determine what happens if no agents are found.</li>
+              <li><strong>Level 0</strong>: Initial assignment - conversations are first assigned to these user groups.</li>
+              <li><strong>Levels 1-4</strong>: Expansion rules - if unassigned, progressively expand to additional groups based on wait time.</li>
+              <li>You can add up to 4 expansion levels (Levels 1-4).</li>
+              <li>Choose the fallback action to determine what happens if no agents are found after all levels.</li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>
@@ -571,220 +413,98 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
         )}
       </div>
 
-      {/* Main Template Section - Always visible */}
+      {/* Main Template Section */}
       <div className="template-output-section-main">
         <div className="template-instruction">
-          Click on the <span className="highlight-text">blue dropdowns</span> below to start editing. Configure user groups and wait times for progressive assignment expansion. Then Save or Publish your playbook.
+          Click on the <span className="highlight-text">blue dropdowns</span> below to configure user groups for each level. You can add up to 4 expansion levels. Then Save or Publish your playbook.
         </div>
 
         <div className="template-output">
-          {/* Variable Declaration */}
-          {contextVariables && contextVariables.length > 0 && (
-            <div className="template-line">
-              Get{' '}
-              {contextVariables.map((v, idx) => (
-                <React.Fragment key={v.id}>
-                  {idx > 0 && ' and '}
-                  the {v.description || v.label.toLowerCase()} from{' '}
-                  <span className="template-variable">
-                    ContextVariable.{v.id}
-                  </span>
-                </React.Fragment>
-              ))}.
+          {/* Level 0: Initial Assignment */}
+          <div className="template-line level-line">
+            <span className="level-label">Level 0:</span>
+            {' '}For all conversations, attempt assignment to{' '}
+            <UserGroupMultiSelect
+              selectedIds={initialUserGroups}
+              onChange={(ids) => {
+                setInitialUserGroups(ids);
+                if (ids.length > 0) {
+                  setValidationErrors(prev => prev.filter(e => e.fieldId !== 'level-0'));
+                }
+              }}
+              placeholder="choose user group(s)"
+              hasError={hasError('level-0')}
+            />.
+          </div>
+
+          {/* Expansion Levels 1-4 */}
+          {expansionLevels.map((level, idx) => (
+            <div key={level.id} className="template-line level-line indented">
+              <span className="level-label">Level {level.level}:</span>
+              {' '}If the conversation remains unassigned for{' '}
+              <input
+                type="number"
+                className="template-input small time-input"
+                value={level.waitTimeValue}
+                onChange={(e) => handleExpansionWaitTimeChange(level.id, e.target.value)}
+                min="1"
+                placeholder="30"
+              />
+              <select
+                className="template-dropdown time-unit-dropdown"
+                value={level.waitTimeUnit}
+                onChange={(e) => handleExpansionWaitTimeUnitChange(level.id, e.target.value as 'seconds' | 'minutes')}
+              >
+                <option value="seconds">seconds</option>
+                <option value="minutes">minutes</option>
+              </select>
+              , expand to{' '}
+              <UserGroupMultiSelect
+                selectedIds={level.userGroupIds}
+                onChange={(ids) => handleExpansionUserGroupsChange(level.id, ids)}
+                placeholder="choose user group(s)"
+                hasError={hasError(level.id)}
+              />.
+              {/* Add button on last level if less than 4 */}
+              {idx === expansionLevels.length - 1 && expansionLevels.length < 4 && (
+                <button
+                  className="inline-add-btn"
+                  onClick={addExpansionLevel}
+                  title="Add expansion level (max 4)"
+                >+</button>
+              )}
+              {/* Remove button if more than 0 levels */}
+              <button
+                className="inline-remove-btn"
+                onClick={() => removeExpansionLevel(level.id)}
+                title="Remove this level"
+              >×</button>
+            </div>
+          ))}
+
+          {/* Add Level button when no expansion levels exist */}
+          {expansionLevels.length === 0 && (
+            <div className="add-level-section">
+              <button
+                className="add-fallback-btn"
+                onClick={addExpansionLevel}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Add expansion level
+              </button>
             </div>
           )}
 
-          {/* Condition Branches */}
-          {branches.map((branch, branchIdx) => {
-            // Filter out disabled variables to get active ones
-            const activeVariableConditions = branch.variableConditions?.filter(
-              vc => !(branch.disabledVariables || []).includes(vc.variableId)
-            ) || [];
-            const hasActiveVariables = contextVariables && contextVariables.length > 0 && activeVariableConditions.length > 0;
+          {/* Fallback Divider */}
+          <div className="branches-divider">
+            <span className="branches-divider-text">Fallback</span>
+          </div>
 
-            // Track active variable index for "and" connector
-            let activeVarIndex = 0;
-
-            return (
-              <React.Fragment key={branch.id}>
-                {/* Main condition line with variable conditions */}
-                <div className="template-line condition-line">
-                  {hasActiveVariables ? (
-                    <>
-                      For customer where{' '}
-                      {branch.variableConditions?.map((vc) => {
-                        const isDisabled = (branch.disabledVariables || []).includes(vc.variableId);
-
-                        if (isDisabled) {
-                          // Render disabled variable chip in its original position
-                          return (
-                            <button
-                              key={vc.variableId}
-                              className="disabled-variable-chip"
-                              onClick={() => toggleVariableForBranch(branch.id, vc.variableId)}
-                              title="Click to enable this variable"
-                            >
-                              + {vc.variableLabel}
-                            </button>
-                          );
-                        } else {
-                          // Render active variable with input and remove button
-                          const currentActiveIndex = activeVarIndex;
-                          activeVarIndex++;
-                          return (
-                            <React.Fragment key={vc.variableId}>
-                              {currentActiveIndex > 0 && ' and '}
-                              <span className="variable-condition">
-                                <span className="variable-name-tag">
-                                  {vc.variableLabel}
-                                  <button
-                                    className="variable-remove-btn"
-                                    onClick={() => toggleVariableForBranch(branch.id, vc.variableId)}
-                                    title="Click to remove this variable from this branch"
-                                  >×</button>
-                                </span>
-                                {' '}is{' '}
-                                <input
-                                  type="text"
-                                  className="template-input small"
-                                  value={vc.value}
-                                  onChange={(e) => handleVariableConditionChange(branch.id, vc.variableId, e.target.value)}
-                                  placeholder="<value>"
-                                />
-                              </span>
-                            </React.Fragment>
-                          );
-                        }
-                      })}
-                      , assign the conversations to{' '}
-                    </>
-                  ) : (
-                    <>
-                      {/* Show disabled variable chips even when no active variables */}
-                      {contextVariables && contextVariables.length > 0 && branch.variableConditions?.some(vc => (branch.disabledVariables || []).includes(vc.variableId)) && (
-                        <>
-                          {branch.variableConditions?.filter(vc => (branch.disabledVariables || []).includes(vc.variableId)).map(vc => (
-                            <button
-                              key={vc.variableId}
-                              className="disabled-variable-chip"
-                              onClick={() => toggleVariableForBranch(branch.id, vc.variableId)}
-                              title="Click to enable this variable"
-                            >
-                              + {vc.variableLabel}
-                            </button>
-                          ))}
-                          {' '}
-                        </>
-                      )}
-                      Assign the conversations to{' '}
-                    </>
-                  )}
-                  <MultiSelectDropdown
-                    options={userGroups.map(g => g.name)}
-                    selected={branch.initialUserGroups.map(id => getUserGroupName(id)).filter(Boolean)}
-                    onChange={(selectedNames) => {
-                      const selectedIds = selectedNames.map(name => userGroups.find(g => g.name === name)?.id).filter(Boolean) as string[];
-                      handleInitialUserGroupsChange(branch.id, selectedIds);
-                      if (selectedIds.length > 0) {
-                        setValidationErrors(prev => prev.filter(err => !(err.branchId === branch.id && err.fieldId === 'initialUserGroups')));
-                      }
-                    }}
-                    placeholder="choose user group(s)"
-                    hasError={hasError(branch.id, 'initialUserGroups')}
-                  />.
-                  {contextVariables && contextVariables.length > 0 && branches.length < 5 && branchIdx === branches.length - 1 && (
-                    <button
-                      className="inline-add-btn"
-                      onClick={addBranch}
-                      title="Add another condition branch (max 5)"
-                    >+</button>
-                  )}
-                  {contextVariables && contextVariables.length > 0 && branches.length > 1 && (
-                    <button
-                      className="inline-remove-btn"
-                      onClick={() => removeBranch(branch.id)}
-                      title="Remove this condition branch"
-                    >×</button>
-                  )}
-                </div>
-
-                {/* Expansion Rules */}
-                {branch.expansionRules.map((rule, ruleIdx) => (
-                  <div key={rule.id} className="template-line fallback-line indented">
-                    {ruleIdx === 0 ? (
-                      <>If no support representative is available or the conversation remains unassigned for{' '}</>
-                    ) : (
-                      <>If the conversation is still unassigned after{' '}</>
-                    )}
-                    <input
-                      type="number"
-                      className="template-input small time-input"
-                      value={rule.waitTimeValue}
-                      onChange={(e) => handleExpansionWaitTimeValueChange(branch.id, rule.id, e.target.value)}
-                      min="1"
-                      placeholder="30"
-                    />
-                    <select
-                      className="template-dropdown time-unit-dropdown"
-                      value={rule.waitTimeUnit}
-                      onChange={(e) => handleExpansionWaitTimeUnitChange(branch.id, rule.id, e.target.value as 'seconds' | 'minutes')}
-                    >
-                      <option value="seconds">seconds</option>
-                      <option value="minutes">minutes</option>
-                    </select>
-                    , expand to{' '}
-                    <MultiSelectDropdown
-                      options={userGroups.map(g => g.name)}
-                      selected={rule.userGroupIds.map(id => getUserGroupName(id)).filter(Boolean)}
-                      onChange={(selectedNames) => {
-                        const selectedIds = selectedNames.map(name => userGroups.find(g => g.name === name)?.id).filter(Boolean) as string[];
-                        handleExpansionUserGroupsChange(branch.id, rule.id, selectedIds);
-                        if (selectedIds.length > 0) {
-                          setValidationErrors(prev => prev.filter(err => !(err.branchId === branch.id && err.fieldId === rule.id)));
-                        }
-                      }}
-                      placeholder="choose user group(s)"
-                      hasError={hasError(branch.id, rule.id)}
-                    />.
-                    {branch.expansionRules.length < 4 && (
-                      <button
-                        className="inline-add-btn"
-                        onClick={() => addExpansionRule(branch.id)}
-                        title="Add expansion rule (max 4)"
-                      >+</button>
-                    )}
-                    {branch.expansionRules.length > 1 && (
-                      <button
-                        className="inline-remove-btn"
-                        onClick={() => removeExpansionRule(branch.id, rule.id)}
-                        title="Remove this expansion rule"
-                      >×</button>
-                    )}
-                  </div>
-                ))}
-              </React.Fragment>
-            );
-          })}
-
-          {/* Default Fallback with Time and Action */}
-          <div className="template-line default-fallback">
-            If the conversation remains unassigned after{' '}
-            <input
-              type="number"
-              className="template-input small time-input"
-              value={fallbackTimeValue}
-              onChange={(e) => setFallbackTimeValue(e.target.value)}
-              min="1"
-              placeholder="60"
-            />
-            <select
-              className="template-dropdown time-unit-dropdown"
-              value={fallbackTimeUnit}
-              onChange={(e) => setFallbackTimeUnit(e.target.value as 'seconds' | 'minutes')}
-            >
-              <option value="seconds">seconds</option>
-              <option value="minutes">minutes</option>
-            </select>,{' '}
+          {/* Fallback Action */}
+          <div className="template-line fallback-line">
+            If the conversation still remains unassigned,{' '}
             <select
               className="template-dropdown fallback-action-dropdown"
               value={fallbackAction}

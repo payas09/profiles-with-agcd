@@ -2535,3 +2535,27 @@
   background-color: #f3f2f1;
   color: #a19f9d;
 }
+
+/* Level Labels for User Group Expansion */
+.level-label {
+  font-weight: 600;
+  color: #0078d4;
+  font-size: 13px;
+  margin-right: 4px;
+}
+
+.level-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.level-line.indented {
+  padding-left: 24px;
+}
+
+.add-level-section {
+  margin-top: 12px;
+  padding-left: 24px;
+}
