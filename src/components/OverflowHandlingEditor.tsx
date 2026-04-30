@@ -1093,8 +1093,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
         }
 
         // Fallback format: "For all other conversations, if <overflow conditions> then <action>"
-        const prefix = idx === 0 ? 'For all other conversations' : 'Otherwise';
-        lines.push(`${prefix}, if ${fallbackOverflowCondition} then ${fallbackActionText.toLowerCase()}`);
+        lines.push(`For all other conversations, if ${fallbackOverflowCondition} then ${fallbackActionText.toLowerCase()}`);
       }
     });
 
@@ -1749,12 +1748,11 @@ For all other conversations, if no support reps are available immediately then o
           {/* Fallback Branches */}
           {fallbackBranches.map((fallback, fallbackIndex) => {
               const currentAction = overflowActionOptions.find(a => a.id === fallback.actionId);
-              const isFirstFallback = fallbackIndex === 0;
 
               return (
                 <div key={fallback.id} className="template-line overflow-single-line fallback-branch">
                   <span className="fallback-label">
-                    {isFirstFallback ? 'For all other conversations' : 'Otherwise'}
+                    For all other conversations
                   </span>
                   {/* Overflow Condition for fallback - Static field for public preview, dropdown for regular */}
                   {isPublicPreview ? (
