@@ -1855,6 +1855,57 @@
   margin: 0 2px;
 }
 
+/* Inline value text input for time/number values */
+.inline-value-input {
+  width: 50px;
+  padding: 2px 6px;
+  border: 1px solid #0078d4;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 12px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #0078d4;
+  font-weight: 500;
+  text-align: center;
+  margin: 0 2px;
+}
+
+.inline-value-input:focus {
+  outline: none;
+  border-color: #005a9e;
+  box-shadow: 0 0 0 1px #005a9e;
+}
+
+.inline-value-input::placeholder {
+  color: #a19f9d;
+  font-weight: 400;
+}
+
+/* Inline unit select (seconds/minutes) */
+.inline-unit-select {
+  padding: 2px 4px;
+  border: 1px solid #0078d4;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 12px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #0078d4;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 0 2px;
+}
+
+.inline-unit-select:focus {
+  outline: none;
+  border-color: #005a9e;
+}
+
+/* Fallback if text */
+.fallback-if-text {
+  color: #323130;
+  font-weight: 400;
+}
+
 .overflow-condition-backdrop {
   position: fixed;
   top: 0;
@@ -2025,7 +2076,19 @@
 }
 
 .tips-list li {
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.tips-link {
+  color: #0078d4;
+  text-decoration: underline;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+.tips-link:hover {
+  color: #106ebe;
+  text-decoration: none;
 }
 
 .tips-example {

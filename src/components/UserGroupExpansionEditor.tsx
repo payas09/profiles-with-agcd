@@ -399,11 +399,34 @@ const UserGroupExpansionEditor: React.FC<UserGroupExpansionEditorProps> = ({
         {isTipsSectionOpen && (
           <div className="tips-accordion-content">
             <ul className="tips-list">
-              <li>This policy will apply to the queues you select.</li>
-              <li><strong>Level 0</strong>: Initial assignment - conversations are first assigned to these user groups.</li>
-              <li><strong>Levels 1-4</strong>: Expansion rules - if unassigned, progressively expand to additional groups based on wait time.</li>
-              <li>You can add up to 4 expansion levels (Levels 1-4).</li>
-              <li>Choose the fallback action to determine what happens if no agents are found after all levels.</li>
+              <li>
+                This scenario requires <strong>User groups</strong>. If you haven't created any yet,
+                <a href="#" className="tips-link" onClick={(e) => { e.preventDefault(); /* TODO: Navigate to user group creation */ }}>create them here</a>.
+              </li>
+              <li>
+                <strong>Level 0</strong> is where assignment begins. The system first tries to assign conversations to these user groups.
+              </li>
+              <li>
+                <strong>Level 1</strong> can start at 0 seconds (immediately with Level 0). <strong>Levels 2, 3, and 4</strong> require at least 30 seconds.
+              </li>
+              <li>
+                <strong>Wait times are total</strong>, measured from when the conversation started. For example, if Level 1 is set to 30 seconds and Level 2 is set to 45 seconds, the gap between them is 15 seconds.
+              </li>
+              <li>
+                <strong>Same wait time?</strong> Levels with identical wait times trigger back-to-back with no delay. Use this to add multiple user groups at the same point.
+              </li>
+              <li>
+                <strong>Earlier levels have priority.</strong> As you expand, previous user groups stay active but new ones are added with lower priority.
+              </li>
+              <li>
+                <strong>Wait time starts from conversation creation</strong>, not from when it entered the current queue (e.g., after a transfer).
+              </li>
+              <li>
+                <strong>Fallback action</strong> kicks in when no expert is found after all levels have been tried.
+              </li>
+              <li>
+                Only user groups <strong>common to all selected queues/profiles</strong> are shown here.
+              </li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>

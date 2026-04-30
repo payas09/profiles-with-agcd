@@ -152,7 +152,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
       {
         id: 'sample-1',
         promptName: 'Overflow routing policy',
-        policyBehavior: 'For all conversations, when no agents are available, route to the overflow queue "General Overflow Queue". For conversations where Is VIP Customer is True, route to the overflow queue "VIP Overflow Queue". For all other conversations, end the conversation.',
+        policyBehavior: 'For conversations where Is VIP Customer is True, if no support reps are available immediately then transfer to queue VIP Overflow Queue\nFor all other conversations, if no support reps are available immediately then transfer to queue General Overflow Queue',
         selectedProfiles: [
           { profileId: 'profile1', profileName: 'Standard Support Profile', queues: ['General Support Queue', 'Chat Support Queue'] }
         ],
@@ -183,7 +183,7 @@ const initializeSamplePolicies = (prompts: Map<string, PromptData>) => {
       {
         id: 'sample-3',
         promptName: 'After hours automated response',
-        policyBehavior: 'For all conversations, when no agents are available, send a message to customer "Thank you for contacting us. Our business hours are 9 AM to 5 PM. We will respond to your inquiry during the next business day." and then end the conversation.',
+        policyBehavior: 'For all conversations, if is out of operating hours then send to voicemail\nFor all other conversations, if no support reps are available immediately then end conversation',
         selectedProfiles: [
           { profileId: 'q1', profileName: 'General Support Queue', queues: ['General Support Queue'] }
         ],

@@ -160,6 +160,11 @@ const AgCDPlaybook: React.FC = () => {
     });
   };
 
+  // Helper function to check if playbook is a DID (Direct Inward Dialing) playbook
+  const isDIDPlaybook = (policy: PromptData): boolean => {
+    return policy.scenarioId === 'direct-inward-dialing';
+  };
+
   const renderProfiles = (policy: PromptData) => {
     // Use selectedProfiles which contains profile data
     const profiles = policy.selectedProfiles || [];
@@ -224,6 +229,80 @@ const AgCDPlaybook: React.FC = () => {
         All engagement profiles
       </span>
     );
+  };
+
+  // Render function for inbound profiles (DID playbooks)
+  const renderInboundProfiles = (policy: PromptData) => {
+    const inboundProfiles = policy.selectedInboundProfiles || [];
+
+    if (policy.selectionMode === 'all') {
+      return (
+        <span className="queue-tag-item">
+          All inbound profiles
+        </span>
+      );
+    } else if (inboundProfiles.length > 0) {
+      if (expandedRows.has(policy.id + '-inbound-profiles')) {
+        return (
+          <div className="queues-expanded-list">
+            {policy.selectionMode === 'except' && (
+              <span className="queue-display-text-small">
+                All except:
+              </span>
+            )}
+            {inboundProfiles.map((profile, index) => (
+              <span
+                key={index}
+                className="queue-tag-item"
+              >
+                {profile.profileName}
+              </span>
+            ))}
+            <button
+              className="queue-toggle-btn"
+              onClick={(e) => toggleExpandRow(policy.id + '-inbound-profiles', e)}
+            >
+              Show less
+            </button>
+          </div>
+        );
+      } else {
+        return (
+          <>
+            {policy.selectionMode === 'except' && (
+              <span className="queue-display-text-small">
+                All except:{' '}
+              </span>
+            )}
+            <span className="queue-tag-item">
+              {inboundProfiles[0].profileName}
+            </span>
+            {inboundProfiles.length > 1 && (
+              <button
+                className="queue-more-count"
+                onClick={(e) => toggleExpandRow(policy.id + '-inbound-profiles', e)}
+              >
+                +{inboundProfiles.length - 1} more
+              </button>
+            )}
+          </>
+        );
+      }
+    }
+    // Default to "All inbound profiles" since profiles are mandatory
+    return (
+      <span className="queue-tag-item">
+        All inbound profiles
+      </span>
+    );
+  };
+
+  // Unified render function for "Applies to" column
+  const renderAppliesToColumn = (policy: PromptData) => {
+    if (isDIDPlaybook(policy)) {
+      return renderInboundProfiles(policy);
+    }
+    return renderProfiles(policy);
   };
 
   const renderChannels = (policy: PromptData) => {
@@ -330,7 +409,7 @@ const AgCDPlaybook: React.FC = () => {
                   <th>Playbook Name</th>
                   <th>Trigger</th>
                   <th>Status</th>
-                  <th>Profiles</th>
+                  <th>Applies to</th>
                   <th>Channels</th>
                   <th>Last Modified</th>
                   <th>Action</th>
@@ -371,7 +450,7 @@ const AgCDPlaybook: React.FC = () => {
                       </td>
                       <td className="queues-display-cell">
                         <div className="queues-display-wrapper">
-                          {renderProfiles(policy)}
+                          {renderAppliesToColumn(policy)}
                         </div>
                       </td>
                       <td className="channels-display-cell">

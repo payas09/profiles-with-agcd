@@ -50,32 +50,50 @@ interface OverflowConditionOption {
 }
 
 const overflowConditionOptions: OverflowConditionOption[] = [
-  { id: 'estimated-wait-time', label: 'the estimated average wait time >', requiresValue: true, valueType: 'time', valueLabel: 'minutes', valuePlaceholder: '5' },
-  { id: 'conversations-waiting', label: 'the conversations waiting in the queue >', requiresValue: true, valueType: 'number', valueLabel: 'conversations', valuePlaceholder: '10' },
-  { id: 'actual-wait-time', label: 'the actual in queue wait time >', requiresValue: true, valueType: 'time', valueLabel: 'minutes', valuePlaceholder: '5' },
-  { id: 'all-agents-offline', label: 'all agents are offline or away', requiresValue: false },
-  { id: 'no-agents-available', label: 'no agents are available', requiresValue: false },
-  { id: 'out-of-hours', label: 'the queue is out of operating hours', requiresValue: false },
-  { id: 'closing-soon', label: 'the queue will be out of operation in next', requiresValue: true, valueType: 'time', valueLabel: 'minutes', valuePlaceholder: '30' },
+  // Time-based conditions
+  { id: 'estimated-wait-time', label: 'estimated average wait time in queue >', requiresValue: true, valueType: 'time', valueLabel: '', valuePlaceholder: '5' },
+  { id: 'actual-wait-time', label: 'actual wait time in queue >', requiresValue: true, valueType: 'time', valueLabel: '', valuePlaceholder: '5' },
+  { id: 'conversations-waiting', label: 'number of conversations waiting in the queue >', requiresValue: true, valueType: 'number', valueLabel: '', valuePlaceholder: '10' },
+  // Operating hours conditions
+  { id: 'out-of-hours', label: 'queue is out of operation', requiresValue: false },
+  { id: 'queue-out-of-hours-waiting', label: 'queue goes out of operation while conversations are waiting', requiresValue: false },
+  // Agent availability conditions
+  { id: 'all-reps-logged-out', label: 'all support reps are logged out', requiresValue: false },
+  { id: 'reps-logout-while-waiting', label: 'all support reps log out while conversations are waiting', requiresValue: false },
+  { id: 'no-reps-available', label: 'no support reps are available immediately', requiresValue: false },
 ];
+
+// Time unit options
+const timeUnitOptions = ['seconds', 'minutes'] as const;
+type TimeUnit = typeof timeUnitOptions[number];
 
 // Overflow action options
 interface OverflowActionOption {
   id: string;
   label: string;
   requiresValue: boolean;
-  valueType?: 'queue' | 'phone' | 'text';
+  valueType?: 'queue' | 'phone' | 'text' | 'outbound-profile';
   valueLabel?: string;
   valuePlaceholder?: string;
 }
 
+// Outbound profiles for scheduled callback
+const outboundProfiles = [
+  { id: 'obp1', name: 'Default Outbound Profile' },
+  { id: 'obp2', name: 'Sales Outbound Profile' },
+  { id: 'obp3', name: 'Support Outbound Profile' },
+  { id: 'obp4', name: 'VIP Callback Profile' },
+  { id: 'obp5', name: 'After Hours Profile' },
+];
+
 const overflowActionOptions: OverflowActionOption[] = [
-  { id: 'transfer-queue', label: 'Transfer to another queue', requiresValue: true, valueType: 'queue', valueLabel: 'Queue', valuePlaceholder: 'Select queue' },
-  { id: 'transfer-external', label: 'Transfer to external number', requiresValue: true, valueType: 'phone', valueLabel: 'Number', valuePlaceholder: '+1-800-XXX-XXXX' },
   { id: 'offer-callback', label: 'Offer direct callback', requiresValue: false },
+  { id: 'scheduled-callback', label: 'Offer scheduled callback', requiresValue: true, valueType: 'outbound-profile', valueLabel: 'Outbound Profile', valuePlaceholder: 'Select outbound profile' },
+  { id: 'transfer-queue', label: 'Transfer to queue', requiresValue: true, valueType: 'queue', valueLabel: 'Queue', valuePlaceholder: 'Select queue' },
+  { id: 'transfer-external', label: 'Transfer to external', requiresValue: true, valueType: 'phone', valueLabel: 'Number', valuePlaceholder: '+1-800-XXX-XXXX' },
   { id: 'send-voicemail', label: 'Send to voicemail', requiresValue: false },
-  { id: 'scheduled-callback', label: 'Offer scheduled callback', requiresValue: false },
-  { id: 'end-conversation', label: 'End the conversation', requiresValue: false },
+  { id: 'end-conversation', label: 'End conversation', requiresValue: false },
+  { id: 'continue-waiting', label: 'Continue waiting in the queue', requiresValue: false },
 ];
 
 // Time options for dropdowns
@@ -83,11 +101,11 @@ const timeOptions = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120];
 const conversationCountOptions = [5, 10, 15, 20, 25, 30, 50, 75, 100];
 
 // Example Playbook for Overflow
-const examplePlaybook = `For VIP conversations where the estimated average wait time > 5 minutes or all agents are offline or away, transfer to VIP Support Queue.
+const examplePlaybook = `For conversations where Customer Tier is Gold, if estimated average wait time in queue > 5 minutes or all support reps are logged out then transfer to queue VIP Support Queue
 
-For all other conversations where the actual in queue wait time > 10 minutes, offer direct callback.
+For all conversations, if actual wait time in queue > 30 seconds then offer direct callback
 
-For conversations where the queue is out of operating hours, transfer to After Hours Queue.`;
+For all other conversations, if queue is out of operation then transfer to queue After Hours Queue`;
 
 // Preset configurations for common overflow scenarios
 interface OverflowPreset {
@@ -125,7 +143,7 @@ const overflowPresets: OverflowPreset[] = [
     description: 'Fast-track VIP conversations, offer callback for others',
     branches: [
       {
-        selectedConditionIds: ['estimated-wait-time', 'all-agents-offline'],
+        selectedConditionIds: ['estimated-wait-time', 'all-reps-logged-out'],
         conditionValues: { 'estimated-wait-time': 3 },
         overflowConditionExcludeMode: false,
         actionId: 'transfer-queue',
@@ -153,8 +171,8 @@ const overflowPresets: OverflowPreset[] = [
         actionValue: 'q7' // After Hours Queue
       },
       {
-        selectedConditionIds: ['closing-soon'],
-        conditionValues: { 'closing-soon': 30 },
+        selectedConditionIds: ['queue-out-of-hours-waiting'],
+        conditionValues: {},
         overflowConditionExcludeMode: false,
         actionId: 'send-voicemail'
       }
@@ -163,7 +181,7 @@ const overflowPresets: OverflowPreset[] = [
   {
     id: 'callback-fallback',
     name: 'Callback Fallback',
-    description: 'Offer callback when queue is busy or agents unavailable',
+    description: 'Offer callback when queue is busy or reps unavailable',
     branches: [
       {
         selectedConditionIds: ['conversations-waiting'],
@@ -172,10 +190,11 @@ const overflowPresets: OverflowPreset[] = [
         actionId: 'offer-callback'
       },
       {
-        selectedConditionIds: ['no-agents-available'],
+        selectedConditionIds: ['no-reps-available'],
         conditionValues: {},
         overflowConditionExcludeMode: false,
-        actionId: 'scheduled-callback'
+        actionId: 'scheduled-callback',
+        actionValue: 'obp1' // Default Outbound Profile
       }
     ]
   },
@@ -192,7 +211,7 @@ const overflowPresets: OverflowPreset[] = [
         actionValue: 'q6' // Escalation Queue
       },
       {
-        selectedConditionIds: ['all-agents-offline'],
+        selectedConditionIds: ['all-reps-logged-out'],
         conditionValues: {},
         overflowConditionExcludeMode: false,
         actionId: 'transfer-external',
@@ -217,6 +236,7 @@ interface OverflowBranch {
   disabledVariables: string[];
   selectedConditionIds: string[];  // IDs of selected overflow conditions
   conditionValues: { [conditionId: string]: string | number };  // Values for conditions that require them
+  conditionUnits: { [conditionId: string]: TimeUnit };  // Time units for conditions (seconds/minutes)
   overflowConditionExcludeMode: boolean;  // If true, selectedConditionIds are conditions to EXCLUDE
   actionId: string;
   actionValue?: string;
@@ -255,9 +275,12 @@ export interface SelectedVariableState {
   values: string[];
 }
 
-// Fallback branch - simpler structure without conditions
+// Fallback branch - includes overflow conditions
 export interface FallbackBranchState {
   id: string;
+  selectedConditionIds: string[];  // IDs of selected overflow conditions
+  conditionValues: { [conditionId: string]: string | number };  // Values for conditions that require them
+  conditionUnits: { [conditionId: string]: TimeUnit };  // Time units for conditions (seconds/minutes)
   actionId: string;
   actionValue?: string;
 }
@@ -414,16 +437,20 @@ const _MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 interface OverflowConditionMultiSelectProps {
   selectedIds: string[];
   conditionValues: { [conditionId: string]: string | number };
+  conditionUnits: { [conditionId: string]: TimeUnit };
   onSelectionChange: (selectedIds: string[]) => void;
   onValueChange: (conditionId: string, value: number) => void;
+  onUnitChange: (conditionId: string, unit: TimeUnit) => void;
   hasError?: boolean;
 }
 
 const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> = ({
   selectedIds,
   conditionValues,
+  conditionUnits,
   onSelectionChange,
   onValueChange,
+  onUnitChange,
   hasError = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -463,6 +490,7 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
           const option = overflowConditionOptions.find(o => o.id === condId);
           if (!option) return null;
           const value = conditionValues[condId];
+          const unit = conditionUnits[condId] || 'minutes';
           return (
             <React.Fragment key={condId}>
               {idx > 0 && <span className="condition-connector-black"> or </span>}
@@ -471,25 +499,42 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
                 {option.requiresValue && (
                   <>
                     {' '}
-                    <select
-                      className="inline-value-select"
-                      value={value || (option.valueType === 'number' ? 10 : 5)}
+                    <input
+                      type="text"
+                      className="inline-value-input"
+                      value={value || ''}
+                      placeholder={option.valuePlaceholder}
                       onChange={(e) => {
                         e.stopPropagation();
-                        onValueChange(condId, parseInt(e.target.value));
+                        // Only allow positive integers (minimum 1, no 0)
+                        const inputVal = e.target.value.replace(/[^0-9]/g, '');
+                        if (inputVal === '') {
+                          onValueChange(condId, '');
+                        } else {
+                          const numValue = Math.max(1, parseInt(inputVal));
+                          onValueChange(condId, numValue);
+                        }
                       }}
                       onClick={(e) => e.stopPropagation()}
-                    >
-                      {option.valueType === 'number'
-                        ? conversationCountOptions.map(c => (
-                            <option key={c} value={c}>{c}</option>
-                          ))
-                        : timeOptions.map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))
-                      }
-                    </select>
-                    {' '}{option.valueLabel}
+                    />
+                    {option.valueType === 'time' && (
+                      <>
+                        {' '}
+                        <select
+                          className="inline-unit-select"
+                          value={unit}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            onUnitChange(condId, e.target.value as TimeUnit);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {timeUnitOptions.map(u => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                        </select>
+                      </>
+                    )}
                   </>
                 )}
               </span>
@@ -527,7 +572,6 @@ const OverflowConditionMultiSelect: React.FC<OverflowConditionMultiSelectProps> 
                     onChange={() => toggleCondition(option.id)}
                   />
                   <span className="condition-option-label">{option.label}</span>
-                  {option.requiresValue && <span className="requires-value-hint">({option.valueLabel})</span>}
                 </label>
               ))}
             </div>
@@ -551,17 +595,28 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   contextVariables: parentContextVariables = []
 }) => {
   // Create default branch helper function with sensible defaults
-  // For public preview, always use 'no-agents-available' as the only condition
+  // For public preview, always use 'no-reps-available' as the only condition
   const createDefaultBranch = (index: number): OverflowBranch => ({
     id: `branch-${index}`,
     variableValues: {},
     variableExcludeMode: {},
     disabledVariables: [],
-    selectedConditionIds: isPublicPreview ? ['no-agents-available'] : ['estimated-wait-time'],
+    selectedConditionIds: isPublicPreview ? ['no-reps-available'] : ['estimated-wait-time'],
     conditionValues: isPublicPreview ? {} : { 'estimated-wait-time': 5 },
+    conditionUnits: isPublicPreview ? {} : { 'estimated-wait-time': 'minutes' },
     overflowConditionExcludeMode: false,
     actionId: 'transfer-queue',
     actionValue: 'q8'
+  });
+
+  // Create default fallback branch helper function
+  const createDefaultFallbackBranch = (index: number): FallbackBranchState => ({
+    id: `fallback-${index}`,
+    selectedConditionIds: ['no-reps-available'],
+    conditionValues: {},
+    conditionUnits: {},
+    actionId: 'end-conversation',
+    actionValue: ''
   });
 
   // Helper to restore variables from state
@@ -603,6 +658,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
         disabledVariables: b.disabledVariables || [],
         selectedConditionIds: b.selectedConditionIds || [],
         conditionValues: b.conditionValues || {},
+        conditionUnits: (b as any).conditionUnits || {},
         overflowConditionExcludeMode: b.overflowConditionExcludeMode || false,
         actionId: b.actionId || '',
         actionValue: b.actionValue || ''
@@ -616,12 +672,22 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
   const [fallbackBranches, setFallbackBranches] = useState<FallbackBranchState[]>(() => {
     // First check for new fallbackBranches array format
     if (initialState?.fallbackBranches && initialState.fallbackBranches.length > 0) {
-      return initialState.fallbackBranches;
+      return initialState.fallbackBranches.map(fb => ({
+        id: fb.id,
+        selectedConditionIds: (fb as any).selectedConditionIds || ['no-reps-available'],
+        conditionValues: (fb as any).conditionValues || {},
+        conditionUnits: (fb as any).conditionUnits || {},
+        actionId: fb.actionId || '',
+        actionValue: fb.actionValue || ''
+      }));
     }
     // Legacy support: migrate from old single fallback format
     if (initialState?.hasFallbackBranch && initialState?.fallbackActionId) {
       return [{
         id: 'fallback-0',
+        selectedConditionIds: ['no-reps-available'],
+        conditionValues: {},
+        conditionUnits: {},
         actionId: initialState.fallbackActionId,
         actionValue: initialState.fallbackActionValue || ''
       }];
@@ -631,11 +697,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       return [];
     }
     // Default: show one fallback branch for new editors
-    return [{
-      id: 'fallback-0',
-      actionId: 'end-conversation',
-      actionValue: ''
-    }];
+    return [createDefaultFallbackBranch(0)];
   });
 
   // Section collapse states - open Variables section if we have variables from restored state
@@ -842,6 +904,19 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     }));
   };
 
+  // Overflow condition unit change handler
+  const handleConditionUnitChange = (branchId: string, conditionId: string, unit: TimeUnit) => {
+    setBranches(prev => prev.map(branch => {
+      if (branch.id === branchId) {
+        return {
+          ...branch,
+          conditionUnits: { ...branch.conditionUnits, [conditionId]: unit }
+        };
+      }
+      return branch;
+    }));
+  };
+
   // Action handlers
   const handleActionChange = (branchId: string, actionId: string) => {
     setBranches(prev => prev.map(branch => {
@@ -885,20 +960,26 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     return queue?.name || '';
   };
 
-  const formatConditionText = (conditionId: string, value?: string | number): string => {
+  const formatConditionText = (conditionId: string, value?: string | number, unit?: TimeUnit): string => {
     const option = overflowConditionOptions.find(o => o.id === conditionId);
     if (!option) return '';
 
     if (option.requiresValue) {
       const displayValue = value || '[choose value]';
       if (option.valueType === 'time') {
-        return `${option.label} ${displayValue} ${option.valueLabel}`;
+        const displayUnit = unit || 'minutes';
+        return `${option.label} ${displayValue} ${displayUnit}`;
       } else if (option.valueType === 'number') {
         return `${option.label} ${displayValue}`;
       }
       return `${option.label} ${displayValue}`;
     }
     return option.label;
+  };
+
+  const getOutboundProfileName = (id: string) => {
+    const profile = outboundProfiles.find(p => p.id === id);
+    return profile?.name || '';
   };
 
   const formatActionText = (actionId: string, actionValue?: string): string => {
@@ -908,12 +989,28 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
     if (action.requiresValue) {
       if (action.valueType === 'queue') {
         const queueName = actionValue ? getQueueName(actionValue) : '';
-        return `${action.label}: ${queueName || '[select queue]'}`;
+        return `transfer to queue ${queueName || '[select queue]'}`;
       } else if (action.valueType === 'phone') {
-        return `${action.label}: ${actionValue || '[enter number]'}`;
+        return `transfer to external ${actionValue || '[enter number]'}`;
+      } else if (action.valueType === 'outbound-profile') {
+        const profileName = actionValue ? getOutboundProfileName(actionValue) : '';
+        return `offer scheduled callback using ${profileName || '[select outbound profile]'}`;
       }
     }
-    return action.label;
+
+    // Standard action labels mapping to new format
+    switch (actionId) {
+      case 'offer-callback':
+        return 'offer direct callback';
+      case 'send-voicemail':
+        return 'send to voicemail';
+      case 'end-conversation':
+        return 'end conversation';
+      case 'continue-waiting':
+        return 'continue waiting in the queue';
+      default:
+        return action.label.toLowerCase();
+    }
   };
 
   const generateFinalPrompt = (): string => {
@@ -955,46 +1052,53 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
       let overflowConditionText = '';
       if (isPublicPreview) {
         // Public preview: always use static condition
-        overflowConditionText = 'no agents are available';
+        overflowConditionText = 'no support reps are available immediately';
       } else {
         // Multiple conditions with OR logic
         const overflowConditionParts = branch.selectedConditionIds.map(condId =>
-          formatConditionText(condId, branch.conditionValues[condId])
+          formatConditionText(condId, branch.conditionValues[condId], branch.conditionUnits[condId])
         );
         overflowConditionText = overflowConditionParts.join(' or ');
       }
 
       const actionText = formatActionText(branch.actionId, branch.actionValue);
 
-      let conditionText = '';
+      // New template format:
+      // With branch conditions: "For conversations where <branch condition>, if <overflow conditions> then <action>"
+      // Without branch conditions: "For all conversations, if <overflow conditions> then <action>"
+      let promptLine = '';
       if (customerConditionParts.length > 0) {
-        if (isPublicPreview) {
-          conditionText = `For conversations where ${customerConditionParts.join(' AND ')} and ${overflowConditionText}`;
-        } else {
-          conditionText = `For conversations where ${customerConditionParts.join(' AND ')} and (${overflowConditionText})`;
-        }
+        // Has branch conditions
+        const branchCondition = customerConditionParts.join(' and ');
+        promptLine = `For conversations where ${branchCondition}, if ${overflowConditionText} then ${actionText.toLowerCase()}`;
       } else {
-        conditionText = `For all conversations where ${overflowConditionText}`;
+        // No branch conditions - all conversations
+        promptLine = `For all conversations, if ${overflowConditionText} then ${actionText.toLowerCase()}`;
       }
 
-      lines.push(`${conditionText}, ${actionText.toLowerCase()}.`);
+      lines.push(promptLine);
     });
 
     // Add fallback branches
     fallbackBranches.forEach((fallback, idx) => {
       if (fallback.actionId) {
         const fallbackActionText = formatActionText(fallback.actionId, fallback.actionValue);
-        if (isPublicPreview) {
-          lines.push(`For all other conversations where no agents are available, ${fallbackActionText.toLowerCase()}.`);
-        } else {
-          // For multiple fallback branches, indicate the order
-          const prefix = fallbackBranches.length > 1 ? `Otherwise, ` : `For all other conversations, `;
-          lines.push(`${idx === 0 ? 'For all other conversations, ' : prefix}${fallbackActionText.toLowerCase()}.`);
+        // Use the fallback's own overflow conditions
+        let fallbackOverflowCondition = 'no support reps are available immediately';
+        if (!isPublicPreview && fallback.selectedConditionIds && fallback.selectedConditionIds.length > 0) {
+          const overflowConditionParts = fallback.selectedConditionIds.map(condId =>
+            formatConditionText(condId, fallback.conditionValues[condId], fallback.conditionUnits[condId])
+          );
+          fallbackOverflowCondition = overflowConditionParts.join(' or ');
         }
+
+        // Fallback format: "For all other conversations, if <overflow conditions> then <action>"
+        const prefix = idx === 0 ? 'For all other conversations' : 'Otherwise';
+        lines.push(`${prefix}, if ${fallbackOverflowCondition} then ${fallbackActionText.toLowerCase()}`);
       }
     });
 
-    return lines.join('\n\n');
+    return lines.join('\n');
   };
 
   // Notify parent of state changes for persistence
@@ -1008,6 +1112,7 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
           disabledVariables: b.disabledVariables,
           selectedConditionIds: b.selectedConditionIds,
           conditionValues: b.conditionValues,
+          conditionUnits: b.conditionUnits,
           overflowConditionExcludeMode: b.overflowConditionExcludeMode,
           actionId: b.actionId,
           actionValue: b.actionValue
@@ -1029,6 +1134,9 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
         scenarioId,
         fallbackBranches: fallbackBranches.map(fb => ({
           id: fb.id,
+          selectedConditionIds: fb.selectedConditionIds,
+          conditionValues: fb.conditionValues,
+          conditionUnits: fb.conditionUnits,
           actionId: fb.actionId,
           actionValue: fb.actionValue
         }))
@@ -1413,14 +1521,14 @@ const OverflowHandlingEditor: React.FC<OverflowHandlingEditorProps> = ({
               <li>Custom overflow rules will not apply to queues with predefined overflow logic.</li>
               <li>Please ensure that the queues referenced in the prompt contain at least one member.</li>
               <li>Minimum wait time threshold is 30 seconds.</li>
-              <li>{isPublicPreview ? 'The overflow condition triggers when no agents are available.' : 'You can combine multiple overflow conditions using OR logic within a single rule.'}</li>
+              <li>{isPublicPreview ? 'The overflow condition triggers when no support reps are available immediately.' : 'You can combine multiple overflow conditions using OR logic within a single rule.'}</li>
             </ul>
             <div className="tips-example">
               <strong>Example:</strong>
               <pre className="tips-example-text">{isPublicPreview
-                ? `For VIP conversations where no agents are available, transfer to VIP Support Queue.
+                ? `For conversations where Customer Tier is Gold, if no support reps are available immediately then transfer to queue VIP Support Queue
 
-For all other conversations where no agents are available, offer direct callback.`
+For all other conversations, if no support reps are available immediately then offer direct callback`
                 : examplePlaybook}</pre>
             </div>
           </div>
@@ -1523,44 +1631,52 @@ For all other conversations where no agents are available, offer direct callback
 
                 {/* Overflow Condition - Static field for public preview, dropdown for regular */}
                 {isPublicPreview ? (
-                  <span className="overflow-condition-static">no agents are available</span>
+                  <span className="overflow-condition-static">no support reps are available immediately</span>
                 ) : (
                   <OverflowConditionMultiSelect
                     selectedIds={branch.selectedConditionIds}
                     conditionValues={branch.conditionValues}
+                    conditionUnits={branch.conditionUnits}
                     onSelectionChange={(selectedIds) => {
                       setBranches(prev => prev.map(b => {
                         if (b.id === branch.id) {
-                          // Initialize default values for newly selected conditions
+                          // Initialize default values and units for newly selected conditions
                           const newConditionValues = { ...b.conditionValues };
+                          const newConditionUnits = { ...b.conditionUnits };
                           selectedIds.forEach(condId => {
                             const option = overflowConditionOptions.find(o => o.id === condId);
                             if (option?.requiresValue && !(condId in newConditionValues)) {
                               newConditionValues[condId] = option.valueType === 'number' ? 10 : 5;
+                              if (option.valueType === 'time') {
+                                newConditionUnits[condId] = 'minutes';
+                              }
                             }
                           });
-                          // Remove values for deselected conditions
+                          // Remove values and units for deselected conditions
                           Object.keys(newConditionValues).forEach(key => {
                             if (!selectedIds.includes(key)) {
                               delete newConditionValues[key];
+                              delete newConditionUnits[key];
                             }
                           });
                           return {
                             ...b,
                             selectedConditionIds: selectedIds,
-                            conditionValues: newConditionValues
+                            conditionValues: newConditionValues,
+                            conditionUnits: newConditionUnits
                           };
                         }
                         return b;
                       }));
                     }}
                     onValueChange={(conditionId, value) => handleConditionValueChange(branch.id, conditionId, value)}
+                    onUnitChange={(conditionId, unit) => handleConditionUnitChange(branch.id, conditionId, unit)}
                     hasError={hasError(branch.id, 'conditions')}
                   />
                 )}
 
                 {/* Action */}
-                <span className="action-arrow">→</span>
+                <span className="action-arrow">then</span>
                 <select
                   className="template-dropdown action-dropdown"
                   value={branch.actionId}
@@ -1591,6 +1707,18 @@ For all other conversations where no agents are available, offer direct callback
                     value={branch.actionValue || ''}
                     onChange={(e) => handleActionValueChange(branch.id, e.target.value)}
                   />
+                )}
+                {currentAction?.requiresValue && currentAction.valueType === 'outbound-profile' && (
+                  <select
+                    className={`template-dropdown ${hasError(branch.id, 'action-value') ? 'has-error' : ''}`}
+                    value={branch.actionValue || ''}
+                    onChange={(e) => handleActionValueChange(branch.id, e.target.value)}
+                  >
+                    <option value="">Select outbound profile...</option>
+                    {outboundProfiles.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                 )}
 
                 {/* Add/Remove buttons */}
@@ -1628,10 +1756,62 @@ For all other conversations where no agents are available, offer direct callback
                   <span className="fallback-label">
                     {isFirstFallback ? 'For all other conversations' : 'Otherwise'}
                   </span>
-                  {isPublicPreview && isFirstFallback && (
-                    <span className="overflow-condition-static"> where no agents are available</span>
+                  {/* Overflow Condition for fallback - Static field for public preview, dropdown for regular */}
+                  {isPublicPreview ? (
+                    <span className="overflow-condition-static">, if no support reps are available immediately</span>
+                  ) : (
+                    <>
+                      <span className="fallback-if-text">, if </span>
+                      <OverflowConditionMultiSelect
+                        selectedIds={fallback.selectedConditionIds || []}
+                        conditionValues={fallback.conditionValues || {}}
+                        conditionUnits={fallback.conditionUnits || {}}
+                        onSelectionChange={(selectedIds) => {
+                          setFallbackBranches(prev => prev.map(fb => {
+                            if (fb.id === fallback.id) {
+                              // Initialize default values and units for newly selected conditions
+                              const newConditionValues = { ...fb.conditionValues };
+                              const newConditionUnits = { ...fb.conditionUnits };
+                              selectedIds.forEach(condId => {
+                                const option = overflowConditionOptions.find(o => o.id === condId);
+                                if (option?.requiresValue && !(condId in newConditionValues)) {
+                                  newConditionValues[condId] = option.valueType === 'number' ? 10 : 5;
+                                  if (option.valueType === 'time') {
+                                    newConditionUnits[condId] = 'minutes';
+                                  }
+                                }
+                              });
+                              // Remove values and units for deselected conditions
+                              Object.keys(newConditionValues).forEach(key => {
+                                if (!selectedIds.includes(key)) {
+                                  delete newConditionValues[key];
+                                  delete newConditionUnits[key];
+                                }
+                              });
+                              return {
+                                ...fb,
+                                selectedConditionIds: selectedIds,
+                                conditionValues: newConditionValues,
+                                conditionUnits: newConditionUnits
+                              };
+                            }
+                            return fb;
+                          }));
+                        }}
+                        onValueChange={(conditionId, value) => {
+                          setFallbackBranches(prev => prev.map(fb =>
+                            fb.id === fallback.id ? { ...fb, conditionValues: { ...fb.conditionValues, [conditionId]: value } } : fb
+                          ));
+                        }}
+                        onUnitChange={(conditionId, unit) => {
+                          setFallbackBranches(prev => prev.map(fb =>
+                            fb.id === fallback.id ? { ...fb, conditionUnits: { ...fb.conditionUnits, [conditionId]: unit } } : fb
+                          ));
+                        }}
+                      />
+                    </>
                   )}
-                  <span className="action-arrow">→</span>
+                  <span className="action-arrow">then</span>
                   <select
                     className="template-dropdown action-dropdown"
                     value={fallback.actionId}
@@ -1675,15 +1855,27 @@ For all other conversations where no agents are available, offer direct callback
                       }}
                     />
                   )}
+                  {currentAction?.requiresValue && currentAction.valueType === 'outbound-profile' && (
+                    <select
+                      className="template-dropdown"
+                      value={fallback.actionValue || ''}
+                      onChange={(e) => {
+                        setFallbackBranches(prev => prev.map(fb =>
+                          fb.id === fallback.id ? { ...fb, actionValue: e.target.value } : fb
+                        ));
+                      }}
+                    >
+                      <option value="">Select outbound profile...</option>
+                      {outboundProfiles.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  )}
                   <span className="rule-actions">
                     <button
                       className="inline-add-btn"
                       onClick={() => {
-                        setFallbackBranches(prev => [...prev, {
-                          id: `fallback-${Date.now()}`,
-                          actionId: 'end-conversation',
-                          actionValue: ''
-                        }]);
+                        setFallbackBranches(prev => [...prev, createDefaultFallbackBranch(Date.now())]);
                       }}
                       title="Add another fallback action"
                     >+</button>
@@ -1705,11 +1897,7 @@ For all other conversations where no agents are available, offer direct callback
               <button
                 className="add-fallback-btn"
                 onClick={() => {
-                  setFallbackBranches([{
-                    id: `fallback-${Date.now()}`,
-                    actionId: 'end-conversation',
-                    actionValue: ''
-                  }]);
+                  setFallbackBranches([createDefaultFallbackBranch(Date.now())]);
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">

@@ -1,9 +1,9 @@
 Prompt:
 Get the customer tier from ContextVariable.CustomerTier and the customer region from ContextVariable.Region.
-For customers where Customer Tier is Gold AND Customer Region is USA and no agents are available, transfer to another queue: overflow queue.
-For customers where Customer Tier is Silver AND Customer Region is France and no agents are available, offer scheduled callback.
-For customers where Customer Tier is Platinum AND Customer Region is UAE and no agents are available, transfer to external number: 1800548756.
-For customers where Customer Tier is Standand and no agents are available, send to voicemail.
+For conversations where Customer Tier is Gold and Customer Region is USA, if estimated average wait time in queue > 5 minutes or no support reps are available immediately then transfer to queue overflow queue
+For conversations where Customer Tier is Silver and Customer Region is France, if actual wait time in queue > 30 seconds then offer scheduled callback using Default Outbound Profile
+For conversations where Customer Tier is Platinum and Customer Region is UAE, if all support reps are logged out then transfer to external 1800548756
+For all other conversations, if queue is out of operation then send to voicemail
 
 
 JSON:
