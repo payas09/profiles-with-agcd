@@ -1,0 +1,283 @@
+.csac-home {
+  padding: 24px 32px;
+  max-width: 1200px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* SOA Hero Card */
+.soa-hero-card {
+  background: linear-gradient(135deg, #fde8c8 0%, #f5d5e8 40%, #e8d5f5 70%, #d5e8f5 100%);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+
+.soa-hero-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1b1b1b;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.soa-chat-input-container {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e1dfdd;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  cursor: text;
+}
+
+.soa-chat-input-placeholder {
+  flex: 1;
+  color: #797775;
+  font-size: 14px;
+}
+
+.soa-chat-input-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.soa-chat-add-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #c8c6c4;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #605e5c;
+  font-size: 16px;
+}
+
+.soa-chat-send-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #605e5c;
+}
+
+.soa-option-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.soa-option-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.soa-option-card:hover {
+  border-color: #0078d4;
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.12);
+}
+
+.soa-option-card.single {
+  grid-column: span 1;
+}
+
+.soa-option-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  color: #0078d4;
+}
+
+.soa-option-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.soa-option-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b1b1b;
+  margin: 0 0 4px 0;
+}
+
+.soa-option-card-desc {
+  font-size: 12px;
+  color: #605e5c;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.soa-ai-disclaimer {
+  text-align: right;
+  font-size: 11px;
+  color: #797775;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* Bottom cards */
+.csac-home-bottom {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+.csac-agent-hub-card {
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.csac-agent-hub-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.csac-agent-hub-sparkle {
+  color: #e85e9a;
+  font-size: 18px;
+}
+
+.csac-agent-hub-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1b1b1b;
+}
+
+.csac-agent-hub-desc {
+  font-size: 13px;
+  color: #605e5c;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.csac-agent-hub-chart {
+  background: linear-gradient(180deg, #e8f4ff 0%, #c5dff5 100%);
+  border-radius: 6px;
+  height: 80px;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.csac-agent-hub-chart-bar {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(180deg, #7cc2f5 0%, #4a9fd4 100%);
+  border-radius: 4px 4px 0 0;
+}
+
+.csac-health-card {
+  background: white;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.csac-health-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1b1b1b;
+  margin: 0 0 4px 0;
+}
+
+.csac-health-subtitle {
+  font-size: 12px;
+  color: #605e5c;
+  margin: 0 0 16px 0;
+}
+
+.csac-health-learn-more {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.csac-health-overview-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b1b1b;
+  margin-bottom: 12px;
+}
+
+.csac-health-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.csac-health-metric {
+  background: #f3f2f1;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.csac-metric-label {
+  font-size: 11px;
+  color: #605e5c;
+  margin-bottom: 4px;
+}
+
+.csac-metric-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1b1b1b;
+}
+
+.csac-metric-change {
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.csac-metric-change.up {
+  color: #107c10;
+}
+
+.csac-metric-change.down {
+  color: #d13438;
+}
+
+.csac-health-suggestion {
+  background: #f3f2f1;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.csac-health-suggestion::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffaa44;
+  flex-shrink: 0;
+}

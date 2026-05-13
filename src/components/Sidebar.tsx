@@ -12,7 +12,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
   // Check if current path matches the nav item
   const isAgcdActive = location.pathname.startsWith('/agcd');
-  const isChannelsActive = location.pathname === '/' || location.pathname.startsWith('/chat-channels') || location.pathname.startsWith('/voice-channels');
+  const isChannelsActive = location.pathname === '/channels' || location.pathname.startsWith('/chat-channels') || location.pathname.startsWith('/voice-channels');
+  const isHomeActive = location.pathname === '/' || location.pathname === '/home';
+  const isSOAActive = location.pathname.startsWith('/service-operations-agent');
 
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -25,12 +27,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       <nav className="sidebar-nav">
         <div className="nav-section">
           <div className="nav-section-title">Get started</div>
-          <a href="#" className="nav-item">
+          <Link to="/" className={`nav-item ${isHomeActive ? 'active' : ''}`}>
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2L2 6v6a2 2 0 002 2h8a2 2 0 002-2V6l-6-4z" />
             </svg>
             <span>Home</span>
-          </a>
+          </Link>
+          <Link to="/service-operations-agent" className={`nav-item ${isSOAActive ? 'active' : ''}`}>
+            <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="2" y="4" width="12" height="9" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              <circle cx="5.5" cy="8" r="1" fill="currentColor" />
+              <circle cx="10.5" cy="8" r="1" fill="currentColor" />
+              <path d="M8 4V2M6.5 2h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <span>Service Operations Agent</span>
+          </Link>
           <a href="#" className="nav-item">
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" fill="none" />
@@ -67,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </svg>
             <span>AI Agents</span>
           </a>
-          <Link to="/" className={`nav-item ${isChannelsActive ? 'active' : ''}`}>
+          <Link to="/channels" className={`nav-item ${isChannelsActive ? 'active' : ''}`}>
             <svg className="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M2 2h12v2H2V2zm0 5h12v2H2V7zm0 5h12v2H2v-2z" />
             </svg>

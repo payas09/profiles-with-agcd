@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
+import CSACHome from './components/CSACHome';
+import ServiceOperationsAgent from './components/ServiceOperationsAgent';
 import ChatChannels from './components/ChatChannels';
 import VoiceChannels from './components/VoiceChannels';
 import ChannelEdit from './components/ChannelEdit';
@@ -34,6 +36,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                             location.pathname.startsWith('/conversation-flow/') ||
                             location.pathname.startsWith('/engagement-profile/');
 
+  const isSOAPage = location.pathname.startsWith('/service-operations-agent');
+
   if (isNonAgCDEditPage) {
     return (
       <>
@@ -50,7 +54,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <Header />
       <div className="app">
         <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-        <div className={`main-content-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <div className={`main-content-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${isSOAPage ? 'soa-wrapper' : ''}`}>
           {children}
         </div>
       </div>
@@ -63,7 +67,10 @@ const App: React.FC = () => {
     <Router basename={APP_CONFIG.basePath}>
       <Layout>
         <Routes>
-          <Route path="/" element={<MainContent />} />
+          <Route path="/" element={<CSACHome />} />
+          <Route path="/home" element={<CSACHome />} />
+          <Route path="/service-operations-agent" element={<ServiceOperationsAgent />} />
+          <Route path="/channels" element={<MainContent />} />
           <Route path="/chat-channels" element={<ChatChannels />} />
           <Route path="/voice-channels" element={<VoiceChannels />} />
           <Route path="/channel-experiences" element={<ChannelExperiences />} />

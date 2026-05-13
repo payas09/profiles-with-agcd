@@ -20,6 +20,13 @@
   margin-left: 48px; /* Width of collapsed sidebar */
 }
 
+/* SOA page needs overflow hidden to handle its own internal scroll */
+.main-content-wrapper.soa-wrapper {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .main-content {
   flex: 1;
   overflow-y: auto;
