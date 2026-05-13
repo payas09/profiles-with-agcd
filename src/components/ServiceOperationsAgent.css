@@ -582,7 +582,7 @@
 
 /* ===== Right Detail Panel ===== */
 .soa-detail-panel {
-  width: 300px;
+  width: 380px;
   flex-shrink: 0;
   background: white;
   border-left: 1px solid #e1dfdd;
